@@ -61,9 +61,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () {
 
                 },
+                style: ElevatedButton.styleFrom(
+                  textStyle: const TextStyle(fontSize: 18, color: Colors.deepPurple),
+                ),
                 child: const Text("Cadastrar"),
+               
+                ),
               ),
-            ),
+            
 
           ],
         ),

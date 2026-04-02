@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/trip.dart';
 
 class TripDashboardPage extends StatelessWidget {
-
   final Trip trip;
 
   const TripDashboardPage({
@@ -12,72 +11,87 @@ class TripDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: Text(trip.destination),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
 
-        child: Column(
-
-          children: [
-
-            const SizedBox(height: 20),
-
-            const Text(
-              "Painel da Viagem",
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+              // Título da viagem
+              Text(
+                trip.destination,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 10),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                child: const Text("Roteiro"),
-                onPressed: () {},
+              // Orçamento
+              Text(
+                "Orçamento: R\$ ${trip.budget}",
+                style: const TextStyle(
+                  fontSize: 16,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 15),
+              const SizedBox(height: 30),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                child: const Text("Gastos"),
-                onPressed: () {},
-              ),
-            ),
+              // Cards de opções
+              _buildOptionCard(Icons.map, "Roteiro"),
+              _buildOptionCard(Icons.attach_money, "Gastos"),
+              _buildOptionCard(Icons.book, "Diário"),
+              _buildOptionCard(Icons.security, "Segurança"),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(height: 15),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                child: const Text("Diário"),
-                onPressed: () {},
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                child: const Text("Segurança"),
-                onPressed: () {},
-              ),
-            ),
-
-          ],
+  // Widget reutilizável para os cards
+  Widget _buildOptionCard(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        elevation: 4,
+        child: ListTile(
+          leading: Icon(icon, size: 30),
+          title: Text(
+            title,
+            style: const TextStyle(fontSize: 18),
+          ),
+          trailing: const Icon(Icons.arrow_forward_ios),
+          onTap: () {
+            // aqui você pode navegar depois
+          },
         ),
       ),
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
