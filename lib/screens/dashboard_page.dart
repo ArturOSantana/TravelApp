@@ -14,23 +14,37 @@ class DashboardPage extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
         children: [
-
-          const SizedBox(height: 40),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              child: const Text("Minhas Viagens"),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TripsPage(),
-                  ),
-                );
-              },
-            ),
+            //substituir por um header bonito,com card
+       Card(
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16),
+        ),
+      elevation: 4,
+        child: InkWell(
+    borderRadius: BorderRadius.circular(16),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TripsPage(),
+        ),
+      );
+    },
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        children: [
+          const Icon(Icons.card_travel, size: 40),
+          const SizedBox(width: 20),
+          const Text(
+            "Minhas Viagens",
+            style: TextStyle(fontSize: 20),
           ),
+        ],
+      ),
+    ),
+  ),
+)
 
         ],
         ),

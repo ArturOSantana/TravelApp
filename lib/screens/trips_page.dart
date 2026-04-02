@@ -9,51 +9,64 @@ class TripsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Minhas Viagens")),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: trips.length,
-              itemBuilder: (context, index) {
-                final trip = trips[index];
+      appBar: AppBar(
+        title: const Text("Minhas Viagens"),
+      ),
 
-                return ListTile(
-                  title: Text(trip.destination),
-                  subtitle: Text("Orçamento: ${trip.budget}"),
+    
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreateTripPage(),
+            ),
+          );
+        },
+      ),
 
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TripDashboardPage(trip: trip),
-                      ),
-                    );
-                  },
+      body: ListView.builder(
+        itemCount: trips.length,
+        itemBuilder: (context, index) {
+          final trip = trips[index];
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 4,
+
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+
+              leading: const Icon(Icons.flight),
+
+              title: Text(
+                trip.destination,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+
+              subtitle: Text("Orçamento: R\$ ${trip.budget}"),
+              trailing: const Icon(Icons.arrow_forward_ios),
+
+              onTap: () {
+              Navigator.push(
+              context,
+              MaterialPageRoute(
+              builder: (context) => TripDashboardPage(trip: trip),
+                  ),
                 );
               },
             ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                child: const Text("Nova Viagem"),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateTripPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
+//verificar se o código do create_trip_page.dart está correto,pois tem um trecho estranho no meio,parece que foi colado errado,verificar também o dashboard_page.dart,pois tem um trecho de código que parece ter sido colado errado no meio do arquivo.
+//verificar pq ta estranho aq 30/03

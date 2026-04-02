@@ -5,6 +5,13 @@ void main() {
   runApp(const MyApp());
 }
 
+//projeto refatorado para melhor organização do código,objetivo:
+//Dashboard → bonito + cards
+//Lista → cards com viagens
+//Detalhes → visual (imagem, infos)
+//Criar → formulário elegante
+//data 30 do 3
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -13,17 +20,33 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: const Color(0xfff2f1e2),
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: const Color(0xfff1eec0),
-        ),
-        scaffoldBackgroundColor: const Color(0xfff2f1e2),
-        textTheme: const TextTheme(
-          bodyLarge : TextStyle (color : Colors.deepPurple),
-        ),
+     
+  useMaterial3: true,
 
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: Colors.deepPurple,
+  ),
 
+  scaffoldBackgroundColor: Colors.grey[100],
+
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+  ),
+
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
+    ),
+  ),
+),
       home: const LoginPage(),
     );
   }
