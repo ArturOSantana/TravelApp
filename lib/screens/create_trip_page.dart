@@ -20,10 +20,15 @@ class _CreateTripPageState extends State<CreateTripPage> {
     final trip = Trip(
       destination: destinationController.text,
       budget: budgetController.text,
-    );
-
-    trips.add(trip);
-
+    ); 
+    //favor verificar dps em, projeto ultiliza dados de exemplo por enquanto,estas loinhas abaixo pedem caixa de texto com dados msm
+    
+      controller.addTrip(
+        Trip(
+          destination: destinationController.text,
+          budget: budgetController.text,
+        ),
+      ); 
     Navigator.pop(context);
 
   }
