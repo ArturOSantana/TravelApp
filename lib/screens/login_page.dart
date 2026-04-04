@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'register_page.dart';
 import 'dashboard_page.dart';
+import '../controllers/auth_controller.dart'; 
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,12 +14,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  final AuthController controller = AuthController();
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   int _currentImageIndex = 0;
-  //codigo pa animacao de fade entre as imagens
+
   final List<String> _images = [
     'assets/images/imagi03.jpg',
     'assets/images/imagi04.jpg',
@@ -29,27 +32,27 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 3000), // 3 seconds per image
+      duration: const Duration(milliseconds: 3000),
       vsync: this,
     );
 
-    // transicao  (0-0.4) → pra (0.4-0.6) → fade tlgd  (0.6-1.0)
     _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    // joga pro lado (starts at -1,0)
-    _slideAnimation = Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero).animate(
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(-1, 0), 
+      end: Offset.zero
+    ).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        // vai po proximo
         setState(() {
           _currentImageIndex = (_currentImageIndex + 1) % _images.length;
         });
-        _animationController.forward(from: 0); // reinicia a animacao para a proxima imagem
+        _animationController.forward(from: 0);
       }
     });
 
@@ -79,6 +82,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             children: [
             
               const SizedBox(height: 20),
+
               Center(
                 child: SlideTransition(
                   position: _slideAnimation,
@@ -96,8 +100,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
 
+              const SizedBox(height: 20),
               const SizedBox(height: 18),
 
               const Text(
@@ -112,13 +116,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
               const SizedBox(height: 30),
 
-              TextField( 
+              TextField(
                 controller: emailController,
                 decoration: const InputDecoration(
                   labelText: "Email",
                   border: OutlineInputBorder(),
                   filled: true,
-                  fillColor: Colors.white,  
+                  fillColor: Colors.white,
                 ),
               ),
 
@@ -141,24 +145,36 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DashboardPage(),
-                      ),
+                    bool sucesso = controller.login(
+                      emailController.text,
+                      passwordController.text,
                     );
 
+                    if (sucesso) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DashboardPage(),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Preencha email e senha"),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xfff1eec0),  
-                    foregroundColor: Colors.deepPurple, 
+                    backgroundColor: const Color(0xfff1eec0),
+                    foregroundColor: Colors.deepPurple,
                   ),
                   child: const Text("Entrar"),
                 ),
               ),
 
               const SizedBox(height: 15),
-            //socorro
+
               TextButton(
                 onPressed: () {
                   Navigator.push(

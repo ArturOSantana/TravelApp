@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'create_trip_page.dart';
 import '../data/trip_data.dart';
 import 'trip_dashboard_page.dart';
+import '../controllers/trip_controller.dart';
+
+
 
 class TripsPage extends StatelessWidget {
   const TripsPage({super.key});
 
   @override
+  final controller = TripController();
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -27,9 +31,9 @@ class TripsPage extends StatelessWidget {
       ),
 
       body: ListView.builder(
-        itemCount: trips.length,
+        itemCount: controller.getTrips().length,
         itemBuilder: (context, index) {
-          final trip = trips[index];
+          final trip = controller.getTrips()[index];
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             shape: RoundedRectangleBorder(

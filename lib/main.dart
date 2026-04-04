@@ -11,6 +11,8 @@ void main() {
 //Detalhes → visual (imagem, infos)
 //Criar → formulário elegante
 //data 30 do 3
+//data 04 do 04 alteraçoes terminei oq eu queria so falta o firebase.
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
