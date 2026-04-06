@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'register_page.dart';
-import 'dashboard_page.dart';
-import '../controllers/auth_controller.dart'; 
+import '../controllers/auth_controller.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,186 +8,107 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
-
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final AuthController _authController = AuthController();
 
-  final AuthController controller = AuthController();
-  
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  int _currentImageIndex = 0;
+  bool _isLoading = false;
 
-  final List<String> _images = [
-    'assets/images/imagi03.jpg',
-    'assets/images/imagi04.jpg',
-    'assets/images/imagi05.jpg',
-  ];
+  Future<void> _handleLogin() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+      
+      final String? error = await _authController.login(
+        emailController.text.trim(),
+        passwordController.text.trim(),
+      );
 
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
-      vsync: this,
-    );
+      if (mounted) setState(() => _isLoading = false);
 
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(-1, 0), 
-      end: Offset.zero
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
-    _animationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        setState(() {
-          _currentImageIndex = (_currentImageIndex + 1) % _images.length;
-        });
-        _animationController.forward(from: 0);
+      if (error == null) {
+        if (mounted) Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: Colors.red),
+          );
+        }
       }
-    });
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Travel Planner"),
-      ),
-      body: SafeArea(
+      body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-            
-              const SizedBox(height: 20),
-
-              Center(
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: Image.asset(
-                        _images[_currentImageIndex],
-                        width: 400,
-                        height: 400,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              const SizedBox(height: 18),
-
-              const Text(
-                "Login",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
+          padding: const EdgeInsets.all(25.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.travel_explore,
+                  size: 100,
                   color: Colors.deepPurple,
                 ),
-              ),
-
-              const SizedBox(height: 30),
-
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
+                const SizedBox(height: 30),
+                const Text(
+                  "Travel App",
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
-              ),
-
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: "Senha",
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    bool sucesso = controller.login(
-                      emailController.text,
-                      passwordController.text,
-                    );
-
-                    if (sucesso) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardPage(),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Preencha email e senha"),
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xfff1eec0),
-                    foregroundColor: Colors.deepPurple,
+                const SizedBox(height: 30),
+                TextFormField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: "E-mail",
+                    prefixIcon: Icon(Icons.email),
+                    border: OutlineInputBorder(),
                   ),
-                  child: const Text("Entrar"),
+                  validator: (value) =>
+                      value == null || value.isEmpty ? "Informe o e-mail" : null,
                 ),
-              ),
+                const SizedBox(height: 15),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: "Senha",
+                    prefixIcon: Icon(Icons.lock),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) =>
+                      value == null || value.length < 6 ? "Mínimo 6 caracteres" : null,
+                ),
+                const SizedBox(height: 30),
 
-              const SizedBox(height: 15),
-
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RegisterPage(),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
                     ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.deepPurple,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Entrar", style: TextStyle(fontSize: 18)),
+                  ),
                 ),
-                child: const Text("Criar conta"),
-              ),
-            ],
+
+                const SizedBox(height: 15),
+
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/register'),
+                  child: const Text("Não tem conta? Cadastre-se aqui"),
+                ),
+              ],
+            ),
           ),
         ),
       ),

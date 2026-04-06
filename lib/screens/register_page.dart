@@ -9,93 +9,142 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  final AuthController controller = AuthController(); 
+  final AuthController _authController = AuthController();
+
+  bool _isLoading = false;
+
+  void _handleRegister() async {
+    // 1. Valida os campos do formulário
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
+      final String? erro = await _authController.register(
+        nameController.text.trim(),
+        emailController.text.trim(),
+        passwordController.text,
+      );
+
+      if (mounted) setState(() => _isLoading = false);
+
+      if (erro == null) {
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Conta criada com sucesso!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(erro),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Criar Conta"),
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-
-       
+      body: Center(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: "Nome",
-                  border: OutlineInputBorder(),
+          padding: const EdgeInsets.all(25.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.person_add_alt_1,
+                  size: 80,
+                  color: Colors.deepPurple,
                 ),
-              ),
-
-              const SizedBox(height: 20),
-
-              TextField(
-                
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 20),
+                const Text(
+                  "Cadastre-se para começar",
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
-              ),
+                const SizedBox(height: 30),
 
-              const SizedBox(height: 20),
 
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: "Senha",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-
-                    bool sucesso = controller.register(
-                      nameController.text,
-                      emailController.text,
-                      passwordController.text,
-                    );
-
-                    if (sucesso) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Conta criada com sucesso!"),
-                        ),
-                      );
-
-                      Navigator.pop(context); // volta pro login
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Preencha todos os campos"),
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    textStyle: const TextStyle(fontSize: 18),
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: "Nome Completo",
+                    prefixIcon: Icon(Icons.person),
                   ),
-                  child: const Text("Cadastrar"),
+                  validator: (value) =>
+                  value == null || value.isEmpty ? "Informe seu nome" : null,
                 ),
-              ),
-            ],
+                const SizedBox(height: 15),
+
+                TextFormField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: "E-mail",
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  validator: (value) =>
+                  value == null || !value.contains('@') ? "E-mail inválido" : null,
+                ),
+                const SizedBox(height: 15),
+
+
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: "Senha",
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  validator: (value) =>
+                  value == null || value.length < 6 ? "Mínimo 6 caracteres" : null,
+                ),
+                const SizedBox(height: 30),
+
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleRegister,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                      "Cadastrar",
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Já tenho uma conta. Entrar"),
+                ),
+              ],
+            ),
           ),
         ),
       ),

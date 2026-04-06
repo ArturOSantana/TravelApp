@@ -1,0 +1,85 @@
+{
+  "usuarios": {
+    "userId_123": {
+      "nome": "Artur",
+      "email": "artur.santana@email.com",
+      "premium": true,
+      "criadoEm": "2026-03-25T21:38:00Z"
+    }
+  },
+  "viagens": {
+    "viagemId_ABC": {
+      "usuarioId": "userId_123",
+      "titulo": "Viagem para RJ",
+      "destino": "Rio de Janeiro",
+      "dataInicio": "2026-07-10",
+      "dataFim": "2026-07-15",
+      "modoNomade": false,
+      "orcamento": 2000,
+      "objetivo": "lazer",
+      "tipo": "solo",
+      "membros": {
+        "membroId_01": {
+          "userId": "abc",
+          "permissao": "editor"
+        }
+      },
+      "atividades": {
+        "atividadeId_01": {
+          "nome": "Cristo Redentor",
+          "data": "2026-07-11",
+          "horario": "10:00",
+          "localizacao": {
+            "lat": -22.9519,
+            "lng": -43.2105
+          },
+          "categoria": "turismo",
+          "notas": "",
+          "ordem": 1
+        }
+      },
+      "gastos": {
+        "gastoId_01": {
+          "valor": 50,
+          "categoria": "alimentacao",
+          "pagoPor": "userId_123",
+          "divididoEntre": ["user1", "user2"],
+          "data": "2026-07-11"
+        }
+      },
+      "diario": {
+        "diaId_01": {
+          "texto": "Dia incrível",
+          "fotos": ["url1", "url2"],
+          "humor": "feliz"
+        }
+      },
+      "aprendizado": {
+        "id_01": {
+          "pontosPositivos": "Vista maravilhosa",
+          "pontosNegativos": "Filas grandes",
+          "nota": 4
+        }
+      }
+    }
+  },
+  "servicos_usuario": {
+    "id_servico_01": {
+      "userId": "userId_123",
+      "nome": "Hotel X",
+      "tipo": "hotel",
+      "local": "Lisboa",
+      "nota": 5,
+      "comentario": "",
+      "custoMedio": 300
+    }
+  },
+  "seguranca": {
+    "id_seguranca_01": {
+      "userId": "userId_123",
+      "contato": "email",
+      "ativo": true,
+      "tempoLimite": "02:00:00"
+    }
+  }
+}
