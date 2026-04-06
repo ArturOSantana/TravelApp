@@ -50,7 +50,14 @@ class TripController {
     });
   }
 
-  // --- USERS (Novo: Buscar membros reais para finanças) ---
+  // Novo: Remover membro (Apenas ADM)
+  Future<void> removeMember(String tripId, String memberId) async {
+    await _db.collection('trips').doc(tripId).update({
+      'members': FieldValue.arrayRemove([memberId])
+    });
+  }
+
+  // --- USERS ---
   Future<List<UserModel>> getTripMembers(List<String> memberIds) async {
     List<UserModel> users = [];
     for (String id in memberIds) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 
@@ -23,13 +24,54 @@ class _CreateTripPageState extends State<CreateTripPage> {
   bool _isGroup = false;
   bool _isLoading = false;
 
+  DateTime? _startDate;
+  DateTime? _endDate;
+
   final List<String> _objectives = ['Descanso', 'Aventura', 'Trabalho', 'Cultural', 'Gastronômico'];
+
+  Future<void> _selectDateRange(BuildContext context) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+      initialDateRange: _startDate != null && _endDate != null
+          ? DateTimeRange(start: _startDate!, end: _endDate!)
+          : null,
+    );
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+    }
+  }
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (picked != null) {
+      setState(() {
+        _startDate = picked;
+      });
+    }
+  }
 
   void createTrip() async {
     final String uid = _auth.currentUser?.uid ?? '';
     if (uid.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Erro: Usuário não autenticado!"), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    if (!_isNomad && (_startDate == null || _endDate == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Por favor, selecione as datas da viagem ou ative o Modo Nômade."), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -47,6 +89,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
         isGroup: _isGroup,
         members: [uid],
         createdAt: DateTime.now(),
+        startDate: _startDate,
+        endDate: _isNomad ? null : _endDate,
       );
 
       await controller.addTrip(newTrip);
@@ -91,6 +135,30 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     validator: (value) => value == null || value.isEmpty ? "Digite um destino" : null,
                   ),
                   const SizedBox(height: 20),
+                  
+                  // Seletor de Datas
+                  if (!_isNomad)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_month, color: Colors.deepPurple),
+                      title: const Text("Datas da Viagem", style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(_startDate == null || _endDate == null 
+                        ? "Selecionar Início e Fim" 
+                        : "${DateFormat('dd/MM/yyyy').format(_startDate!)} - ${DateFormat('dd/MM/yyyy').format(_endDate!)}"),
+                      onTap: () => _selectDateRange(context),
+                    )
+                  else
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                      title: const Text("Data de Início", style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(_startDate == null 
+                        ? "Selecionar data de início" 
+                        : DateFormat('dd/MM/yyyy').format(_startDate!)),
+                      onTap: () => _selectStartDate(context),
+                    ),
+                  
+                  const SizedBox(height: 10),
                   TextFormField(
                     controller: budgetController,
                     keyboardType: TextInputType.number,
@@ -118,7 +186,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     title: const Text("Modo Nômade (Sem data final)"),
                     subtitle: const Text("Ideal para viagens longas e flexíveis"),
                     value: _isNomad,
-                    onChanged: (val) => setState(() => _isNomad = val),
+                    onChanged: (val) {
+                      setState(() {
+                        _isNomad = val;
+                        if (_isNomad) _endDate = null;
+                      });
+                    },
                   ),
                   SwitchListTile(
                     title: const Text("Viagem em Grupo"),

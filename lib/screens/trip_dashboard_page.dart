@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 import 'itinerary_page.dart';
 import 'expenses_page.dart';
 import 'journal_page.dart';
 import 'safety_page.dart';
+import 'group_members_page.dart';
 
 class TripDashboardPage extends StatelessWidget {
   final Trip trip;
@@ -18,6 +20,13 @@ class TripDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = TripController();
+    final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    
+    // Melhorei a lógica do ADM: Se o ownerId estiver vazio (viagem antiga), 
+    // verificamos se o usuário atual é o primeiro membro da lista.
+    final bool isAdm = trip.ownerId.isNotEmpty 
+        ? currentUid == trip.ownerId 
+        : (trip.members.isNotEmpty && trip.members.first == currentUid);
 
     return Scaffold(
       appBar: AppBar(
@@ -26,11 +35,19 @@ class TripDashboardPage extends StatelessWidget {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add, color: Colors.white),
-            onPressed: () => _showInviteDialog(context),
-            tooltip: "Convidar Amigos",
+            icon: const Icon(Icons.group, color: Colors.white),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: trip))),
+            tooltip: "Ver Membros",
           ),
-          if (trip.status != 'completed')
+          // APENAS ADM pode convidar membros novos
+          if (isAdm)
+            IconButton(
+              icon: const Icon(Icons.person_add, color: Colors.white),
+              onPressed: () => _showInviteDialog(context),
+              tooltip: "Convidar Amigos",
+            ),
+          // APENAS ADM pode concluir a viagem
+          if (isAdm && trip.status != 'completed')
             TextButton.icon(
               onPressed: () => _showFinishDialog(context, controller),
               icon: const Icon(Icons.check_circle, color: Colors.white),
@@ -75,7 +92,10 @@ class TripDashboardPage extends StatelessWidget {
                             style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
                           ),
                           if (trip.isGroup)
-                            Text("${trip.members.length} membros no grupo", style: const TextStyle(color: Colors.deepPurple, fontSize: 12)),
+                            GestureDetector(
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: trip))),
+                              child: Text("${trip.members.length} membros no grupo (Ver)", style: const TextStyle(color: Colors.deepPurple, fontSize: 12, decoration: TextDecoration.underline)),
+                            ),
                         ],
                       ),
                     ),
