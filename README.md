@@ -1,69 +1,57 @@
-# Travel App - Planejamento Inteligente de Viagens 🌍✈️
+# Travel App - Sistema Inteligente de Planejamento e Gestão de Viagens
 
-O **Travel App** é uma solução completa para viajantes que buscam organizar suas jornadas de forma inteligente, seja em aventuras solo ou em grupo. O foco principal é a praticidade, controle financeiro e a criação de uma memória de viagem rica e colaborativa.
+## Visão Geral
+O Travel App é uma plataforma robusta desenvolvida para otimizar a experiência de planejamento e execução de viagens individuais e coletivas. O sistema foca em três pilares fundamentais: organização logística, controle financeiro compartilhado e documentação colaborativa de experiências.
 
----
-
-## 🚀 Funcionalidades Principais (Casos de Uso)
-
-### 1. Gerenciamento de Viagens
-- **Viagem Solo:** Criação rápida com definição de destino, orçamento e objetivo (lazer, trabalho, etc).
-- **Modo Nômade:** Suporte para viagens sem data de término definida.
-- **Viagens em Grupo:** Sistema de convite via código privado com gestão de permissões (ADM e Membros).
-
-### 2. Roteiro Inteligente 📅
-- **Organização por Dias:** Adicione atividades com horários e localizações.
-- **Votação em Grupo:** Evite conflitos permitindo que os membros votem (aprovar/reprovar) em atividades propostas.
-
-### 3. Controle Financeiro 💰
-- **Gestão de Gastos:** Registro individual categorizado (alimentação, transporte, etc).
-- **Divisão Automática:** Em viagens de grupo, o sistema calcula "quem deve para quem" com base em divisões personalizadas.
-
-### 4. Biblioteca de Recomendações & Comunidade 🌟
-- **Memória Pessoal:** Salve serviços (hotéis, restaurantes) com fotos, avaliações e dicas.
-- **Feed da Comunidade:** Explore e salve dicas de outros usuários para suas próprias viagens.
-- **Privacidade:** Escolha se sua recomendação será pública ou apenas para você.
-
-### 5. Diário de Viagem & Segurança 📖🛟
-- **Diário Emocional:** Registre fotos e textos com escala de humor diária.
-- **Check-in de Segurança:** Compartilhamento de localização e botão "Estou Seguro" para tranquilizar familiares.
+Este projeto foi estruturado seguindo padrões de arquitetura modernos, garantindo escalabilidade e facilidade de manutenção, sendo ideal para apresentação acadêmica (TCC) ou como base para soluções corporativas no setor de turismo.
 
 ---
 
-## 🧪 Como rodar os Testes
+## Funcionalidades do Sistema
 
-O projeto utiliza **Testes Unitários** para garantir que todas as regras de negócio (Casos de Uso) funcionem corretamente.
+### 1. Gestão de Itinerários e Grupos
+*   **Planejamento Flexível:** Suporte para viagens com roteiros definidos ou modalidade nômade (sem data de término).
+*   **Colaboração em Grupo:** Sistema de ingresso via código de convite único, permitindo a gestão multiusuário em um mesmo projeto de viagem.
+*   **Controle de Acesso:** Hierarquia de permissões entre Administrador (criador) e Membros.
 
-### Pré-requisitos
-Certifique-se de que o Flutter está configurado corretamente em sua máquina:
+### 2. Roteirização e Governança Colaborativa
+*   **Cronograma de Atividades:** Organização detalhada por data, horário, localização e categoria.
+*   **Sistema de Votação:** Mecanismo democrático para aprovação de atividades em grupo, visando a resolução de conflitos no planejamento.
+
+### 3. Gestão Financeira e Divisão de Custos
+*   **Lançamento de Despesas:** Registro categorizado de gastos com suporte a múltiplas moedas (conversão base).
+*   **Split de Gastos:** Algoritmo de divisão automática de despesas entre membros do grupo, gerando relatórios de "quem deve para quem" em tempo real.
+
+### 4. Inteligência de Comunidade e Serviços
+*   **Curadoria de Recomendações:** Biblioteca pessoal de serviços (hospedagem, gastronomia, transporte) com avaliações técnicas e evidências fotográficas.
+*   **Módulo de Comunidade:** Feed público para exploração de recomendações de terceiros, com funcionalidade de importação para a biblioteca privada.
+
+### 5. Documentação e Segurança
+*   **Diário de Bordo Digital:** Registro de memórias com análise de humor (mood tracking) e galeria de fotos sincronizada.
+*   **Álbum em Tempo Real:** Compartilhamento de link externo para visualização pública do progresso da viagem por familiares ou seguidores.
+*   **Monitoramento de Segurança:** Ferramenta de check-in de localização e alertas de status para a rede de contatos.
+
+---
+
+## Especificações Técnicas
+*   **Framework:** Flutter (Dart)
+*   **Backend:** Firebase (Authentication, Cloud Firestore, Firebase Storage)
+*   **Gerenciamento de Estado:** Controller Pattern (Pattern-based abstraction)
+*   **Integrações:** Share Plus (Social Sharing), Image Picker (Captura de Mídia), Intl (Internacionalização).
+
+---
+
+## Garantia de Qualidade e Testes
+O projeto conta com uma suíte de testes automatizados que cobrem as principais regras de negócio.
+
+### Execução dos Testes
+Para validar a integridade do sistema, execute o seguinte comando no terminal:
 ```bash
-flutter doctor
+flutter test
 ```
 
-### Executando os Testes
-Para rodar todos os testes de lógica de negócio:
-
-1. **Testes de Casos de Uso (Geral):**
-   Valida criação de viagens, votação de atividades, divisão financeira e diário.
-   ```bash
-   flutter test test/use_cases_test.dart
-   ```
-
-2. **Testes de Lógica de Permissão (ADM/Membro):**
-   Garante que apenas o administrador tenha poderes de edição e exclusão.
-   ```bash
-   flutter test test/trip_model_test.dart
-   ```
-
-3. **Rodar todos os testes do projeto:**
-   ```bash
-   flutter test
-   ```
-
----
-
-## 🛠 Tecnologias Utilizadas
-- **Flutter** (Framework UI)
-- **Firebase Auth** (Autenticação)
-- **Cloud Firestore** (Banco de dados em tempo real)
-- **Provider/Controller Pattern** (Gestão de estado e lógica)
+Os testes abrangem:
+1.  **Modelos de Dados:** Validação de integridade e parsing de objetos.
+2.  **Lógica Financeira:** Precisão nos cálculos de divisão de despesas.
+3.  **Regras de Negócio:** Permissões de usuários e fluxos de votação.
+4.  **Integração de Componentes:** Fluxo de dados entre modelos e controladores.
