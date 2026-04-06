@@ -55,7 +55,7 @@ class JournalPage extends StatelessWidget {
         actions: [
           Builder(
             builder: (btnContext) => IconButton(
-              icon: const Icon(Icons.share_arrival), // Ícone que remete a envio/compartilhamento
+              icon: const Icon(Icons.ios_share), // Ícone corrigido de share_arrival para ios_share
               tooltip: "Compartilhar Link do Álbum",
               onPressed: () => _shareLiveAlbumLink(btnContext),
             ),
