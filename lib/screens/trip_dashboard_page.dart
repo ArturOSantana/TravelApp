@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 import 'itinerary_page.dart';
@@ -22,8 +23,6 @@ class TripDashboardPage extends StatelessWidget {
     final controller = TripController();
     final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     
-    // Melhorei a lógica do ADM: Se o ownerId estiver vazio (viagem antiga), 
-    // verificamos se o usuário atual é o primeiro membro da lista.
     final bool isAdm = trip.ownerId.isNotEmpty 
         ? currentUid == trip.ownerId 
         : (trip.members.isNotEmpty && trip.members.first == currentUid);
@@ -39,14 +38,12 @@ class TripDashboardPage extends StatelessWidget {
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: trip))),
             tooltip: "Ver Membros",
           ),
-          // APENAS ADM pode convidar membros novos
           if (isAdm)
             IconButton(
               icon: const Icon(Icons.person_add, color: Colors.white),
               onPressed: () => _showInviteDialog(context),
               tooltip: "Convidar Amigos",
             ),
-          // APENAS ADM pode concluir a viagem
           if (isAdm && trip.status != 'completed')
             TextButton.icon(
               onPressed: () => _showFinishDialog(context, controller),
@@ -150,23 +147,54 @@ class TripDashboardPage extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Compartilhe o código abaixo com seus amigos para eles entrarem na viagem:"),
+            const Text("Compartilhe o código abaixo para convidar seus amigos:"),
             const SizedBox(height: 15),
             Container(
               padding: const EdgeInsets.all(10),
+              width: double.infinity,
               decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
-              child: SelectableText(trip.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              child: SelectableText(
+                trip.id, 
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.2),
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(
+          IconButton(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: trip.id));
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Código copiado!")));
-              Navigator.pop(context);
-            }, 
-            child: const Text("Copiar Código")
+            },
+            icon: const Icon(Icons.copy),
+            tooltip: "Copiar Código",
+          ),
+          Builder(
+            builder: (buttonContext) {
+              return ElevatedButton.icon(
+                onPressed: () async {
+                  final box = buttonContext.findRenderObject() as RenderBox?;
+                  final String text = "Ei! Vamos viajar juntos para ${trip.destination}?\n\n"
+                      "Baixe o Travel App e entre no meu grupo usando o código:\n"
+                      "${trip.id}";
+                  
+                  await Share.share(
+                    text, 
+                    subject: "Convite de Viagem",
+                    sharePositionOrigin: box != null 
+                        ? box.localToGlobal(Offset.zero) & box.size 
+                        : null,
+                  );
+                }, 
+                icon: const Icon(Icons.share),
+                label: const Text("Compartilhar"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                ),
+              );
+            }
           ),
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Fechar")),
         ],
