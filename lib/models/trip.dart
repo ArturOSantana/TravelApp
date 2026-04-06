@@ -29,6 +29,16 @@ class Trip {
     this.status = 'planned',
   });
 
+  // Centraliza a lógica de quem é ADM
+  bool isAdmin(String uid) {
+    if (uid.isEmpty) return false;
+    if (ownerId.isNotEmpty) {
+      return uid == ownerId;
+    }
+    // Fallback para viagens antigas sem ownerId definido
+    return members.isNotEmpty && members.first == uid;
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'ownerId': ownerId,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip.dart';
 import '../models/user_model.dart';
@@ -16,15 +17,27 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   final controller = TripController();
   final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+  bool get isAdm {
+    return widget.trip.ownerId.isNotEmpty 
+        ? currentUid == widget.trip.ownerId 
+        : (widget.trip.members.isNotEmpty && widget.trip.members.first == currentUid);
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isAdm = currentUid == widget.trip.ownerId;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Membros do Grupo"),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        actions: [
+          if (isAdm)
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: () => _showInviteDialog(context),
+              tooltip: "Convidar Membro",
+            ),
+        ],
       ),
       body: FutureBuilder<List<UserModel>>(
         future: controller.getTripMembers(widget.trip.members),
@@ -62,23 +75,26 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                   itemCount: members.length,
                   itemBuilder: (context, index) {
                     final member = members[index];
-                    bool isOwner = member.uid == widget.trip.ownerId;
+                    // O dono original ou o primeiro da lista (se ownerId for vazio) é o ADM
+                    bool isMemberOwner = widget.trip.ownerId.isNotEmpty 
+                        ? member.uid == widget.trip.ownerId 
+                        : (widget.trip.members.indexOf(member.uid) == 0);
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: _getMemberColor(index),
-                          child: Text(member.name[0].toUpperCase(), style: const TextStyle(color: Colors.white)),
+                          child: Text(member.name.isNotEmpty ? member.name[0].toUpperCase() : "?", style: const TextStyle(color: Colors.white)),
                         ),
                         title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(member.email),
-                        trailing: isOwner 
+                        trailing: isMemberOwner 
                           ? const BadgeADM()
                           : (isAdm ? IconButton(
                               icon: const Icon(Icons.person_remove, color: Colors.red),
                               onPressed: () => _confirmRemove(context, member),
-                            ) : null),
+                            ) : null), // Se não for ADM, o trailing é null (membro só olha)
                       ),
                     );
                   },
@@ -87,6 +103,38 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _showInviteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Convidar para o Grupo"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Compartilhe o código abaixo com seus amigos:"),
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+              child: SelectableText(widget.trip.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: widget.trip.id));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Código copiado!")));
+              Navigator.pop(context);
+            }, 
+            child: const Text("Copiar Código")
+          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Fechar")),
+        ],
       ),
     );
   }
