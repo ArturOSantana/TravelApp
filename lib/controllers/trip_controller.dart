@@ -69,6 +69,55 @@ class TripController {
     return users;
   }
 
+  // --- SERVICES ---
+  Stream<List<ServiceModel>> getPersonalServices() {
+    String uid = _auth.currentUser?.uid ?? '';
+    return _db
+        .collection('services')
+        .where('ownerId', isEqualTo: uid)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList());
+  }
+
+  Stream<List<ServiceModel>> getCommunityServices() {
+    return _db
+        .collection('services')
+        .where('isPublic', isEqualTo: true)
+        .limit(20)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList());
+  }
+
+  Future<void> saveService(ServiceModel service) async {
+    await _db.collection('services').add(service.toMap());
+  }
+
+  // Novo: Importar serviço para favoritos
+  Future<void> importService(ServiceModel service) async {
+    String uid = _auth.currentUser?.uid ?? '';
+    String userName = _auth.currentUser?.displayName ?? 'Viajante';
+
+    final imported = ServiceModel(
+      id: '',
+      ownerId: uid,
+      userName: userName,
+      name: service.name,
+      category: service.category,
+      location: service.location,
+      rating: service.rating,
+      comment: service.comment,
+      averageCost: service.averageCost,
+      lastUsed: DateTime.now(),
+      isPublic: false, // Salva como privado na biblioteca pessoal
+      photos: service.photos,
+      tags: service.tags,
+    );
+    
+    await saveService(imported);
+  }
+
   // --- ACTIVITIES ---
   Stream<List<Activity>> getActivities(String tripId) {
     return _db
@@ -159,29 +208,5 @@ class TripController {
       isPanic: isPanic,
     );
     await _db.collection('safety').add(checkIn.toMap());
-  }
-
-  // --- SERVICES & COMMUNITY ---
-  Stream<List<ServiceModel>> getPersonalServices() {
-    String uid = _auth.currentUser?.uid ?? '';
-    return _db
-        .collection('services')
-        .where('ownerId', isEqualTo: uid)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList());
-  }
-
-  Stream<List<ServiceModel>> getCommunityServices() {
-    return _db
-        .collection('services')
-        .limit(20)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList());
-  }
-
-  Future<void> saveService(ServiceModel service) async {
-    await _db.collection('services').add(service.toMap());
   }
 }

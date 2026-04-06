@@ -11,7 +11,10 @@ class ServiceModel {
   final double averageCost;
   final int usageFrequency;
   final List<String> tags;
+  final List<String> photos; // New: Photos for the recommendation
   final DateTime lastUsed;
+  final bool isPublic; // New: To share with the community
+  final String? userName; // Optional: To show who recommended it
 
   ServiceModel({
     required this.id,
@@ -24,7 +27,10 @@ class ServiceModel {
     required this.averageCost,
     this.usageFrequency = 1,
     this.tags = const [],
+    this.photos = const [],
     required this.lastUsed,
+    this.isPublic = false,
+    this.userName,
   });
 
   Map<String, dynamic> toMap() {
@@ -38,7 +44,10 @@ class ServiceModel {
       'averageCost': averageCost,
       'usageFrequency': usageFrequency,
       'tags': tags,
+      'photos': photos,
       'lastUsed': lastUsed,
+      'isPublic': isPublic,
+      'userName': userName,
     };
   }
 
@@ -55,7 +64,10 @@ class ServiceModel {
       averageCost: (data['averageCost'] ?? 0).toDouble(),
       usageFrequency: data['usageFrequency'] ?? 1,
       tags: List<String>.from(data['tags'] ?? []),
-      lastUsed: (data['lastUsed'] as Timestamp).toDate(),
+      photos: List<String>.from(data['photos'] ?? []),
+      lastUsed: (data['lastUsed'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isPublic: data['isPublic'] ?? false,
+      userName: data['userName'],
     );
   }
 }

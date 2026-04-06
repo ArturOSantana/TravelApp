@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import 'create_trip_page.dart';
 import 'trip_dashboard_page.dart';
+import 'community_page.dart'; // Import da nova tela
 import '../controllers/trip_controller.dart';
 
 class TripsPage extends StatefulWidget {
@@ -27,6 +28,11 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
       appBar: AppBar(
         title: const Text("Minhas Viagens"),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.public),
+            tooltip: "Explorar Comunidade",
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CommunityPage())),
+          ),
           IconButton(
             icon: const Icon(Icons.group_add),
             tooltip: "Entrar em um Grupo",
