@@ -1,1 +1,16 @@
-{"flutter":{"platforms":{"ios":{"default":{"projectId":"travel-app-tcc","appId":"1:660606500922:ios:b2a4d3d8934ba63f34f503","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"travel-app-tcc","appId":"1:660606500922:ios:b2a4d3d8934ba63f34f503","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"travel-app-tcc","configurations":{"ios":"1:660606500922:ios:b2a4d3d8934ba63f34f503","macos":"1:660606500922:ios:b2a4d3d8934ba63f34f503","windows":"1:660606500922:web:904a0286a86224b034f503"}}}}}}
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
