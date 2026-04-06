@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/trip.dart';
+import '../controllers/trip_controller.dart';
 import 'itinerary_page.dart';
 import 'expenses_page.dart';
 import 'journal_page.dart';
+import 'safety_page.dart';
 
 class TripDashboardPage extends StatelessWidget {
   final Trip trip;
@@ -14,11 +17,26 @@ class TripDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = TripController();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(trip.destination),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add, color: Colors.white),
+            onPressed: () => _showInviteDialog(context),
+            tooltip: "Convidar Amigos",
+          ),
+          if (trip.status != 'completed')
+            TextButton.icon(
+              onPressed: () => _showFinishDialog(context, controller),
+              icon: const Icon(Icons.check_circle, color: Colors.white),
+              label: const Text("Concluir", style: TextStyle(color: Colors.white)),
+            )
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -26,7 +44,6 @@ class TripDashboardPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header com informações da viagem
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -35,10 +52,14 @@ class TripDashboardPage extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 30,
-                      backgroundColor: Colors.deepPurple,
-                      child: Icon(Icons.flight_takeoff, color: Colors.white, size: 30),
+                      backgroundColor: trip.status == 'completed' ? Colors.grey : Colors.deepPurple,
+                      child: Icon(
+                        trip.status == 'completed' ? Icons.archive : Icons.flight_takeoff, 
+                        color: Colors.white, 
+                        size: 30
+                      ),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -50,13 +71,11 @@ class TripDashboardPage extends StatelessWidget {
                             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            "Objetivo: ${trip.objective}",
-                            style: TextStyle(color: Colors.grey[700]),
+                            "Status: ${trip.status == 'active' ? 'Em andamento' : trip.status == 'completed' ? 'Concluída' : 'Planejada'}",
+                            style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
                           ),
-                          Text(
-                            "Orçamento: R\$ ${trip.budget.toStringAsFixed(2)}",
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-                          ),
+                          if (trip.isGroup)
+                            Text("${trip.members.length} membros no grupo", style: const TextStyle(color: Colors.deepPurple, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -65,43 +84,95 @@ class TripDashboardPage extends StatelessWidget {
               ),
 
               const SizedBox(height: 30),
-              const Text(
-                "Gerenciamento",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
+              const Text("Gerenciamento", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 15),
 
               _buildOptionCard(
                 context, 
                 Icons.calendar_month, 
                 "Roteiro Inteligente", 
-                "Organize suas atividades diárias",
+                "Organize atividades e vote em grupo",
                 () => Navigator.push(context, MaterialPageRoute(builder: (context) => ItineraryPage(tripId: trip.id)))
               ),
               _buildOptionCard(
                 context, 
                 Icons.account_balance_wallet, 
                 "Controle Financeiro", 
-                "Gerencie gastos solo ou em grupo",
+                "Gastos e divisão automática",
                 () => Navigator.push(context, MaterialPageRoute(builder: (context) => ExpensesPage(tripId: trip.id)))
               ),
               _buildOptionCard(
                 context, 
                 Icons.auto_stories, 
                 "Diário de Viagem", 
-                "Registre memórias e fotos",
+                "Registre memórias e sentimentos",
                 () => Navigator.push(context, MaterialPageRoute(builder: (context) => JournalPage(tripId: trip.id)))
               ),
               _buildOptionCard(
                 context, 
                 Icons.gpp_good, 
                 "Segurança e SOS", 
-                "Compartilhamento e botão de pânico",
-                () {} // Próximo passo
+                "Compartilhamento de localização",
+                () => Navigator.push(context, MaterialPageRoute(builder: (context) => SafetyPage(tripId: trip.id)))
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showInviteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Convidar para o Grupo"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Compartilhe o código abaixo com seus amigos para eles entrarem na viagem:"),
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+              child: SelectableText(trip.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: trip.id));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Código copiado!")));
+              Navigator.pop(context);
+            }, 
+            child: const Text("Copiar Código")
+          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Fechar")),
+        ],
+      ),
+    );
+  }
+
+  void _showFinishDialog(BuildContext context, TripController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Concluir Viagem?"),
+        content: const Text("Isso gerará seu relatório de análise final."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () async {
+              await controller.updateTripStatus(trip.id, 'completed');
+              if (context.mounted) {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("Concluir"),
+          ),
+        ],
       ),
     );
   }

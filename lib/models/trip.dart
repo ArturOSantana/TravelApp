@@ -12,6 +12,7 @@ class Trip {
   final List<String> members;
   final bool isNomad;
   final DateTime createdAt;
+  final String status; // 'active', 'planned', 'completed'
 
   Trip({
     required this.id,
@@ -25,6 +26,7 @@ class Trip {
     this.members = const [],
     this.isNomad = false,
     required this.createdAt,
+    this.status = 'planned',
   });
 
   Map<String, dynamic> toMap() {
@@ -38,8 +40,8 @@ class Trip {
       'isGroup': isGroup,
       'members': members,
       'isNomad': isNomad,
-      // Removi o FieldValue daqui para evitar conflito na serialização local
       'createdAt': createdAt,
+      'status': status,
     };
   }
 
@@ -57,6 +59,7 @@ class Trip {
       members: List<String>.from(data['members'] ?? []),
       isNomad: data['isNomad'] ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      status: data['status'] ?? 'planned',
     );
   }
 }

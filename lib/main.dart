@@ -4,15 +4,20 @@ import 'firebase_options.dart';
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
 import 'screens/dashboard_page.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Inicializa o Firebase
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
+  
+  // Inicializa o serviço de notificações/alarmes
+  await NotificationService.init();
   
   runApp(const MyApp());
 }

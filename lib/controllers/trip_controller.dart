@@ -5,28 +5,61 @@ import '../models/activity.dart';
 import '../models/expense.dart';
 import '../models/service_model.dart';
 import '../models/journal_entry.dart';
+import '../models/safety_checkin.dart';
+import '../models/user_model.dart';
 
 class TripController {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // --- TRIPS ---
-  Stream<List<Trip>> getTrips() {
+  Stream<List<Trip>> getTrips({String? status}) {
     String uid = _auth.currentUser?.uid ?? '';
-    return _db
-        .collection('trips')
-        .where('members', arrayContains: uid)
-        .snapshots()
-        .map((snapshot) {
-          final trips = snapshot.docs.map((doc) => Trip.fromFirestore(doc)).toList();
-          // Ordenação feita em Dart para evitar erro de índice composto no Firestore
-          trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          return trips;
-        });
+    var query = _db.collection('trips').where('members', arrayContains: uid);
+    
+    if (status != null) {
+      query = query.where('status', isEqualTo: status);
+    }
+
+    return query.snapshots().map((snapshot) {
+      final trips = snapshot.docs.map((doc) => Trip.fromFirestore(doc)).toList();
+      trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return trips;
+    });
   }
 
   Future<void> addTrip(Trip trip) async {
     await _db.collection('trips').add(trip.toMap());
+  }
+
+  Future<void> deleteTrip(String tripId) async {
+    await _db.collection('trips').doc(tripId).delete();
+  }
+
+  Future<void> updateTripStatus(String tripId, String newStatus) async {
+    await _db.collection('trips').doc(tripId).update({'status': newStatus});
+  }
+
+  Future<void> joinTrip(String tripId) async {
+    String uid = _auth.currentUser?.uid ?? '';
+    if (uid.isEmpty) throw Exception("Usuário não autenticado");
+
+    await _db.collection('trips').doc(tripId).update({
+      'members': FieldValue.arrayUnion([uid]),
+      'isGroup': true, 
+    });
+  }
+
+  // --- USERS (Novo: Buscar membros reais para finanças) ---
+  Future<List<UserModel>> getTripMembers(List<String> memberIds) async {
+    List<UserModel> users = [];
+    for (String id in memberIds) {
+      var doc = await _db.collection('users').doc(id).get();
+      if (doc.exists) {
+        users.add(UserModel.fromMap(doc.data()!));
+      }
+    }
+    return users;
   }
 
   // --- ACTIVITIES ---
@@ -46,6 +79,12 @@ class TripController {
     await _db.collection('activities').add(activity.toMap());
   }
 
+  Future<void> voteActivity(String activityId, String userId, int vote) async {
+    await _db.collection('activities').doc(activityId).update({
+      'votes.$userId': vote,
+    });
+  }
+
   // --- EXPENSES ---
   Stream<List<Expense>> getExpenses(String tripId) {
     return _db
@@ -57,6 +96,15 @@ class TripController {
           expenses.sort((a, b) => b.date.compareTo(a.date));
           return expenses;
         });
+  }
+
+  Stream<List<Expense>> getAllUserExpenses() {
+    String uid = _auth.currentUser?.uid ?? '';
+    return _db
+        .collection('expenses')
+        .where('payerId', isEqualTo: uid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList());
   }
 
   Future<void> addExpense(Expense expense) async {
@@ -71,7 +119,6 @@ class TripController {
         .snapshots()
         .map((snapshot) {
           final entries = snapshot.docs.map((doc) => JournalEntry.fromFirestore(doc)).toList();
-          // Ordena decrescente (mais recente primeiro)
           entries.sort((a, b) => b.date.compareTo(a.date));
           return entries;
         });
@@ -81,12 +128,47 @@ class TripController {
     await _db.collection('journal').add(entry.toMap());
   }
 
-  // --- SERVICES ---
+  // --- SAFETY ---
+  Stream<List<SafetyCheckIn>> getSafetyHistory(String tripId) {
+    return _db
+        .collection('safety')
+        .where('tripId', isEqualTo: tripId)
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs.map((doc) => SafetyCheckIn.fromFirestore(doc)).toList();
+          list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          return list;
+        });
+  }
+
+  Future<void> performSafetyCheckIn(String tripId, String location, bool isPanic) async {
+    String uid = _auth.currentUser?.uid ?? '';
+    final checkIn = SafetyCheckIn(
+      id: '',
+      tripId: tripId,
+      userId: uid,
+      timestamp: DateTime.now(),
+      locationName: location,
+      isPanic: isPanic,
+    );
+    await _db.collection('safety').add(checkIn.toMap());
+  }
+
+  // --- SERVICES & COMMUNITY ---
   Stream<List<ServiceModel>> getPersonalServices() {
     String uid = _auth.currentUser?.uid ?? '';
     return _db
         .collection('services')
         .where('ownerId', isEqualTo: uid)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList());
+  }
+
+  Stream<List<ServiceModel>> getCommunityServices() {
+    return _db
+        .collection('services')
+        .limit(20)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList());

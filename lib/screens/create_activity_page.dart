@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/activity.dart';
 import '../controllers/trip_controller.dart';
+import '../services/notification_service.dart';
 
 class CreateActivityPage extends StatefulWidget {
   final String tripId;
@@ -30,14 +31,24 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     );
 
     final activity = Activity(
-      id: '',
+      id: '', // Firestore gerará o ID
       tripId: widget.tripId,
       title: titleController.text,
       time: combinedDateTime,
       location: locationController.text,
     );
 
+    // 1. Salva no banco
     await _controller.addActivity(activity);
+
+    // 2. Agenda o Alarme/Notificação (REVOLUCIONÁRIO!)
+    await NotificationService.scheduleNotification(
+      combinedDateTime.millisecondsSinceEpoch.remainder(100000), // ID único simples
+      "Lembrete de Viagem: \${activity.title}",
+      "Sua atividade em \${activity.location} começa agora!",
+      combinedDateTime,
+    );
+
     if (mounted) Navigator.pop(context);
   }
 
@@ -70,7 +81,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
             
             ListTile(
               title: const Text("Data e Horário"),
-              subtitle: Text("${_selectedDate.day}/${_selectedDate.month} às ${_selectedTime.format(context)}"),
+              subtitle: Text("\${_selectedDate.day}/\${_selectedDate.month} às \${_selectedTime.format(context)}"),
               leading: const Icon(Icons.calendar_today),
               onTap: () async {
                 final date = await showDatePicker(
