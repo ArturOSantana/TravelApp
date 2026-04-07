@@ -39,7 +39,8 @@ android {
 
 dependencies {
     // Adiciona a biblioteca de desugaring exigida pelo flutter_local_notifications
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    // Atualizado para 2.1.4 conforme exigido pela versão do plugin
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 flutter {

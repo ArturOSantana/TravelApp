@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:path/path.dart' as path;
 import '../models/journal_entry.dart';
 import '../controllers/trip_controller.dart';
 
@@ -18,7 +17,6 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   final _controller = TripController();
   final _contentController = TextEditingController();
   final List<File> _selectedImages = [];
-  final List<String> _uploadedUrls = [];
   bool _isUploading = false;
   double _moodScore = 3.0;
 
@@ -27,8 +25,8 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   Future<void> _pickImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(
       source: source,
-      imageQuality: 70, // Reduz o tamanho para o TCC
-      maxWidth: 1200,
+      imageQuality: 50,
+      maxWidth: 800,
     );
     
     if (image != null) {
@@ -39,20 +37,33 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   }
 
   Future<String> _uploadFile(File file) async {
-    String fileName = path.basename(file.path);
+    // Nome do arquivo ultra-simples para evitar qualquer erro de caracteres no path
+    String fileName = "journal_${DateTime.now().millisecondsSinceEpoch}.jpg";
+    
+    // Referência na pasta journal_photos
     Reference ref = FirebaseStorage.instance
         .ref()
         .child('journal_photos')
-        .child(widget.tripId)
-        .child(DateTime.now().millisecondsSinceEpoch.toString() + '_' + fileName);
+        .child(fileName);
     
-    UploadTask uploadTask = ref.putFile(file);
+    // Converte o arquivo em bytes antes de subir (resolve muitos erros de [object-not-found])
+    final bytes = await file.readAsBytes();
+
+    // Upload usando putData
+    UploadTask uploadTask = ref.putData(
+      bytes,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+
+    // Aguarda a tarefa completar
     TaskSnapshot snapshot = await uploadTask;
+    
+    // Retorna a URL de download
     return await snapshot.ref.getDownloadURL();
   }
 
   void _saveEntry() async {
-    if (_contentController.text.isEmpty) {
+    if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Escreva algo sobre sua memória!")),
       );
@@ -62,63 +73,53 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
     setState(() => _isUploading = true);
 
     try {
-      // 1. Fazer upload de todas as imagens para o Firebase Storage
       List<String> urls = [];
+      
+      // Upload das fotos uma por uma
       for (File image in _selectedImages) {
         String url = await _uploadFile(image);
         urls.add(url);
       }
 
-      // 2. Salvar no Firestore
+      // Salva os dados no Firestore após o sucesso dos uploads
       final entry = JournalEntry(
         id: '',
         tripId: widget.tripId,
         date: DateTime.now(),
-        content: _contentController.text,
+        content: _contentController.text.trim(),
         moodScore: _moodScore,
         photos: urls,
         createdAt: DateTime.now(),
       );
 
       await _controller.addJournalEntry(entry);
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar: $e")),
+          const SnackBar(content: Text("Memória salva com sucesso!"), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        debugPrint("ERRO AO SALVAR: $e");
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Erro ao salvar memória"),
+            content: Text("Ocorreu um erro ao subir as fotos para o Firebase Storage.\n\n"
+                "PASSO IMPORTANTE:\n"
+                "Verifique se o seu Firebase Storage está com as regras de segurança abertas para gravação.\n\n"
+                "Detalhe técnico: $e"),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
+            ],
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
-  }
-
-  void _showImageSourceActionSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galeria'),
-              onTap: () {
-                _pickImage(ImageSource.gallery);
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Câmera'),
-              onTap: () {
-                _pickImage(ImageSource.camera);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -144,15 +145,16 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                   max: 5,
                   divisions: 4,
                   activeColor: Colors.blueGrey,
-                  label: _moodScore.round().toString(),
                   onChanged: (val) => setState(() => _moodScore = val),
                 ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: _contentController,
-                  maxLines: 5,
+                  maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: "Descreva sua aventura...",
+                    hintText: "O que você viveu hoje?",
+                    filled: true,
+                    fillColor: Colors.grey[50],
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
                   ),
                 ),
@@ -160,19 +162,14 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text("Fotos da Memória", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ElevatedButton.icon(
-                      onPressed: () => _showImageSourceActionSheet(context),
-                      icon: const Icon(Icons.add_a_photo, size: 18),
-                      label: const Text("Adicionar"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                        foregroundColor: Colors.white,
-                      ),
+                    const Text("Fotos", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      onPressed: _isUploading ? null : () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.add_a_photo, color: Colors.blueGrey, size: 30),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
                 if (_selectedImages.isNotEmpty)
                   SizedBox(
                     height: 120,
@@ -182,22 +179,17 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                       itemBuilder: (context, index) => Stack(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(right: 12.0),
+                            padding: const EdgeInsets.only(right: 12),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(15),
                               child: Image.file(_selectedImages[index], width: 120, height: 120, fit: BoxFit.cover),
                             ),
                           ),
                           Positioned(
-                            right: 4,
-                            top: 0,
+                            right: 4, top: 0,
                             child: GestureDetector(
                               onTap: () => setState(() => _selectedImages.removeAt(index)),
-                              child: const CircleAvatar(
-                                radius: 14,
-                                backgroundColor: Colors.red,
-                                child: Icon(Icons.close, size: 18, color: Colors.white),
-                              ),
+                              child: const CircleAvatar(radius: 12, backgroundColor: Colors.red, child: Icon(Icons.close, size: 16, color: Colors.white)),
                             ),
                           ),
                         ],
@@ -206,20 +198,9 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                   )
                 else
                   Container(
-                    height: 100,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.image_outlined, color: Colors.grey, size: 40),
-                        Text("Nenhuma foto selecionada", style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
+                    height: 100, width: double.infinity,
+                    decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(15)),
+                    child: const Center(child: Text("Nenhuma foto selecionada", style: TextStyle(color: Colors.grey))),
                   ),
                 const SizedBox(height: 40),
                 SizedBox(
@@ -227,14 +208,12 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                   height: 55,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey, 
+                      backgroundColor: Colors.blueGrey,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     ),
                     onPressed: _isUploading ? null : _saveEntry,
-                    child: _isUploading 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("SALVAR NO DIARIO", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: const Text("SALVAR NO DIÁRIO", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -242,20 +221,15 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
           ),
           if (_isUploading)
             Container(
-              color: Colors.black26,
+              color: Colors.black54,
               child: const Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 15),
-                        Text("Subindo suas fotos para a nuvem..."),
-                      ],
-                    ),
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: Colors.white),
+                    SizedBox(height: 20),
+                    Text("Subindo fotos para a nuvem...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
                 ),
               ),
             ),

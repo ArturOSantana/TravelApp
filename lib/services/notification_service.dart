@@ -8,6 +8,8 @@ class NotificationService {
 
   static Future<void> init() async {
     tz_data.initializeTimeZones();
+    // Definir o local padrão
+    tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
     
     const AndroidInitializationSettings initializationSettingsAndroid = 
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -24,33 +26,43 @@ class NotificationService {
       iOS: initializationSettingsIOS,
     );
 
-    await _notifications.initialize(initializationSettings);
+    // CORREÇÃO v21: O parâmetro agora é nomeado e se chama 'settings'
+    await _notifications.initialize(
+      settings: initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        // Lógica de clique se necessário
+      },
+    );
 
-    // Solicita permissão para Android 13+
     if (Platform.isAndroid) {
-      await _notifications.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+      final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.requestNotificationsPermission();
+      await androidPlugin?.requestExactAlarmsPermission();
     }
   }
 
-  static Future<void> scheduleNotification(int id, String title, String body, DateTime scheduledDate) async {
+  static Future<void> scheduleNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledDate,
+  }) async {
     if (scheduledDate.isBefore(DateTime.now())) return;
 
     await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
-          'travel_channel',
+          'travel_channel_v1',
           'Roteiro de Viagem',
           channelDescription: 'Alarmes das atividades do seu roteiro',
           importance: Importance.max,
           priority: Priority.high,
-          ticker: 'ticker',
-          playSound: true,
-          enableVibration: true,
+          icon: '@mipmap/ic_launcher',
         ),
         iOS: DarwinNotificationDetails(
           presentAlert: true,
@@ -59,7 +71,11 @@ class NotificationService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      // Nota: uiLocalNotificationDateInterpretation foi removido na v21
     );
+  }
+
+  static Future<void> cancelNotification(int id) async {
+    await _notifications.cancel(id: id);
   }
 }

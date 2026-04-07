@@ -38,24 +38,36 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       location: locationController.text,
     );
 
-    // 1. Salva no banco
-    await _controller.addActivity(activity);
+    try {
+      // 1. Salva no banco
+      await _controller.addActivity(activity);
 
-    // 2. Agenda o Alarme/Notificação (REVOLUCIONÁRIO!)
-    await NotificationService.scheduleNotification(
-      combinedDateTime.millisecondsSinceEpoch.remainder(100000), // ID único simples
-      "Lembrete de Viagem: \${activity.title}",
-      "Sua atividade em \${activity.location} começa agora!",
-      combinedDateTime,
-    );
+      // 2. Agenda o Alarme/Notificação com os parâmetros nomeados corretos
+      await NotificationService.scheduleNotification(
+        id: combinedDateTime.millisecondsSinceEpoch.remainder(100000),
+        title: "Lembrete: ${activity.title}",
+        body: "Sua atividade em ${activity.location} começa agora!",
+        scheduledDate: combinedDateTime,
+      );
 
-    if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro ao salvar: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Adicionar Atividade")),
+      appBar: AppBar(
+        title: const Text("Adicionar Atividade"),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -79,46 +91,54 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
             ),
             const SizedBox(height: 20),
             
-            ListTile(
-              title: const Text("Data e Horário"),
-              subtitle: Text("\${_selectedDate.day}/\${_selectedDate.month} às \${_selectedTime.format(context)}"),
-              leading: const Icon(Icons.calendar_today),
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: _selectedDate,
-                  firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                  lastDate: DateTime.now().add(const Duration(days: 3650)),
-                );
-                if (date != null) {
-                  if (context.mounted) {
-                    final time = await showTimePicker(
-                      context: context,
-                      initialTime: _selectedTime,
-                    );
-                    if (time != null) {
-                      setState(() {
-                        _selectedDate = date;
-                        _selectedTime = time;
-                      });
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                title: const Text("Data e Horário"),
+                subtitle: Text("${_selectedDate.day}/${_selectedDate.month} às ${_selectedTime.format(context)}"),
+                leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate,
+                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                    lastDate: DateTime.now().add(const Duration(days: 3650)),
+                  );
+                  if (date != null) {
+                    if (context.mounted) {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: _selectedTime,
+                      );
+                      if (time != null) {
+                        setState(() {
+                          _selectedDate = date;
+                          _selectedTime = time;
+                        });
+                      }
                     }
                   }
-                }
-              },
+                },
+              ),
             ),
 
             const SizedBox(height: 30),
 
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
+              height: 55,
+              child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple, 
-                  foregroundColor: Colors.white
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _saveActivity,
-                child: const Text("Salvar no Roteiro"),
+                icon: const Icon(Icons.check_circle),
+                label: const Text("SALVAR NO ROTEIRO", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           ],
