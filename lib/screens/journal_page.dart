@@ -13,8 +13,8 @@ class JournalPage extends StatelessWidget {
   Future<void> _shareLiveAlbumLink(BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
     
-    // Este link deve apontar para a versão web do seu app que exibe o diário
-    final String albumUrl = "https://travel-app-etec.web.app/journal/$tripId";
+
+    final String albumUrl = "https://travel-app-tcc.web.app/journal/$tripId";
     
     final String message = "📸 Acompanhe meu Diário de Viagem em tempo real!\n\n"
         "Estou postando fotos e relatos da nossa viagem aqui neste álbum:\n"
@@ -32,9 +32,10 @@ class JournalPage extends StatelessWidget {
 
   Future<void> _shareSingleEntry(JournalEntry entry, BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
+    // ATUALIZADO: Link correto baseado no .firebaserc
     String text = "📸 Registro de Viagem (${DateFormat('dd/MM').format(entry.date)}):\n\n"
         "${entry.content}\n\n"
-        "Veja mais no meu diário: https://travel-app-etec.web.app/journal/$tripId";
+        "Veja mais no meu diário: https://travel-app-tcc.web.app/journal/$tripId";
 
     await Share.share(
       text,
@@ -55,7 +56,7 @@ class JournalPage extends StatelessWidget {
         actions: [
           Builder(
             builder: (btnContext) => IconButton(
-              icon: const Icon(Icons.ios_share), // Ícone corrigido de share_arrival para ios_share
+              icon: const Icon(Icons.ios_share),
               tooltip: "Compartilhar Link do Álbum",
               onPressed: () => _shareLiveAlbumLink(btnContext),
             ),
