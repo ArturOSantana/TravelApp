@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/service_model.dart';
 import '../controllers/trip_controller.dart';
 import 'add_recommendation_page.dart';
@@ -14,6 +15,7 @@ class ServicesLibraryPage extends StatefulWidget {
 class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TripController _controller = TripController();
+  final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
   String _searchQuery = '';
   String _selectedCategory = 'Todas';
 
@@ -179,37 +181,84 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
           itemCount: services.length,
           itemBuilder: (context, index) {
             final service = services[index];
+            final bool isLiked = service.likes.contains(_currentUid);
+
             return Card(
               elevation: 3,
               margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: _getCategoryIcon(service.category),
-                title: Text(service.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
                   children: [
-                    Text(service.location),
-                    _buildTrustSeal(service.rating),
-                  ],
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.share, color: Colors.indigo, size: 20),
-                      onPressed: () => _shareService(service, context),
+                    ListTile(
+                      leading: _getCategoryIcon(service.category),
+                      title: Text(service.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(service.location),
+                          _buildTrustSeal(service.rating),
+                        ],
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.share, color: Colors.indigo, size: 20),
+                            onPressed: () => _shareService(service, context),
+                          ),
+                          if (isCommunity)
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline, color: Colors.indigo),
+                              onPressed: () => _importService(service),
+                            )
+                          else
+                            const Icon(Icons.check_circle, color: Colors.green),
+                        ],
+                      ),
+                      onTap: () => _showDetails(context, service),
                     ),
-                    if (isCommunity)
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline, color: Colors.indigo),
-                        onPressed: () => _importService(service),
-                      )
-                    else
-                      const Icon(Icons.check_circle, color: Colors.green),
+                    if (isCommunity) ...[
+                      const Divider(height: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => _controller.toggleLikeService(service.id, service.likes),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isLiked ? Icons.favorite : Icons.favorite_border,
+                                    color: isLiked ? Colors.red : Colors.grey,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "${service.likes.length}",
+                                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Row(
+                              children: [
+                                Icon(Icons.bookmark_border, color: Colors.grey, size: 20),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "${service.savesCount}",
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                onTap: () => _showDetails(context, service),
               ),
             );
           },

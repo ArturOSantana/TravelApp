@@ -50,7 +50,6 @@ class TripController {
     });
   }
 
-  // Novo: Remover membro (Apenas ADM)
   Future<void> removeMember(String tripId, String memberId) async {
     await _db.collection('trips').doc(tripId).update({
       'members': FieldValue.arrayRemove([memberId])
@@ -84,7 +83,6 @@ class TripController {
     return _db
         .collection('services')
         .where('isPublic', isEqualTo: true)
-        .limit(20)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList());
@@ -94,10 +92,16 @@ class TripController {
     await _db.collection('services').add(service.toMap());
   }
 
-  // Novo: Importar serviço para favoritos
   Future<void> importService(ServiceModel service) async {
     String uid = _auth.currentUser?.uid ?? '';
     String userName = _auth.currentUser?.displayName ?? 'Viajante';
+
+    // Incrementa o contador de salvamentos no post original
+    if (service.id.isNotEmpty) {
+      await _db.collection('services').doc(service.id).update({
+        'savesCount': FieldValue.increment(1)
+      });
+    }
 
     final imported = ServiceModel(
       id: '',
@@ -110,12 +114,29 @@ class TripController {
       comment: service.comment,
       averageCost: service.averageCost,
       lastUsed: DateTime.now(),
-      isPublic: false, // Salva como privado na biblioteca pessoal
+      isPublic: false,
       photos: service.photos,
       tags: service.tags,
     );
     
     await saveService(imported);
+  }
+
+  Future<void> toggleLikeService(String serviceId, List<String> currentLikes) async {
+    String uid = _auth.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+
+    DocumentReference docRef = _db.collection('services').doc(serviceId);
+    
+    if (currentLikes.contains(uid)) {
+      await docRef.update({
+        'likes': FieldValue.arrayRemove([uid])
+      });
+    } else {
+      await docRef.update({
+        'likes': FieldValue.arrayUnion([uid])
+      });
+    }
   }
 
   // --- ACTIVITIES ---

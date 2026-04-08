@@ -4,17 +4,19 @@ class ServiceModel {
   final String id;
   final String ownerId;
   final String name;
-  final String category; // Lodging, Restaurant, Transport, Tour, etc.
+  final String category;
   final String location;
   final double rating;
   final String comment;
   final double averageCost;
   final int usageFrequency;
   final List<String> tags;
-  final List<String> photos; // New: Photos for the recommendation
+  final List<String> photos;
   final DateTime lastUsed;
-  final bool isPublic; // New: To share with the community
-  final String? userName; // Optional: To show who recommended it
+  final bool isPublic;
+  final String? userName;
+  final List<String> likes; // Lista de UIDs que curtiram
+  final int savesCount;     // Quantas vezes foi importado/salvo
 
   ServiceModel({
     required this.id,
@@ -31,6 +33,8 @@ class ServiceModel {
     required this.lastUsed,
     this.isPublic = false,
     this.userName,
+    this.likes = const [],
+    this.savesCount = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -48,6 +52,8 @@ class ServiceModel {
       'lastUsed': lastUsed,
       'isPublic': isPublic,
       'userName': userName,
+      'likes': likes,
+      'savesCount': savesCount,
     };
   }
 
@@ -68,6 +74,8 @@ class ServiceModel {
       lastUsed: (data['lastUsed'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isPublic: data['isPublic'] ?? false,
       userName: data['userName'],
+      likes: List<String>.from(data['likes'] ?? []),
+      savesCount: data['savesCount'] ?? 0,
     );
   }
 }
