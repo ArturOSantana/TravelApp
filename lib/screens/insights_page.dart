@@ -3,145 +3,336 @@ import '../models/trip.dart';
 import '../models/expense.dart';
 import '../controllers/trip_controller.dart';
 
-class InsightsPage extends StatelessWidget {
+class InsightsPage extends StatefulWidget {
   const InsightsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = TripController();
+  State<InsightsPage> createState() => _InsightsPageState();
+}
 
+class _InsightsPageState extends State<InsightsPage> {
+  final TripController _controller = TripController();
+  Trip? _selectedTrip;
+  bool _showGeneral = true;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Insights de Viagem"),
-        backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
+        title: const Text("Insights & Análise", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        actions: [
+          if (!_showGeneral)
+            IconButton(
+              icon: const Icon(Icons.analytics_outlined),
+              onPressed: () => setState(() => _showGeneral = true),
+              tooltip: "Ver Geral",
+            )
+        ],
       ),
       body: StreamBuilder<List<Trip>>(
-        stream: controller.getTrips(),
-        builder: (context, tripSnapshot) {
-          if (tripSnapshot.connectionState == ConnectionState.waiting) {
+        stream: _controller.getTrips(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final trips = tripSnapshot.data ?? [];
-          
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Seu Perfil de Viajante",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          final trips = snapshot.data ?? [];
+          if (trips.isEmpty) {
+            return const Center(child: Text("Nenhuma viagem encontrada para análise."));
+          }
+
+          return Column(
+            children: [
+              _buildTripSelector(trips),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: _showGeneral ? _buildGeneralInsights(trips) : _buildIndividualInsights(_selectedTrip!),
                 ),
-                const SizedBox(height: 10),
-                _buildProfileSummary(trips),
-                
-                const SizedBox(height: 30),
-                const Text(
-                  "Análise de Gastos",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 15),
-                _buildExpenseCharts(trips),
-                
-                const SizedBox(height: 30),
-                _buildAIPredictionCard(),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  Widget _buildProfileSummary(List<Trip> trips) {
-    int solo = trips.where((t) => !t.isGroup).length;
-    int group = trips.where((t) => t.isGroup).length;
-    
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildStatItem("Solo", solo.toString(), Icons.person),
-            _buildStatItem("Grupo", group.toString(), Icons.group),
-            _buildStatItem("Países", trips.length.toString(), Icons.public),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.deepOrange),
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.grey)),
-      ],
-    );
-  }
-
-  Widget _buildExpenseCharts(List<Trip> trips) {
-    // Aqui no futuro integraremos gráficos reais. Por hora, um sumário inteligente.
-    double totalBudget = trips.fold(0, (sum, item) => sum + item.budget);
-    
+  Widget _buildTripSelector(List<Trip> trips) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
         children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Investimento total em viagens:"),
-              Text("R\$", style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
+          ChoiceChip(
+            label: const Text("Visão Geral"),
+            selected: _showGeneral,
+            onSelected: (selected) {
+              if (selected) setState(() => _showGeneral = true);
+            },
+            selectedColor: Colors.deepPurple,
+            labelStyle: TextStyle(color: _showGeneral ? Colors.white : Colors.black),
           ),
-          const SizedBox(height: 10),
-          LinearProgressIndicator(
-            value: 0.7, // Exemplo de uso de orçamento
-            backgroundColor: Colors.grey[300],
-            color: Colors.orange,
-            minHeight: 10,
-          ),
-          const SizedBox(height: 5),
-          Text("Você está economizando 15% em relação à sua média anterior", 
-               style: const TextStyle(fontSize: 12, color: Colors.green)),
+          const SizedBox(width: 8),
+          ...trips.map((trip) {
+            final isSelected = !_showGeneral && _selectedTrip?.id == trip.id;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(trip.destination), // Usando destination em vez de title
+                selected: isSelected,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() {
+                      _showGeneral = false;
+                      _selectedTrip = trip;
+                    });
+                  }
+                },
+                selectedColor: Colors.deepPurple,
+                labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+              ),
+            );
+          }).toList(),
         ],
       ),
     );
   }
 
-  Widget _buildAIPredictionCard() {
-    return Card(
-      color: Colors.indigo,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: const Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
+  Widget _buildGeneralInsights(List<Trip> trips) {
+    final completed = trips.where((t) => t.status == 'completed').toList();
+    double totalInvested = trips.fold(0, (sum, t) => sum + t.budget);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle("Resumo da Jornada"),
+        const SizedBox(height: 16),
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(Icons.auto_awesome, color: Colors.white),
-                SizedBox(width: 10),
-                Text("Predição Inteligente", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            SizedBox(height: 10),
-            Text(
-              "Baseado em seu histórico, seu próximo destino ideal é um lugar de 'Aventura' com orçamento médio de R\$ 3.500.",
-              style: TextStyle(color: Colors.white70),
-            ),
+            Expanded(child: _buildStatCard("Viagens", trips.length.toString(), Icons.map, Colors.blue)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildStatCard("Concluídas", completed.length.toString(), Icons.check_circle, Colors.green)),
           ],
         ),
+        const SizedBox(height: 24),
+        _buildSectionTitle("Investimento Total"),
+        const SizedBox(height: 12),
+        _buildBudgetSummaryCard(totalInvested, trips.length),
+        const SizedBox(height: 24),
+        _buildSectionTitle("Estilo de Viajante"),
+        _buildTravelStyleChart(trips),
+        const SizedBox(height: 32),
+        _buildAIPredictionCard("Geral"),
+      ],
+    );
+  }
+
+  Widget _buildIndividualInsights(Trip trip) {
+    return StreamBuilder<List<Expense>>(
+      stream: _controller.getExpenses(trip.id),
+      builder: (context, snapshot) {
+        final expenses = snapshot.data ?? [];
+        double spent = expenses.fold(0, (sum, e) => sum + e.value); // Usando value em vez de amount
+        double percent = trip.budget > 0 ? (spent / trip.budget) : 0;
+        bool isOverBudget = spent > trip.budget;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(trip.destination, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), // Usando destination
+            const SizedBox(height: 24),
+            
+            _buildSectionTitle("Saúde Financeira"),
+            const SizedBox(height: 12),
+            _buildExpenseComparisonCard(trip.budget, spent, percent, isOverBudget),
+            
+            const SizedBox(height: 24),
+            _buildSectionTitle("Distribuição de Gastos"),
+            _buildCategoryDistribution(expenses),
+            
+            const SizedBox(height: 24),
+            _buildSectionTitle("Recomendações IA"),
+            _buildIndividualAIAdvice(trip, spent, isOverBudget),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildExpenseComparisonCard(double budget, double spent, double percent, bool isOver) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isOver ? Colors.red[50] : Colors.green[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isOver ? Colors.red[100]! : Colors.green[100]!),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSimpleInfo("Orçamento", "R\$ ${budget.toStringAsFixed(0)}"),
+              _buildSimpleInfo("Gasto Real", "R\$ ${spent.toStringAsFixed(0)}", color: isOver ? Colors.red : Colors.green),
+            ],
+          ),
+          const SizedBox(height: 20),
+          LinearProgressIndicator(
+            value: percent > 1 ? 1 : percent,
+            backgroundColor: Colors.white,
+            color: isOver ? Colors.red : Colors.green,
+            minHeight: 10,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isOver ? "Você ultrapassou o planejado em R\$ ${(spent - budget).toStringAsFixed(0)}" : "Você ainda tem R\$ ${(budget - spent).toStringAsFixed(0)} disponíveis",
+            style: TextStyle(fontSize: 12, color: isOver ? Colors.red : Colors.green[800]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryDistribution(List<Expense> expenses) {
+    Map<String, double> categories = {};
+    for (var e in expenses) {
+      categories[e.category] = (categories[e.category] ?? 0) + e.value; // Usando value em vez de amount
+    }
+
+    if (categories.isEmpty) return const Text("Sem gastos registrados.");
+
+    double totalSpent = expenses.fold(0.0, (sum, e) => sum + e.value); // Usando value
+
+    return Column(
+      children: categories.entries.map((entry) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              SizedBox(width: 100, child: Text(entry.key, style: const TextStyle(fontSize: 12))),
+              Expanded(
+                child: LinearProgressIndicator(
+                  value: totalSpent > 0 ? entry.value / totalSpent : 0,
+                  color: Colors.deepPurple,
+                  backgroundColor: Colors.grey[200],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text("R\$ ${entry.value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildIndividualAIAdvice(Trip trip, double spent, bool isOver) {
+    String advice = isOver 
+      ? "Alerta: Seus gastos em ${trip.destination} estão acima da média. Considere reduzir despesas com alimentação nos próximos dias."
+      : "Parabéns! Você está gerindo bem seu orçamento em ${trip.destination}. Sobrou fôlego para uma atividade extra!";
+    
+    return _buildAIPredictionCard(advice);
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(height: 8),
+          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetSummaryCard(double total, int count) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[200]!)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildSimpleInfo("Total Planejado", "R\$ ${total.toStringAsFixed(0)}"),
+          _buildSimpleInfo("Média/Viagem", "R\$ ${(count > 0 ? total / count : 0).toStringAsFixed(0)}"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleInfo(String label, String value, {Color? color}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+
+  Widget _buildTravelStyleChart(List<Trip> trips) {
+    int solo = trips.where((t) => !t.isGroup).length;
+    int group = trips.where((t) => t.isGroup).length;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStyleItem("Solo", solo, Icons.person, Colors.orange),
+          _buildStyleItem("Grupo", group, Icons.group, Colors.indigo),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStyleItem(String label, int count, IconData icon, Color color) {
+    return Column(
+      children: [
+        CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icon, color: color)),
+        const SizedBox(height: 4),
+        Text(count.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildAIPredictionCard(String message) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.deepPurple[700]!, Colors.deepPurple[400]!]),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text("Análise Inteligente", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message == "Geral" ? "Sua tendência atual indica preferência por destinos urbanos. Recomendamos planejar sua próxima viagem com 3 meses de antecedência para economizar 15%." : message,
+            style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+          ),
+        ],
       ),
     );
   }

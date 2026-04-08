@@ -13,6 +13,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   final AuthController _authController = AuthController();
@@ -20,7 +21,6 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
 
   void _handleRegister() async {
-    // 1. Valida os campos do formulário
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
@@ -28,12 +28,12 @@ class _RegisterPageState extends State<RegisterPage> {
         nameController.text.trim(),
         emailController.text.trim(),
         passwordController.text,
+        phone: phoneController.text.trim(),
       );
 
       if (mounted) setState(() => _isLoading = false);
 
       if (erro == null) {
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -44,7 +44,6 @@ class _RegisterPageState extends State<RegisterPage> {
           Navigator.pop(context);
         }
       } else {
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -84,12 +83,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 30),
 
-
                 TextFormField(
                   controller: nameController,
                   decoration: const InputDecoration(
                     labelText: "Nome Completo",
                     prefixIcon: Icon(Icons.person),
+                    border: OutlineInputBorder(),
                   ),
                   validator: (value) =>
                   value == null || value.isEmpty ? "Informe seu nome" : null,
@@ -102,12 +101,25 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const InputDecoration(
                     labelText: "E-mail",
                     prefixIcon: Icon(Icons.email),
+                    border: OutlineInputBorder(),
                   ),
                   validator: (value) =>
                   value == null || !value.contains('@') ? "E-mail inválido" : null,
                 ),
                 const SizedBox(height: 15),
 
+                TextFormField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: "Telefone",
+                    prefixIcon: Icon(Icons.phone),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) =>
+                  value == null || value.isEmpty ? "Informe seu telefone" : null,
+                ),
+                const SizedBox(height: 15),
 
                 TextFormField(
                   controller: passwordController,
@@ -115,18 +127,23 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: const InputDecoration(
                     labelText: "Senha",
                     prefixIcon: Icon(Icons.lock),
+                    border: OutlineInputBorder(),
                   ),
                   validator: (value) =>
                   value == null || value.length < 6 ? "Mínimo 6 caracteres" : null,
                 ),
                 const SizedBox(height: 30),
 
-
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleRegister,
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
@@ -137,7 +154,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
 
                 const SizedBox(height: 15),
-
 
                 TextButton(
                   onPressed: () => Navigator.pop(context),

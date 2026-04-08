@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../models/journal_entry.dart';
 import '../controllers/trip_controller.dart';
 
@@ -16,8 +16,9 @@ class CreateJournalEntryPage extends StatefulWidget {
 class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   final _controller = TripController();
   final _contentController = TextEditingController();
+  final _locationController = TextEditingController();
   final List<File> _selectedImages = [];
-  bool _isUploading = false;
+  bool _isSaving = false;
   double _moodScore = 3.0;
 
   final ImagePicker _picker = ImagePicker();
@@ -25,8 +26,8 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   Future<void> _pickImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(
       source: source,
-      imageQuality: 50,
-      maxWidth: 800,
+      imageQuality: 25, // Qualidade baixa para não exceder o limite de 1MB do Firestore
+      maxWidth: 600,
     );
     
     if (image != null) {
@@ -36,202 +37,119 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
     }
   }
 
-  Future<String> _uploadFile(File file) async {
-    // Nome do arquivo ultra-simples para evitar qualquer erro de caracteres no path
-    String fileName = "journal_${DateTime.now().millisecondsSinceEpoch}.jpg";
-    
-    // Referência na pasta journal_photos
-    Reference ref = FirebaseStorage.instance
-        .ref()
-        .child('journal_photos')
-        .child(fileName);
-    
-    // Converte o arquivo em bytes antes de subir (resolve muitos erros de [object-not-found])
-    final bytes = await file.readAsBytes();
-
-    // Upload usando putData
-    UploadTask uploadTask = ref.putData(
-      bytes,
-      SettableMetadata(contentType: 'image/jpeg'),
-    );
-
-    // Aguarda a tarefa completar
-    TaskSnapshot snapshot = await uploadTask;
-    
-    // Retorna a URL de download
-    return await snapshot.ref.getDownloadURL();
+  // Converte a imagem para uma String Base64 (Texto)
+  Future<String> _imageToBase64(File file) async {
+    List<int> imageBytes = await file.readAsBytes();
+    return base64Encode(imageBytes);
   }
 
   void _saveEntry() async {
     if (_contentController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Escreva algo sobre sua memória!")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Adicione um comentário!")));
       return;
     }
 
-    setState(() => _isUploading = true);
+    setState(() => _isSaving = true);
 
     try {
-      List<String> urls = [];
-      
-      // Upload das fotos uma por uma
+      List<String> base64Images = [];
       for (File image in _selectedImages) {
-        String url = await _uploadFile(image);
-        urls.add(url);
+        String base64 = await _imageToBase64(image);
+        base64Images.add(base64);
       }
 
-      // Salva os dados no Firestore após o sucesso dos uploads
       final entry = JournalEntry(
         id: '',
         tripId: widget.tripId,
         date: DateTime.now(),
         content: _contentController.text.trim(),
         moodScore: _moodScore,
-        photos: urls,
+        photos: base64Images, // Agora salvamos o texto da imagem
+        locationName: _locationController.text.trim().isNotEmpty ? _locationController.text.trim() : null,
         createdAt: DateTime.now(),
       );
 
       await _controller.addJournalEntry(entry);
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Memória salva com sucesso!"), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context);
-      }
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        debugPrint("ERRO AO SALVAR: $e");
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Erro ao salvar memória"),
-            content: Text("Ocorreu um erro ao subir as fotos para o Firebase Storage.\n\n"
-                "PASSO IMPORTANTE:\n"
-                "Verifique se o seu Firebase Storage está com as regras de segurança abertas para gravação.\n\n"
-                "Detalhe técnico: $e"),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
-            ],
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro ao salvar: $e")));
       }
     } finally {
-      if (mounted) setState(() => _isUploading = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Nova Memória"),
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text("Nova Memória"), elevation: 0, backgroundColor: Colors.white, foregroundColor: Colors.black),
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Como foi o seu dia?", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                Slider(
-                  value: _moodScore,
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  activeColor: Colors.blueGrey,
-                  onChanged: (val) => setState(() => _moodScore = val),
+                TextField(
+                  controller: _locationController,
+                  decoration: InputDecoration(
+                    hintText: "Localização",
+                    prefixIcon: const Icon(Icons.pin_drop, color: Colors.red),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
                 TextField(
                   controller: _contentController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: "O que você viveu hoje?",
-                    filled: true,
-                    fillColor: Colors.grey[50],
+                    hintText: "Comentário...",
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
                   ),
                 ),
                 const SizedBox(height: 25),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Fotos", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    IconButton(
-                      onPressed: _isUploading ? null : () => _pickImage(ImageSource.gallery),
-                      icon: const Icon(Icons.add_a_photo, color: Colors.blueGrey, size: 30),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 15),
                 if (_selectedImages.isNotEmpty)
                   SizedBox(
                     height: 120,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: _selectedImages.length,
-                      itemBuilder: (context, index) => Stack(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(15),
-                              child: Image.file(_selectedImages[index], width: 120, height: 120, fit: BoxFit.cover),
-                            ),
-                          ),
-                          Positioned(
-                            right: 4, top: 0,
-                            child: GestureDetector(
-                              onTap: () => setState(() => _selectedImages.removeAt(index)),
-                              child: const CircleAvatar(radius: 12, backgroundColor: Colors.red, child: Icon(Icons.close, size: 16, color: Colors.white)),
-                            ),
-                          ),
-                        ],
+                      itemBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.file(_selectedImages[index], width: 120, height: 120, fit: BoxFit.cover),
+                        ),
                       ),
                     ),
-                  )
-                else
-                  Container(
-                    height: 100, width: double.infinity,
-                    decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(15)),
-                    child: const Center(child: Text("Nenhuma foto selecionada", style: TextStyle(color: Colors.grey))),
                   ),
+                const SizedBox(height: 20),
+                OutlinedButton.icon(
+                  onPressed: () => _pickImage(ImageSource.gallery),
+                  icon: const Icon(Icons.add_a_photo),
+                  label: const Text("ADICIONAR FOTO"),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                ),
                 const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    ),
-                    onPressed: _isUploading ? null : _saveEntry,
-                    child: const Text("SALVAR NO DIÁRIO", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ElevatedButton(
+                  onPressed: _isSaving ? null : _saveEntry,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 55),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   ),
+                  child: const Text("SALVAR NO ÁLBUM", style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
           ),
-          if (_isUploading)
+          if (_isSaving)
             Container(
               color: Colors.black54,
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 20),
-                    Text("Subindo fotos para a nuvem...", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
+              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
             ),
         ],
       ),

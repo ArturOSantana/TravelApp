@@ -2,18 +2,64 @@ import 'package:flutter/material.dart';
 import '../models/service_model.dart';
 import '../controllers/trip_controller.dart';
 
-class CommunityPage extends StatelessWidget {
+class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
+
+  @override
+  State<CommunityPage> createState() => _CommunityPageState();
+}
+
+class _CommunityPageState extends State<CommunityPage> {
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     final controller = TripController();
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Explorar Comunidade"),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
+        title: const Text("Explorar Comunidade", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "Filtrar por nome, local ou categoria...",
+                prefixIcon: const Icon(Icons.search_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                suffixIcon: _searchQuery.isNotEmpty 
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_outlined),
+                      onPressed: () {
+                        setState(() {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<List<ServiceModel>>(
         stream: controller.getCommunityServices(),
@@ -22,17 +68,36 @@ class CommunityPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final recommendations = snapshot.data ?? [];
+          final allRecommendations = snapshot.data ?? [];
+          final recommendations = allRecommendations.where((rec) {
+            final name = rec.name.toLowerCase();
+            final loc = rec.location.toLowerCase();
+            final cat = rec.category.toLowerCase();
+            return name.contains(_searchQuery) || 
+                   loc.contains(_searchQuery) || 
+                   cat.contains(_searchQuery);
+          }).toList();
 
           if (recommendations.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.public_off, size: 80, color: Colors.grey),
-                  SizedBox(height: 20),
-                  Text("Nenhuma recomendação pública ainda."),
-                  Text("Seja o primeiro a compartilhar um lugar!"),
+                  Icon(
+                    _searchQuery.isEmpty ? Icons.public_off_outlined : Icons.search_off_outlined, 
+                    size: 80, 
+                    color: Colors.grey[300]
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _searchQuery.isEmpty ? "Nenhuma recomendação pública ainda." : "Nenhum resultado encontrado.",
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600])
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _searchQuery.isEmpty ? "Seja o primeiro a compartilhar um lugar!" : "Tente outro termo de busca.",
+                    style: const TextStyle(color: Colors.grey)
+                  ),
                 ],
               ),
             );
@@ -54,7 +119,7 @@ class CommunityPage extends StatelessWidget {
   Widget _buildRecommendationCard(BuildContext context, ServiceModel rec, TripController controller) {
     return Card(
       margin: const EdgeInsets.only(bottom: 24),
-      elevation: 5,
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -62,16 +127,15 @@ class CommunityPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagem de Capa
             Stack(
               children: [
                 rec.photos.isNotEmpty 
-                  ? Image.network(rec.photos.first, height: 220, width: double.infinity, fit: BoxFit.cover)
+                  ? Image.network(rec.photos.first, height: 200, width: double.infinity, fit: BoxFit.cover)
                   : Container(
                       height: 180, 
                       width: double.infinity,
-                      color: Colors.grey[200], 
-                      child: const Icon(Icons.image, size: 60, color: Colors.grey)
+                      color: Colors.grey[100], 
+                      child: const Icon(Icons.image_outlined, size: 60, color: Colors.grey)
                     ),
                 Positioned(
                   top: 15, right: 15,
@@ -80,27 +144,10 @@ class CommunityPage extends StatelessWidget {
                     decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(10)),
                     child: Row(
                       children: [
-                        const Icon(Icons.star, size: 16, color: Colors.amber),
+                        const Icon(Icons.star_outline, size: 16, color: Colors.amber),
                         const SizedBox(width: 4),
                         Text(rec.rating.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0, left: 0, right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [Colors.black87, Colors.transparent],
-                      ),
-                    ),
-                    child: Text(
-                      rec.category.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.1),
                     ),
                   ),
                 ),
@@ -112,13 +159,22 @@ class CommunityPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(rec.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text(rec.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+                      Text(
+                        rec.category.toUpperCase(),
+                        style: const TextStyle(color: Colors.deepPurple, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 16, color: Colors.redAccent),
+                      const Icon(Icons.location_on_outlined, size: 14, color: Colors.redAccent),
                       const SizedBox(width: 4),
-                      Text(rec.location, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                      Text(rec.location, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -126,40 +182,20 @@ class CommunityPage extends StatelessWidget {
                     rec.comment,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87, height: 1.4),
+                    style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
                   ),
-                  const SizedBox(height: 15),
-                  const Divider(),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          CircleAvatar(
-                            radius: 14, 
-                            backgroundColor: Colors.deepPurple[100],
-                            child: const Icon(Icons.person, size: 18, color: Colors.deepPurple)
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Recomendado por:", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                              Text(rec.userName ?? "Viajante", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                            ],
-                          ),
+                          CircleAvatar(radius: 12, backgroundColor: Colors.grey[100], child: const Icon(Icons.person_outline, size: 14, color: Colors.grey)),
+                          const SizedBox(width: 8),
+                          Text(rec.userName ?? "Viajante", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
-                      ElevatedButton.icon(
-                        onPressed: () => _saveToFavorites(context, rec, controller),
-                        icon: const Icon(Icons.bookmark_add, size: 18), 
-                        label: const Text("SALVAR"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      )
+                      Text("R\$ ${rec.averageCost.toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                     ],
                   )
                 ],
@@ -177,7 +213,7 @@ class CommunityPage extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("${rec.name} foi adicionado aos seus favoritos!"),
+            content: Text("${rec.name} salvo nos favoritos!"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -198,7 +234,7 @@ class CommunityPage extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.9,
+        height: MediaQuery.of(context).size.height * 0.85,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
@@ -216,7 +252,7 @@ class CommunityPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(rec.name, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                    Text(rec.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                     Text("${rec.category} • ${rec.location}", style: TextStyle(fontSize: 16, color: Colors.grey[600])),
                     const SizedBox(height: 25),
                     
@@ -237,41 +273,23 @@ class CommunityPage extends StatelessWidget {
                       ),
                     
                     const SizedBox(height: 30),
-                    const Text("A experiência de quem recomendou:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text("A experiência:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 10),
                     Text(rec.comment, style: const TextStyle(fontSize: 16, height: 1.6)),
                     
                     const SizedBox(height: 30),
                     Row(
                       children: [
-                        const Icon(Icons.payments, color: Colors.green),
+                        const Icon(Icons.payments_outlined, color: Colors.green),
                         const SizedBox(width: 10),
                         Text(
-                          "Custo Estimado: R\$ ${rec.averageCost.toStringAsFixed(2)}",
+                          "Custo Médio: R\$ ${rec.averageCost.toStringAsFixed(2)}",
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)
                         ),
                       ],
                     ),
                     
                     const SizedBox(height: 40),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20, 
-                          backgroundColor: Colors.deepPurple[50],
-                          child: const Icon(Icons.person, color: Colors.deepPurple),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text("Postado por", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                            Text(rec.userName ?? "Viajante", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
                     SizedBox(
                       width: double.infinity,
                       height: 55,
@@ -280,8 +298,8 @@ class CommunityPage extends StatelessWidget {
                           Navigator.pop(context);
                           _saveToFavorites(context, rec, controller);
                         },
-                        icon: const Icon(Icons.bookmark_add),
-                        label: const Text("SALVAR NA MINHA BIBLIOTECA", style: TextStyle(fontWeight: FontWeight.bold)),
+                        icon: const Icon(Icons.bookmark_add_outlined),
+                        label: const Text("SALVAR NA BIBLIOTECA", style: TextStyle(fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepPurple,
                           foregroundColor: Colors.white,

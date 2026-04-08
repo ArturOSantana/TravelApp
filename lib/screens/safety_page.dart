@@ -29,9 +29,11 @@ class _SafetyPageState extends State<SafetyPage> {
 
   void _loadUserData() async {
     final user = await _authController.getUserData();
-    setState(() {
-      _user = user;
-    });
+    if (mounted) {
+      setState(() {
+        _user = user;
+      });
+    }
   }
 
   // Função mestre de SOS: Dispara SMS e WhatsApp
@@ -158,8 +160,14 @@ class _SafetyPageState extends State<SafetyPage> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () async {
-              await _authController.updateEmergencyContact(nameController.text, phoneController.text);
-              _loadUserData();
+              if (_user != null) {
+                final updatedUser = _user!.copyWith(
+                  emergencyContact: nameController.text,
+                  emergencyPhone: phoneController.text,
+                );
+                await _authController.updateUserProfile(updatedUser);
+                _loadUserData();
+              }
               if (context.mounted) Navigator.pop(context);
             }, 
             child: const Text("Salvar")

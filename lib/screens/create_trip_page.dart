@@ -21,7 +21,6 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   String _selectedObjective = 'Descanso';
   bool _isNomad = false;
-  bool _isGroup = false;
   bool _isLoading = false;
 
   DateTime? _startDate;
@@ -29,50 +28,56 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   final List<String> _objectives = ['Descanso', 'Aventura', 'Trabalho', 'Cultural', 'Gastronômico'];
 
-  Future<void> _selectDateRange(BuildContext context) async {
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 3650)),
-      initialDateRange: _startDate != null && _endDate != null
-          ? DateTimeRange(start: _startDate!, end: _endDate!)
-          : null,
-    );
-    if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
-    }
+  final List<String> _destinations = [
+    'São Paulo, SP', 'Rio de Janeiro, RJ', 'Brasília, DF', 'Salvador, BA', 'Fortaleza, CE', 
+    'Belo Horizonte, MG', 'Curitiba, PR', 'Manaus, AM', 'Recife, PE', 'Porto Alegre, RS', 
+    'Belém, PA', 'Goiânia, GO', 'Florianópolis, SC', 'Natal, RN', 'Gramado, RS', 'Maceió, AL', 
+    'Porto Seguro, BA', 'Búzios, RJ', 'Foz do Iguaçu, PR', 'Bonito, MS', 'Ubatuba, SP',
+    'Paris, França', 'Londres, Reino Unido', 'Nova York, EUA', 'Orlando, EUA', 'Miami, EUA',
+    'Lisboa, Portugal', 'Porto, Portugal', 'Roma, Itália', 'Veneza, Itália', 'Milão, Itália',
+    'Madrid, Espanha', 'Barcelona, Espanha', 'Buenos Aires, Argentina', 'Santiago, Chile',
+    'Montevidéu, Uruguai', 'Tóquio, Japão', 'Berlim, Alemanha', 'Amsterdã, Holanda',
+    'Cancún, México', 'Dubai, Emirados Árabes', 'Toronto, Canadá', 'Sydney, Austrália'
+  ];
+
+  int get _tripDuration {
+    if (_startDate == null || _endDate == null || _isNomad) return 0;
+    return _endDate!.difference(_startDate!).inDays + 1;
   }
 
-  Future<void> _selectStartDate(BuildContext context) async {
+  Future<void> _pickDate(BuildContext context, bool isStart) async {
+    final DateTime now = DateTime.now();
+    final DateTime initialDate = isStart 
+        ? (_startDate ?? now) 
+        : (_endDate ?? (_startDate ?? now).add(const Duration(days: 1)));
+
+    final DateTime firstDate = isStart ? now.subtract(const Duration(days: 30)) : (_startDate ?? now);
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _startDate ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 3650)),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: DateTime(now.year + 10),
     );
+
     if (picked != null) {
       setState(() {
-        _startDate = picked;
+        if (isStart) {
+          _startDate = picked;
+          if (_endDate != null && _startDate!.isAfter(_endDate!)) _endDate = null;
+        } else {
+          _endDate = picked;
+        }
       });
     }
   }
 
   void createTrip() async {
     final String uid = _auth.currentUser?.uid ?? '';
-    if (uid.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erro: Usuário não autenticado!"), backgroundColor: Colors.red),
-      );
-      return;
-    }
+    if (uid.isEmpty) return;
 
     if (!_isNomad && (_startDate == null || _endDate == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor, selecione as datas da viagem ou ative o Modo Nômade."), backgroundColor: Colors.orange),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Defina as datas.")));
       return;
     }
 
@@ -86,7 +91,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
         budget: double.tryParse(budgetController.text) ?? 0.0,
         objective: _selectedObjective,
         isNomad: _isNomad,
-        isGroup: _isGroup,
+        isGroup: false,
         members: [uid],
         createdAt: DateTime.now(),
         startDate: _startDate,
@@ -94,19 +99,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
       );
 
       await controller.addTrip(newTrip);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Viagem criada com sucesso!"), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context);
-      }
+      if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar: $e"), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -115,7 +110,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Nova Viagem")),
+      appBar: AppBar(title: const Text("Planejar Viagem")),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
         : SingleChildScrollView(
@@ -125,101 +120,128 @@ class _CreateTripPageState extends State<CreateTripPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextFormField(
-                    controller: destinationController,
-                    decoration: const InputDecoration(
-                      labelText: "Destino (Cidade ou País)",
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.map),
-                    ),
-                    validator: (value) => value == null || value.isEmpty ? "Digite um destino" : null,
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Seletor de Datas
-                  if (!_isNomad)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_month, color: Colors.deepPurple),
-                      title: const Text("Datas da Viagem", style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(_startDate == null || _endDate == null 
-                        ? "Selecionar Início e Fim" 
-                        : "${DateFormat('dd/MM/yyyy').format(_startDate!)} - ${DateFormat('dd/MM/yyyy').format(_endDate!)}"),
-                      onTap: () => _selectDateRange(context),
-                    )
-                  else
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
-                      title: const Text("Data de Início", style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(_startDate == null 
-                        ? "Selecionar data de início" 
-                        : DateFormat('dd/MM/yyyy').format(_startDate!)),
-                      onTap: () => _selectStartDate(context),
-                    ),
-                  
+                  const Text("Para onde você vai?", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
+                  
+                  Autocomplete<String>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text == '') {
+                        return const Iterable<String>.empty();
+                      }
+                      return _destinations.where((String option) {
+                        return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                      });
+                    },
+                    onSelected: (String selection) {
+                      destinationController.text = selection;
+                    },
+                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                      // Sincroniza o controller externo com o interno do Autocomplete
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                         if (destinationController.text.isNotEmpty && controller.text.isEmpty) {
+                            controller.text = destinationController.text;
+                         }
+                      });
+                      
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        onFieldSubmitted: (String value) {
+                          onFieldSubmitted();
+                        },
+                        decoration: const InputDecoration(
+                          hintText: "Digite o destino (Ex: Paris, França)",
+                          prefixIcon: Icon(Icons.location_on, color: Colors.deepPurple),
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (val) {
+                          destinationController.text = val;
+                        },
+                        validator: (v) => v!.isEmpty ? "Informe o destino" : null,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 30),
+                  
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey[200]!)),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: _buildDateTile(label: "Ida", date: _startDate, icon: Icons.flight_takeoff, onTap: () => _pickDate(context, true))),
+                            if (!_isNomad) ...[
+                              const Icon(Icons.arrow_forward, color: Colors.grey, size: 16),
+                              Expanded(child: _buildDateTile(label: "Volta", date: _endDate, icon: Icons.flight_land, onTap: () => _pickDate(context, false), enabled: _startDate != null)),
+                            ],
+                          ],
+                        ),
+                        if (_tripDuration > 0 && !_isNomad)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 15),
+                            child: Text("Duração: $_tripDuration dias", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                          ),
+                        const Divider(height: 30),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text("Modo Nômade"),
+                          value: _isNomad,
+                          onChanged: (v) => setState(() => _isNomad = v),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
                   TextFormField(
                     controller: budgetController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: "Orçamento Estimado (R\$)",
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.attach_money),
-                    ),
-                    validator: (value) => value == null || value.isEmpty ? "Informe o orçamento" : null,
+                    decoration: const InputDecoration(labelText: "Orçamento Planejado (R\$)", prefixIcon: Icon(Icons.payments), border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? "Informe o valor" : null,
                   ),
+
                   const SizedBox(height: 20),
-                  const Text("Objetivo da Viagem", style: TextStyle(fontWeight: FontWeight.bold)),
                   DropdownButtonFormField<String>(
                     value: _selectedObjective,
-                    items: _objectives.map((obj) => DropdownMenuItem(value: obj, child: Text(obj))).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedObjective = val);
-                      }
-                    },
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    items: _objectives.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
+                    onChanged: (v) => setState(() => _selectedObjective = v!),
+                    decoration: const InputDecoration(labelText: "Objetivo", border: OutlineInputBorder(), prefixIcon: Icon(Icons.flag)),
                   ),
-                  const SizedBox(height: 20),
-                  SwitchListTile(
-                    title: const Text("Modo Nômade (Sem data final)"),
-                    subtitle: const Text("Ideal para viagens longas e flexíveis"),
-                    value: _isNomad,
-                    onChanged: (val) {
-                      setState(() {
-                        _isNomad = val;
-                        if (_isNomad) _endDate = null;
-                      });
-                    },
-                  ),
-                  SwitchListTile(
-                    title: const Text("Viagem em Grupo"),
-                    subtitle: const Text("Permite convidar amigos para colaborar"),
-                    value: _isGroup,
-                    onChanged: (val) => setState(() => _isGroup = val),
-                  ),
-                  const SizedBox(height: 30),
+
+                  const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                       onPressed: () {
-                        if (formKey.currentState!.validate()) {
-                          createTrip();
-                        }
+                        if (formKey.currentState!.validate()) createTrip();
                       },
-                      child: const Text("Criar Painel da Viagem", style: TextStyle(fontSize: 18)),
+                      child: const Text("CRIAR VIAGEM", style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
           ),
+    );
+  }
+
+  Widget _buildDateTile({required String label, DateTime? date, required IconData icon, required VoidCallback onTap, bool enabled = true}) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      child: Opacity(
+        opacity: enabled ? 1.0 : 0.4,
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.deepPurple),
+            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(date == null ? "Selecionar" : DateFormat('dd/MM/yyyy').format(date), style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
     );
   }
 }

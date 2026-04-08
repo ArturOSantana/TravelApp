@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -5,41 +7,32 @@ import '../models/journal_entry.dart';
 import '../controllers/trip_controller.dart';
 import 'create_journal_entry_page.dart';
 
-class JournalPage extends StatelessWidget {
+class JournalPage extends StatefulWidget {
   final String tripId;
   const JournalPage({super.key, required this.tripId});
 
-  // Função para compartilhar o Link do Álbum em Tempo Real
+  @override
+  State<JournalPage> createState() => _JournalPageState();
+}
+
+class _JournalPageState extends State<JournalPage> {
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
   Future<void> _shareLiveAlbumLink(BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
+    final String albumUrl = "https://travel-app-tcc.web.app/journal/${widget.tripId}";
     
-
-    final String albumUrl = "https://travel-app-tcc.web.app/journal/$tripId";
-    
-    final String message = "📸 Acompanhe meu Diário de Viagem em tempo real!\n\n"
-        "Estou postando fotos e relatos da nossa viagem aqui neste álbum:\n"
-        "$albumUrl\n\n"
-        "Fique de olho para ver as novidades! ✈️🌍";
+    final String message = "Confira o meu álbum de fotos e memórias da viagem!\n\n"
+        "Acesse pelo link:\n"
+        "$albumUrl";
 
     await Share.share(
       message,
-      subject: "Álbum de Viagem em Tempo Real",
+      subject: "Álbum de Viagem",
       sharePositionOrigin: box != null 
           ? box.localToGlobal(Offset.zero) & box.size 
           : null,
-    );
-  }
-
-  Future<void> _shareSingleEntry(JournalEntry entry, BuildContext context) async {
-    final box = context.findRenderObject() as RenderBox?;
-    // ATUALIZADO: Link correto baseado no .firebaserc
-    String text = "📸 Registro de Viagem (${DateFormat('dd/MM').format(entry.date)}):\n\n"
-        "${entry.content}\n\n"
-        "Veja mais no meu diário: https://travel-app-tcc.web.app/journal/$tripId";
-
-    await Share.share(
-      text,
-      sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
     );
   }
 
@@ -48,270 +41,243 @@ class JournalPage extends StatelessWidget {
     final controller = TripController();
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Diário de Viagem"),
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
+        title: const Text("Álbum de Viagem", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         actions: [
-          Builder(
-            builder: (btnContext) => IconButton(
-              icon: const Icon(Icons.ios_share),
-              tooltip: "Compartilhar Link do Álbum",
-              onPressed: () => _shareLiveAlbumLink(btnContext),
-            ),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: "Compartilhar Álbum",
+            onPressed: () => _shareLiveAlbumLink(context),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "Filtrar por localização...",
+                prefixIcon: const Icon(Icons.search_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                suffixIcon: _searchQuery.isNotEmpty 
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_outlined),
+                      onPressed: () {
+                        setState(() {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                  : null,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blueGrey,
-        child: const Icon(Icons.add_a_photo, color: Colors.white),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.deepPurple,
+        label: const Text("ADICIONAR FOTO", style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.add_a_photo_outlined, color: Colors.white),
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CreateJournalEntryPage(tripId: tripId),
+              builder: (context) => CreateJournalEntryPage(tripId: widget.tripId),
             ),
           );
         },
       ),
       body: StreamBuilder<List<JournalEntry>>(
-        stream: controller.getJournalEntries(tripId),
+        stream: controller.getJournalEntries(widget.tripId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final entries = snapshot.data ?? [];
+          final allEntries = snapshot.data ?? [];
+          final entries = allEntries.where((entry) {
+            final loc = entry.locationName?.toLowerCase() ?? '';
+            return loc.contains(_searchQuery);
+          }).toList();
 
-          return CustomScrollView(
-            slivers: [
-              // Card Informativo no Topo
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.blueGrey[700]!, Colors.blueGrey[400]!]),
-                    borderRadius: BorderRadius.circular(15),
+          if (entries.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.photo_library_outlined, size: 80, color: Colors.grey[300]),
+                  const SizedBox(height: 20),
+                  Text(
+                    _searchQuery.isEmpty ? "Seu álbum está vazio." : "Nenhuma memória encontrada.",
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600])
                   ),
-                  child: Column(
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.auto_awesome, color: Colors.amber, size: 20),
-                          SizedBox(width: 10),
-                          Text("Álbum em Tempo Real", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "Compartilhe o link deste diário para que amigos e família acompanhem suas fotos e relatos ao vivo!",
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                      const SizedBox(height: 15),
-                      Builder(
-                        builder: (btnContext) => ElevatedButton.icon(
-                          onPressed: () => _shareLiveAlbumLink(btnContext),
-                          icon: const Icon(Icons.ios_share, size: 18),
-                          label: const Text("COMPARTILHAR LINK DO ÁLBUM"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blueGrey[800],
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 10),
+                  Text(
+                    _searchQuery.isEmpty ? "Registre suas memórias de viagem." : "Tente outro termo de busca.",
+                    style: const TextStyle(color: Colors.grey)
                   ),
-                ),
+                ],
               ),
+            );
+          }
 
-              if (entries.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.auto_stories, size: 80, color: Colors.grey),
-                        SizedBox(height: 20),
-                        Text("Seu diário está vazio.", style: TextStyle(fontSize: 18, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildMemoryCard(context, entries[index]),
-                      childCount: entries.length,
-                    ),
-                  ),
-                ),
-            ],
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: entries.length,
+            itemBuilder: (context, index) => _buildAlbumEntry(context, entries[index]),
           );
         },
       ),
     );
   }
 
-  Widget _buildMemoryCard(BuildContext context, JournalEntry entry) {
-    return GestureDetector(
-      onTap: () => _showEntryDetails(context, entry),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        clipBehavior: Clip.antiAlias,
-        elevation: 3,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (entry.photos.isNotEmpty)
-              SizedBox(
-                height: 220,
-                width: double.infinity,
-                child: Image.network(
-                  entry.photos.first,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image)),
+  Widget _buildAlbumEntry(BuildContext context, JournalEntry entry) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  DateFormat('dd/MM/yyyy').format(entry.date),
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
                 ),
-              ),
-            
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        DateFormat('dd MMM, yyyy').format(entry.date),
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey[800], fontSize: 16),
-                      ),
-                      Row(
-                        children: [
-                          _buildMoodIndicator(entry.moodScore),
-                          const SizedBox(width: 8),
-                          Builder(
-                            builder: (btnContext) => IconButton(
-                              icon: const Icon(Icons.share, size: 20, color: Colors.blueGrey),
-                              onPressed: () => _shareSingleEntry(entry, btnContext),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    entry.content,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
-                  ),
-                  if (entry.locationName != null && entry.locationName!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.location_on, size: 14, color: Colors.redAccent),
-                          const SizedBox(width: 4),
-                          Text(entry.locationName!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        ],
-                      ),
+                if (entry.locationName != null && entry.locationName!.isNotEmpty) ...[
+                  const SizedBox(width: 12),
+                  const Icon(Icons.location_on_outlined, size: 14, color: Colors.redAccent),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      entry.locationName!,
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+                      overflow: TextOverflow.ellipsis,
                     ),
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
+          
+          if (entry.photos.isNotEmpty)
+            ClipRRect(
+              child: entry.photos.length == 1
+                  ? _buildBase64Image(entry.photos.first, height: 250)
+                  : _buildImageGrid(entry.photos),
+            ),
 
-  void _showEntryDetails(BuildContext context, JournalEntry entry) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 40, height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          DateFormat('EEEE, dd MMMM').format(entry.date),
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueGrey),
-                        ),
-                        _buildMoodIndicator(entry.moodScore),
-                      ],
-                    ),
-                    const Divider(height: 30),
-                    
-                    if (entry.photos.isNotEmpty)
-                      SizedBox(
-                        height: 300,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: entry.photos.length,
-                          itemBuilder: (context, index) => Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(15),
-                              child: Image.network(
-                                entry.photos[index],
-                                width: 280,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    
-                    const SizedBox(height: 25),
-                    Text(
-                      entry.content,
-                      style: const TextStyle(fontSize: 18, height: 1.6),
-                    ),
-                    const SizedBox(height: 50),
-                  ],
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.content,
+                  style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
                 ),
-              ),
+                const SizedBox(height: 12),
+                _buildMoodTag(entry.moodScore),
+              ],
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBase64Image(String base64String, {double? height}) {
+    try {
+      Uint8List bytes = base64Decode(base64String);
+      return Image.memory(
+        bytes,
+        width: double.infinity,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _errorImage(),
+      );
+    } catch (e) {
+      return _errorImage();
+    }
+  }
+
+  Widget _errorImage() {
+    return Container(
+      height: 200,
+      color: Colors.grey[100],
+      child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+    );
+  }
+
+  Widget _buildImageGrid(List<String> base64Urls) {
+    return SizedBox(
+      height: 250,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: base64Urls.length,
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(right: 2),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: _buildBase64Image(base64Urls[index], height: 250),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMoodIndicator(double score) {
+  Widget _buildMoodTag(double score) {
+    String label;
     IconData icon;
     Color color;
-    if (score >= 4.5) { icon = Icons.sentiment_very_satisfied; color = Colors.green; }
-    else if (score >= 3.5) { icon = Icons.sentiment_satisfied; color = Colors.blue; }
-    else if (score >= 2.5) { icon = Icons.sentiment_neutral; color = Colors.amber; }
-    else { icon = Icons.sentiment_dissatisfied; color = Colors.orange; }
-    return Icon(icon, color: color, size: 28);
+
+    if (score >= 4.5) { label = "Incrível"; icon = Icons.sentiment_very_satisfied_outlined; color = Colors.green; }
+    else if (score >= 3.5) { label = "Bom"; icon = Icons.sentiment_satisfied_outlined; color = Colors.blue; }
+    else if (score >= 2.5) { label = "Ok"; icon = Icons.sentiment_neutral_outlined; color = Colors.amber; }
+    else { label = "Cansativo"; icon = Icons.sentiment_dissatisfied_outlined; color = Colors.orange; }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
   }
 }

@@ -14,6 +14,10 @@ class ServicesLibraryPage extends StatefulWidget {
 class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TripController _controller = TripController();
+  String _searchQuery = '';
+  String _selectedCategory = 'Todas';
+
+  final List<String> _categories = ['Todas', 'Hospedagem', 'Restaurante', 'Transporte', 'Outros'];
 
   @override
   void initState() {
@@ -29,10 +33,7 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
 
   Future<void> _shareService(ServiceModel service, BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
-    
-    // URL da versão web do seu app (substitua pelo seu domínio real após o deploy)
     final String webUrl = "https://travel-app-etec.web.app/service/${service.id}";
-    
     final String text = "Ei! Veja essa recomendação de ${service.category} no Travel App:\n\n"
         "*${service.name}*\n"
         " ${service.location}\n"
@@ -55,12 +56,24 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
         title: const Text("Explorar Serviços"),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: "Meus Favoritos", icon: Icon(Icons.star)),
-            Tab(text: "Comunidade", icon: Icon(Icons.public)),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(170),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: const [
+                  Tab(text: "Favoritos", icon: Icon(Icons.star)),
+                  Tab(text: "Comunidade", icon: Icon(Icons.public)),
+                ],
+              ),
+              _buildFilterBar(),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -82,31 +95,83 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
     );
   }
 
+  Widget _buildFilterBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            decoration: InputDecoration(
+              hintText: "Buscar por nome ou local...",
+              prefixIcon: const Icon(Icons.search, size: 20),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              filled: true,
+              fillColor: Colors.grey[100],
+            ),
+            onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                final category = _categories[index];
+                final isSelected = _selectedCategory == category;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(
+                      category, 
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                      )
+                    ),
+                    selected: isSelected,
+                    onSelected: (bool selected) {
+                      setState(() => _selectedCategory = category);
+                    },
+                    selectedColor: Colors.indigo,
+                    checkmarkColor: Colors.white,
+                    backgroundColor: Colors.grey[200],
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildServiceList({required bool isCommunity}) {
     return StreamBuilder<List<ServiceModel>>(
       stream: isCommunity ? _controller.getCommunityServices() : _controller.getPersonalServices(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text("Erro ao carregar dados: ${snapshot.error}"),
-            ),
-          );
-        }
+        if (snapshot.hasError) return Center(child: Text("Erro: ${snapshot.error}"));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        var services = snapshot.data ?? [];
 
-        final services = snapshot.data ?? [];
+        // Aplicar filtros
+        services = services.where((s) {
+          final matchesSearch = s.name.toLowerCase().contains(_searchQuery) || 
+                               s.location.toLowerCase().contains(_searchQuery);
+          final matchesCategory = _selectedCategory == 'Todas' || 
+                                 s.category.toLowerCase() == _selectedCategory.toLowerCase();
+          return matchesSearch && matchesCategory;
+        }).toList();
 
         if (services.isEmpty) {
-          return Center(
-            child: Text(isCommunity
-              ? "Nenhuma recomendação da comunidade ainda."
-              : "Você ainda não salvou nenhum serviço."),
-          );
+          return const Center(child: Text("Nenhum serviço encontrado."));
         }
 
         return ListView.builder(
@@ -118,7 +183,6 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
               elevation: 3,
               margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              clipBehavior: Clip.antiAlias,
               child: ListTile(
                 leading: _getCategoryIcon(service.category),
                 title: Text(service.name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -126,25 +190,23 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(service.location),
-                    const SizedBox(height: 4),
                     _buildTrustSeal(service.rating),
                   ],
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Builder(
-                      builder: (btnContext) => IconButton(
-                        icon: const Icon(Icons.share, color: Colors.indigo, size: 20),
-                        onPressed: () => _shareService(service, btnContext),
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.share, color: Colors.indigo, size: 20),
+                      onPressed: () => _shareService(service, context),
                     ),
-                    isCommunity
-                      ? IconButton(
-                          icon: const Icon(Icons.add_circle_outline, color: Colors.indigo),
-                          onPressed: () => _importService(service),
-                        )
-                      : const Icon(Icons.check_circle, color: Colors.green),
+                    if (isCommunity)
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline, color: Colors.indigo),
+                        onPressed: () => _importService(service),
+                      )
+                    else
+                      const Icon(Icons.check_circle, color: Colors.green),
                   ],
                 ),
                 onTap: () => _showDetails(context, service),
@@ -161,159 +223,69 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      useRootNavigator: true,
       builder: (modalContext) => Container(
         height: MediaQuery.of(modalContext).size.height * 0.8,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
         ),
-        child: Column(
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Builder(
-                    builder: (btnContext) => IconButton(
-                      icon: const Icon(Icons.share, color: Colors.indigo),
-                      onPressed: () => _shareService(service, btnContext),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(service.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+              Text("${service.category} • ${service.location}", style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+              const SizedBox(height: 20),
+              if (service.photos.isNotEmpty)
+                SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: service.photos.length,
+                    itemBuilder: (context, index) => Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Image.network(service.photos[index], width: 280, fit: BoxFit.cover),
+                      ),
                     ),
                   ),
+                ),
+              const SizedBox(height: 20),
+              Text(service.comment, style: const TextStyle(fontSize: 16, height: 1.5)),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Icon(Icons.payments, color: Colors.green),
+                  const SizedBox(width: 10),
+                  Text("Custo Médio: R\$ ${service.averageCost.toStringAsFixed(2)}", 
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
                 ],
               ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(service.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                    Text("${service.category} • ${service.location}", style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-                    const SizedBox(height: 20),
-
-                    if (service.photos.isNotEmpty)
-                      SizedBox(
-                        height: 200,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: service.photos.length,
-                          itemBuilder: (context, index) {
-                            final photoUrl = service.photos[index];
-                            if (photoUrl.isEmpty) return const SizedBox.shrink();
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: Image.network(
-                                  photoUrl,
-                                  width: 280,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    width: 280, color: Colors.grey[200], child: const Icon(Icons.broken_image, color: Colors.grey),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                    const SizedBox(height: 25),
-                    const Text("Avaliação:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        ...List.generate(5, (i) => Icon(
-                          Icons.star,
-                          color: i < service.rating.floor() ? Colors.amber : Colors.grey[300],
-                          size: 28,
-                        )),
-                        const SizedBox(width: 10),
-                        Text(service.rating.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 25),
-                    const Text("Dica / Comentário:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text(service.comment, style: const TextStyle(fontSize: 16, height: 1.5)),
-                    
-                    const SizedBox(height: 25),
-                    Row(
-                      children: [
-                        const Icon(Icons.payments, color: Colors.green),
-                        const SizedBox(width: 10),
-                        Text(
-                          "Custo Médio: R\$ ${service.averageCost.toStringAsFixed(2)}",
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildTrustSeal(double rating) {
-    String label;
-    Color color;
-    if (rating >= 4.5) {
-      label = "Alta Compatibilidade";
-      color = Colors.green;
-    } else if (rating >= 3.5) {
-      label = "Compatibilidade Moderada";
-      color = Colors.orange;
-    } else {
-      label = "Pode não ser ideal";
-      color = Colors.grey;
-    }
-
+    String label = rating >= 4.5 ? "Alta Compatibilidade" : (rating >= 3.5 ? "Moderada" : "Pode não ser ideal");
+    Color color = rating >= 4.5 ? Colors.green : (rating >= 3.5 ? Colors.orange : Colors.grey);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withAlpha((0.1 * 255).round()),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color, width: 0.5),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold),
-      ),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: color, width: 0.5)),
+      child: Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
     );
   }
 
   void _importService(ServiceModel service) async {
     try {
       await _controller.importService(service);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("${service.name} adicionado aos seus favoritos!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${service.name} importado!"), backgroundColor: Colors.green));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar: $e"), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
     }
   }
 

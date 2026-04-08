@@ -3,6 +3,7 @@ import '../controllers/auth_controller.dart';
 import 'trips_page.dart';
 import 'insights_page.dart';
 import 'services_library_page.dart';
+import 'profile_page.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -16,7 +17,14 @@ class DashboardPage extends StatelessWidget {
         title: const Text("Travel Planner"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfilePage()),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
               await _authController.logout();
               if (context.mounted) {
@@ -42,7 +50,7 @@ class DashboardPage extends StatelessWidget {
               context,
               "Minhas Viagens",
               "Gerencie seus roteiros e gastos",
-              Icons.card_travel,
+              Icons.explore_rounded,
               Colors.deepPurple,
               () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TripsPage())),
             ),
@@ -58,15 +66,15 @@ class DashboardPage extends StatelessWidget {
                 children: [
                   _buildGridItem(
                     context,
-                    "Análise",
-                    Icons.auto_awesome,
+                    "Insights",
+                    Icons.analytics_rounded,
                     Colors.deepOrange,
                     () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InsightsPage())),
                   ),
                   _buildGridItem(
                     context,
                     "Biblioteca",
-                    Icons.library_books,
+                    Icons.local_library_rounded,
                     Colors.indigo,
                     () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesLibraryPage())),
                   ),
@@ -92,12 +100,14 @@ class DashboardPage extends StatelessWidget {
             children: [
               Icon(icon, size: 40, color: color),
               const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  Text(sub, style: const TextStyle(color: Colors.grey)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(sub, style: const TextStyle(color: Colors.grey)),
+                  ],
+                ),
               ),
             ],
           ),

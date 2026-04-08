@@ -27,6 +27,9 @@ class TripDashboardPage extends StatelessWidget {
         ? currentUid == trip.ownerId 
         : (trip.members.isNotEmpty && trip.members.first == currentUid);
 
+    // Condição: Só pode concluir se o status for 'active' (em andamento)
+    final bool canFinish = trip.status == 'active';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(trip.destination),
@@ -46,9 +49,24 @@ class TripDashboardPage extends StatelessWidget {
             ),
           if (isAdm && trip.status != 'completed')
             TextButton.icon(
-              onPressed: () => _showFinishDialog(context, controller),
-              icon: const Icon(Icons.check_circle, color: Colors.white),
-              label: const Text("Concluir", style: TextStyle(color: Colors.white)),
+              onPressed: canFinish 
+                ? () => _showFinishDialog(context, controller)
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("A viagem precisa estar 'Em andamento' para ser concluída."),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  },
+              icon: Icon(
+                Icons.check_circle, 
+                color: canFinish ? Colors.white : Colors.white54
+              ),
+              label: Text(
+                "Concluir", 
+                style: TextStyle(color: canFinish ? Colors.white : Colors.white54)
+              ),
             )
         ],
       ),
@@ -121,7 +139,7 @@ class TripDashboardPage extends StatelessWidget {
               _buildOptionCard(
                 context, 
                 Icons.auto_stories, 
-                "Diário de Viagem", 
+                "Álbum de Viagem",
                 "Registre memórias e sentimentos",
                 () => Navigator.push(context, MaterialPageRoute(builder: (context) => JournalPage(tripId: trip.id)))
               ),

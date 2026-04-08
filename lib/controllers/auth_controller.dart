@@ -6,7 +6,7 @@ class AuthController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<String?> register(String name, String email, String password) async {
+  Future<String?> register(String name, String email, String password, {String phone = ''}) async {
     try {
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -14,13 +14,16 @@ class AuthController {
       );
 
       if (userCredential.user != null) {
-        await _db.collection('users').doc(userCredential.user!.uid).set({
-          'uid': userCredential.user!.uid,
-          'name': name,
-          'email': email,
+        UserModel newUser = UserModel(
+          uid: userCredential.user!.uid,
+          name: name,
+          email: email,
+          phone: phone,
+        );
+        
+        await _db.collection('users').doc(newUser.uid).set({
+          ...newUser.toMap(),
           'createdAt': FieldValue.serverTimestamp(),
-          'emergencyContact': '',
-          'emergencyPhone': '',
         });
       }
       return null;
@@ -53,12 +56,16 @@ class AuthController {
     return null;
   }
 
-  Future<void> updateEmergencyContact(String name, String phone) async {
-    String uid = _auth.currentUser?.uid ?? '';
-    await _db.collection('users').doc(uid).update({
-      'emergencyContact': name,
-      'emergencyPhone': phone,
-    });
+  Future<String?> updateUserProfile(UserModel user) async {
+    try {
+      String uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) return 'Usuário não autenticado';
+      
+      await _db.collection('users').doc(uid).update(user.toMap());
+      return null;
+    } catch (e) {
+      return 'Erro ao atualizar perfil: $e';
+    }
   }
 
   Future<void> logout() async {

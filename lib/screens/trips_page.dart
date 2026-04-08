@@ -19,7 +19,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -41,9 +41,11 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
         ],
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: false,
           tabs: const [
             Tab(text: "Ativas", icon: Icon(Icons.play_circle_outline)),
             Tab(text: "Planejadas", icon: Icon(Icons.calendar_today)),
+            Tab(text: "Finalizadas", icon: Icon(Icons.history)),
           ],
         ),
       ),
@@ -61,6 +63,7 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
         children: [
           _buildTripList('active'),
           _buildTripList('planned'),
+          _buildTripList('completed'),
         ],
       ),
     );
@@ -128,13 +131,30 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
         final trips = snapshot.data ?? [];
 
         if (trips.isEmpty) {
+          IconData icon;
+          String message;
+          
+          switch(status) {
+            case 'active':
+              icon = Icons.explore_off;
+              message = "Nenhuma viagem ativa.";
+              break;
+            case 'completed':
+              icon = Icons.history_edu;
+              message = "Nenhum histórico de viagens.";
+              break;
+            default:
+              icon = Icons.event_busy;
+              message = "Nenhuma viagem planejada.";
+          }
+
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(status == 'active' ? Icons.explore_off : Icons.event_busy, size: 60, color: Colors.grey),
+                Icon(icon, size: 60, color: Colors.grey),
                 const SizedBox(height: 10),
-                Text("Nenhuma viagem ${status == 'active' ? 'ativa' : 'planejada'}."),
+                Text(message),
               ],
             ),
           );
@@ -148,7 +168,10 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: ListTile(
-                leading: const Icon(Icons.flight, color: Colors.deepPurple),
+                leading: Icon(
+                  status == 'completed' ? Icons.archive : Icons.flight, 
+                  color: status == 'completed' ? Colors.grey : Colors.deepPurple
+                ),
                 title: Text(trip.destination, style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text("Orçamento: R\$ ${trip.budget.toStringAsFixed(2)}"),
                 trailing: Row(
