@@ -3,51 +3,82 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/trip.dart';
+import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
+import '../controllers/auth_controller.dart';
+import '../services/weather_service.dart';
 import 'itinerary_page.dart';
 import 'expenses_page.dart';
 import 'journal_page.dart';
 import 'safety_page.dart';
 import 'group_members_page.dart';
 
-class TripDashboardPage extends StatelessWidget {
+class TripDashboardPage extends StatefulWidget {
   final Trip trip;
+  const TripDashboardPage({super.key, required this.trip});
 
-  const TripDashboardPage({
-    super.key,
-    required this.trip,
-  });
+  @override
+  State<TripDashboardPage> createState() => _TripDashboardPageState();
+}
+
+class _TripDashboardPageState extends State<TripDashboardPage> {
+  final _authController = AuthController();
+  UserModel? _user;
+  Map<String, dynamic>? _weather;
+  bool _isLoadingWeather = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final user = await _authController.getUserData();
+    if (mounted) {
+      setState(() => _user = user);
+      _fetchWeather();
+    }
+  }
+
+  Future<void> _fetchWeather() async {
+    if (_user?.role == 'premium' || _user?.role == 'business') {
+      final city = widget.trip.destination.split(',')[0].trim();
+      final data = await WeatherService.getWeather(city);
+      if (mounted) {
+        setState(() {
+          _weather = data;
+          _isLoadingWeather = false;
+        });
+      }
+    } else {
+      if (mounted) setState(() => _isLoadingWeather = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = TripController();
     final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     
-    final bool isAdm = trip.ownerId.isNotEmpty 
-        ? currentUid == trip.ownerId 
-        : (trip.members.isNotEmpty && trip.members.first == currentUid);
+    final bool isAdm = widget.trip.ownerId.isNotEmpty 
+        ? currentUid == widget.trip.ownerId 
+        : (widget.trip.members.isNotEmpty && widget.trip.members.first == currentUid);
 
-    // Condição: Só pode concluir se o status for 'active' (em andamento)
-    final bool canFinish = trip.status == 'active';
+    final bool canFinish = widget.trip.status == 'active';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(trip.destination),
+        title: Text(widget.trip.destination),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.group, color: Colors.white),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: trip))),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: widget.trip))),
             tooltip: "Ver Membros",
           ),
-          if (isAdm)
-            IconButton(
-              icon: const Icon(Icons.person_add, color: Colors.white),
-              onPressed: () => _showInviteDialog(context),
-              tooltip: "Convidar Amigos",
-            ),
-          if (isAdm && trip.status != 'completed')
+          if (isAdm && widget.trip.status != 'completed')
             TextButton.icon(
               onPressed: canFinish 
                 ? () => _showFinishDialog(context, controller)
@@ -70,151 +101,112 @@ class TripDashboardPage extends StatelessWidget {
             )
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: trip.status == 'completed' ? Colors.grey : Colors.deepPurple,
-                      child: Icon(
-                        trip.status == 'completed' ? Icons.archive : Icons.flight_takeoff, 
-                        color: Colors.white, 
-                        size: 30
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            trip.destination,
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "Status: ${trip.status == 'active' ? 'Em andamento' : trip.status == 'completed' ? 'Concluída' : 'Planejada'}",
-                            style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
-                          ),
-                          if (trip.isGroup)
-                            GestureDetector(
-                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: trip))),
-                              child: Text("${trip.members.length} membros no grupo (Ver)", style: const TextStyle(color: Colors.deepPurple, fontSize: 12, decoration: TextDecoration.underline)),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Recurso Premium: Clima
+            if ((_user?.role == 'premium' || _user?.role == 'business') && !_isLoadingWeather && _weather != null)
+              _buildWeatherCard(),
+            
+            const SizedBox(height: 15),
 
-              const SizedBox(height: 30),
-              const Text("Gerenciamento", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: widget.trip.status == 'completed' ? Colors.grey : Colors.deepPurple,
+                    child: Icon(
+                      widget.trip.status == 'completed' ? Icons.archive : Icons.flight_takeoff, 
+                      color: Colors.white, 
+                      size: 30
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.trip.destination,
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "Status: ${widget.trip.status == 'active' ? 'Em andamento' : widget.trip.status == 'completed' ? 'Concluída' : 'Planejada'}",
+                          style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              _buildOptionCard(
-                context, 
-                Icons.calendar_month, 
-                "Roteiro Inteligente", 
-                "Organize atividades e vote em grupo",
-                () => Navigator.push(context, MaterialPageRoute(builder: (context) => ItineraryPage(tripId: trip.id)))
-              ),
-              _buildOptionCard(
-                context, 
-                Icons.account_balance_wallet, 
-                "Controle Financeiro", 
-                "Gastos e divisão automática",
-                () => Navigator.push(context, MaterialPageRoute(builder: (context) => ExpensesPage(tripId: trip.id)))
-              ),
-              _buildOptionCard(
-                context, 
-                Icons.auto_stories, 
-                "Álbum de Viagem",
-                "Registre memórias e sentimentos",
-                () => Navigator.push(context, MaterialPageRoute(builder: (context) => JournalPage(tripId: trip.id)))
-              ),
-              _buildOptionCard(
-                context, 
-                Icons.gpp_good, 
-                "Segurança e SOS", 
-                "Compartilhamento de localização",
-                () => Navigator.push(context, MaterialPageRoute(builder: (context) => SafetyPage(tripId: trip.id)))
-              ),
-            ],
-          ),
+            const SizedBox(height: 30),
+            const Text("Gerenciamento", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 15),
+
+            _buildOptionCard(
+              context, 
+              Icons.calendar_month, 
+              "Roteiro Inteligente", 
+              "Organize atividades e vote em grupo",
+              () => Navigator.push(context, MaterialPageRoute(builder: (context) => ItineraryPage(tripId: widget.trip.id)))
+            ),
+            _buildOptionCard(
+              context, 
+              Icons.account_balance_wallet, 
+              "Controle Financeiro", 
+              "Gastos, divisão e câmbio real",
+              () => Navigator.push(context, MaterialPageRoute(builder: (context) => ExpensesPage(tripId: widget.trip.id)))
+            ),
+            _buildOptionCard(
+              context, 
+              Icons.auto_stories, 
+              "Álbum de Viagem",
+              "Registre memórias e sentimentos",
+              () => Navigator.push(context, MaterialPageRoute(builder: (context) => JournalPage(tripId: widget.trip.id)))
+            ),
+            _buildOptionCard(
+              context, 
+              Icons.gpp_good, 
+              "Segurança e SOS", 
+              "Compartilhamento de localização",
+              () => Navigator.push(context, MaterialPageRoute(builder: (context) => SafetyPage(tripId: widget.trip.id)))
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showInviteDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Convidar para o Grupo"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Compartilhe o código abaixo para convidar seus amigos:"),
-            const SizedBox(height: 15),
-            Container(
-              padding: const EdgeInsets.all(10),
-              width: double.infinity,
-              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
-              child: SelectableText(
-                trip.id, 
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.2),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: trip.id));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Código copiado!")));
-            },
-            icon: const Icon(Icons.copy),
-            tooltip: "Copiar Código",
+  Widget _buildWeatherCard() {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Colors.blue, Colors.lightBlueAccent]),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("PREVISÃO LOCAL (Premium)", style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
+              Text("${_weather!['temp']}°C", style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+              Text(_weather!['desc'], style: const TextStyle(color: Colors.white, fontSize: 14)),
+            ],
           ),
-          Builder(
-            builder: (buttonContext) {
-              return ElevatedButton.icon(
-                onPressed: () async {
-                  final box = buttonContext.findRenderObject() as RenderBox?;
-                  final String text = "Ei! Vamos viajar juntos para ${trip.destination}?\n\n"
-                      "Baixe o Travel App e entre no meu grupo usando o código:\n"
-                      "${trip.id}";
-                  
-                  await Share.share(
-                    text, 
-                    subject: "Convite de Viagem",
-                    sharePositionOrigin: box != null 
-                        ? box.localToGlobal(Offset.zero) & box.size 
-                        : null,
-                  );
-                }, 
-                icon: const Icon(Icons.share),
-                label: const Text("Compartilhar"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                ),
-              );
-            }
-          ),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Fechar")),
+          Text(_weather!['icon'], style: const TextStyle(fontSize: 50)),
         ],
       ),
     );
@@ -230,8 +222,8 @@ class TripDashboardPage extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
           TextButton(
             onPressed: () async {
-              await controller.updateTripStatus(trip.id, 'completed');
-              if (context.mounted) {
+              await controller.updateTripStatus(widget.trip.id, 'completed');
+              if (mounted) {
                 Navigator.pop(context);
                 Navigator.pop(context);
               }

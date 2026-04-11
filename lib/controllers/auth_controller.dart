@@ -19,6 +19,7 @@ class AuthController {
           name: name,
           email: email,
           phone: phone,
+          role: 'user', // Padrão
         );
         
         await _db.collection('users').doc(newUser.uid).set({

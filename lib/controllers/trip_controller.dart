@@ -96,7 +96,6 @@ class TripController {
     String uid = _auth.currentUser?.uid ?? '';
     String userName = _auth.currentUser?.displayName ?? 'Viajante';
 
-    // Incrementa o contador de salvamentos no post original
     if (service.id.isNotEmpty) {
       await _db.collection('services').doc(service.id).update({
         'savesCount': FieldValue.increment(1)
@@ -162,6 +161,20 @@ class TripController {
     });
   }
 
+  Future<void> addOpinion(String activityId, String text) async {
+    String uid = _auth.currentUser?.uid ?? '';
+    String name = _auth.currentUser?.displayName ?? 'Viajante';
+    
+    await _db.collection('activities').doc(activityId).update({
+      'opinions': FieldValue.arrayUnion([{
+        'userId': uid,
+        'userName': name,
+        'text': text,
+        'timestamp': DateTime.now().toIso8601String(),
+      }])
+    });
+  }
+
   // --- EXPENSES ---
   Stream<List<Expense>> getExpenses(String tripId) {
     return _db
@@ -175,17 +188,22 @@ class TripController {
         });
   }
 
-  Stream<List<Expense>> getAllUserExpenses() {
-    String uid = _auth.currentUser?.uid ?? '';
-    return _db
-        .collection('expenses')
-        .where('payerId', isEqualTo: uid)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList());
-  }
-
   Future<void> addExpense(Expense expense) async {
     await _db.collection('expenses').add(expense.toMap());
+  }
+
+  Future<void> settleDebt(String tripId, String fromUserId, String toUserId, double amount) async {
+    final payment = Expense(
+      id: '',
+      tripId: tripId,
+      title: 'Pagamento de Dívida',
+      value: amount,
+      category: 'payment',
+      payerId: fromUserId,
+      date: DateTime.now(),
+      splits: {toUserId: amount},
+    );
+    await addExpense(payment);
   }
 
   // --- JOURNAL ---

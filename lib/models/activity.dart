@@ -7,8 +7,9 @@ class Activity {
   final String? description;
   final DateTime time;
   final String location;
-  final String category; // culture, food, outdoor, etc.
-  final Map<String, int> votes; // userId: vote (1 or -1) - for Case 4
+  final String category;
+  final Map<String, int> votes; // userId: vote (1 or -1)
+  final List<Map<String, dynamic>> opinions; // [{ 'userId': '', 'userName': '', 'text': '' }]
   final bool isApproved;
   final double? latitude;
   final double? longitude;
@@ -22,6 +23,7 @@ class Activity {
     required this.location,
     this.category = 'general',
     this.votes = const {},
+    this.opinions = const [],
     this.isApproved = true,
     this.latitude,
     this.longitude,
@@ -36,6 +38,7 @@ class Activity {
       'location': location,
       'category': category,
       'votes': votes,
+      'opinions': opinions,
       'isApproved': isApproved,
       'latitude': latitude,
       'longitude': longitude,
@@ -53,6 +56,7 @@ class Activity {
       location: data['location'] ?? '',
       category: data['category'] ?? 'general',
       votes: Map<String, int>.from(data['votes'] ?? {}),
+      opinions: List<Map<String, dynamic>>.from(data['opinions'] ?? []),
       isApproved: data['isApproved'] ?? true,
       latitude: data['latitude'],
       longitude: data['longitude'],

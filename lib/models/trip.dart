@@ -7,6 +7,7 @@ class Trip {
   final DateTime? startDate;
   final DateTime? endDate;
   final double budget;
+  final String baseCurrency; // Novo: Moeda base da viagem (ex: BRL, USD, EUR)
   final String objective;
   final bool isGroup;
   final List<String> members;
@@ -21,6 +22,7 @@ class Trip {
     this.startDate,
     this.endDate,
     required this.budget,
+    this.baseCurrency = 'BRL',
     required this.objective,
     this.isGroup = false,
     this.members = const [],
@@ -29,13 +31,11 @@ class Trip {
     this.status = 'planned',
   });
 
-  // Centraliza a lógica de quem é ADM
   bool isAdmin(String uid) {
     if (uid.isEmpty) return false;
     if (ownerId.isNotEmpty) {
       return uid == ownerId;
     }
-    // Fallback para viagens antigas sem ownerId definido
     return members.isNotEmpty && members.first == uid;
   }
 
@@ -46,6 +46,7 @@ class Trip {
       'startDate': startDate,
       'endDate': endDate,
       'budget': budget,
+      'baseCurrency': baseCurrency,
       'objective': objective,
       'isGroup': isGroup,
       'members': members,
@@ -64,6 +65,7 @@ class Trip {
       startDate: (data['startDate'] as Timestamp?)?.toDate(),
       endDate: (data['endDate'] as Timestamp?)?.toDate(),
       budget: (data['budget'] ?? 0).toDouble(),
+      baseCurrency: data['baseCurrency'] ?? 'BRL',
       objective: data['objective'] ?? 'Geral',
       isGroup: data['isGroup'] ?? false,
       members: List<String>.from(data['members'] ?? []),

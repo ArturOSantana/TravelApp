@@ -50,94 +50,48 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
-  }
-
-  Future<String?> _uploadImage(String uid) async {
-    if (_imageFile == null) return _user?.photoUrl;
-
-    try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('user_photos')
-          .child('$uid.jpg');
-      
-      await storageRef.putFile(_imageFile!);
-      return await storageRef.getDownloadURL();
-    } catch (e) {
-      debugPrint("Erro ao fazer upload da imagem: $e");
-      return _user?.photoUrl;
+  Future<void> _changeRole(String newRole) async {
+    if (_user == null) return;
+    setState(() => _isSaving = true);
+    final updated = _user!.copyWith(role: newRole);
+    await _authController.updateUserProfile(updated);
+    await _loadUserData();
+    if (mounted) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Perfil alterado para: ${newRole.toUpperCase()}"), backgroundColor: Colors.blue),
+      );
     }
   }
 
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isSaving = true);
-
-      String? photoUrl = _user?.photoUrl;
-      if (_imageFile != null && !kIsWeb) {
-        photoUrl = await _uploadImage(_user!.uid);
-      }
-
       final updatedUser = _user!.copyWith(
         name: _nameController.text,
         phone: _phoneController.text,
         bio: _bioController.text,
         emergencyContact: _emergencyNameController.text,
         emergencyPhone: _emergencyPhoneController.text,
-        photoUrl: photoUrl,
       );
-
-      final error = await _authController.updateUserProfile(updatedUser);
-
+      await _authController.updateUserProfile(updatedUser);
       if (mounted) {
         setState(() => _isSaving = false);
-        if (error == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Perfil atualizado com sucesso!')),
-          );
-          _loadUserData();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error), backgroundColor: Colors.red),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perfil atualizado!')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Meu Perfil"),
+        title: const Text("Configurações"),
         actions: [
-          if (_isSaving)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                ),
-              ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveProfile,
-            ),
+          if (_isSaving) const Center(child: CircularProgressIndicator())
+          else IconButton(icon: const Icon(Icons.save), onPressed: _saveProfile),
         ],
       ),
       body: SingleChildScrollView(
@@ -146,122 +100,61 @@ class _ProfilePageState extends State<ProfilePage> {
           key: _formKey,
           child: Column(
             children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : (_user?.photoUrl != null && _user!.photoUrl!.isNotEmpty
-                            ? NetworkImage(_user!.photoUrl!) as ImageProvider
-                            : null),
-                    child: (_imageFile == null && (_user?.photoUrl == null || _user!.photoUrl!.isEmpty))
-                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
-                        : null,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.deepPurple,
-                      radius: 20,
-                      child: IconButton(
-                        icon: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
-                        onPressed: _pickImage,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              CircleAvatar(radius: 50, child: const Icon(Icons.person, size: 50)),
+              const SizedBox(height: 20),
+              
+              // SEÇÃO DE TESTE DE ROLES (PARA O TCC)
+              const Text("TESTE DE DISTRIBUIÇÃO (ROLE)", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
               const SizedBox(height: 10),
-              Text(
-                _user?.email ?? '',
-                style: const TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 30),
-              
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: "Nome Completo",
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) => v!.isEmpty ? "Campo obrigatório" : null,
-              ),
-              const SizedBox(height: 15),
-              
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: "Telefone",
-                  prefixIcon: Icon(Icons.phone),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 15),
-              
-              TextFormField(
-                controller: _bioController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: "Sobre mim / Bio",
-                  prefixIcon: Icon(Icons.info_outline),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              
-              const SizedBox(height: 30),
-              const Divider(),
-              const Row(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.emergency, color: Colors.red),
-                  SizedBox(width: 10),
-                  Text(
-                    "Contato de Emergência",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  _roleButton("USER", 'user', Colors.grey),
+                  _roleButton("PREMIUM", 'premium', Colors.amber),
+                  _roleButton("BUSINESS", 'business', Colors.blue),
                 ],
               ),
+              const Divider(height: 40),
+
+              TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: "Nome", border: OutlineInputBorder())),
               const SizedBox(height: 15),
-              
-              TextFormField(
-                controller: _emergencyNameController,
-                decoration: const InputDecoration(
-                  labelText: "Nome do Contato",
-                  prefixIcon: Icon(Icons.contact_phone),
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              TextFormField(controller: _phoneController, decoration: const InputDecoration(labelText: "Telefone", border: OutlineInputBorder())),
               const SizedBox(height: 15),
+              TextFormField(controller: _bioController, maxLines: 3, decoration: const InputDecoration(labelText: "Bio", border: OutlineInputBorder())),
               
-              TextFormField(
-                controller: _emergencyPhoneController,
-                decoration: const InputDecoration(
-                  labelText: "Telefone de Emergência",
-                  prefixIcon: Icon(Icons.phone_android),
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              const SizedBox(height: 30),
+              const Text("Emergência", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              TextFormField(controller: _emergencyNameController, decoration: const InputDecoration(labelText: "Nome Contato")),
+              TextFormField(controller: _emergencyPhoneController, decoration: const InputDecoration(labelText: "Telefone SOS")),
+              
               const SizedBox(height: 40),
-              
               SizedBox(
                 width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
+                child: OutlinedButton(
                   onPressed: () async {
                     await _authController.logout();
                     if (mounted) Navigator.pushReplacementNamed(context, '/');
                   },
-                  icon: const Icon(Icons.logout),
-                  label: const Text("Sair da Conta"),
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text("Sair da Conta", style: TextStyle(color: Colors.red)),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _roleButton(String label, String role, Color color) {
+    bool isSelected = _user?.role == role;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ChoiceChip(
+        label: Text(label, style: TextStyle(fontSize: 10, color: isSelected ? Colors.white : Colors.black)),
+        selected: isSelected,
+        onSelected: (val) => _changeRole(role),
+        selectedColor: color,
       ),
     );
   }
