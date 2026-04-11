@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../models/activity.dart';
 import '../controllers/trip_controller.dart';
 import 'create_activity_page.dart';
@@ -78,24 +79,49 @@ class ItineraryPage extends StatelessWidget {
                     const Divider(),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("O grupo concorda?", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("$upVotes", style: const TextStyle(color: Colors.green)),
-                              IconButton(
-                                icon: Icon(Icons.thumb_up, color: myVote == 1 ? Colors.green : Colors.grey, size: 20),
-                                onPressed: () => controller.voteActivity(activity.id, uid, 1),
-                              ),
-                              Text("$downVotes", style: const TextStyle(color: Colors.red)),
-                              IconButton(
-                                icon: Icon(Icons.thumb_down, color: myVote == -1 ? Colors.red : Colors.grey, size: 20),
-                                onPressed: () => controller.voteActivity(activity.id, uid, -1),
-                              ),
+                              const Text("O grupo concorda?", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              Row(
+                                children: [
+                                  Text("$upVotes", style: const TextStyle(color: Colors.green)),
+                                  IconButton(
+                                    icon: Icon(Icons.thumb_up, color: myVote == 1 ? Colors.green : Colors.grey, size: 20),
+                                    onPressed: () => controller.voteActivity(activity.id, uid, 1),
+                                  ),
+                                  Text("$downVotes", style: const TextStyle(color: Colors.red)),
+                                  IconButton(
+                                    icon: Icon(Icons.thumb_down, color: myVote == -1 ? Colors.red : Colors.grey, size: 20),
+                                    onPressed: () => controller.voteActivity(activity.id, uid, -1),
+                                  ),
+                                ],
+                              )
                             ],
-                          )
+                          ),
+                          const SizedBox(height: 10),
+                          const Text("Opiniões do Grupo:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ...activity.opinions.map((op) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(op['userName'] ?? 'Viajante', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            subtitle: Text(op['text'] ?? ''),
+                          )).toList(),
+                          TextField(
+                            decoration: const InputDecoration(
+                              hintText: "Dê sua opinião...",
+                              hintStyle: TextStyle(fontSize: 12),
+                              suffixIcon: Icon(Icons.send, size: 18),
+                            ),
+                            onSubmitted: (val) {
+                              if (val.isNotEmpty) {
+                                controller.addOpinion(activity.id, val);
+                              }
+                            },
+                          ),
                         ],
                       ),
                     )

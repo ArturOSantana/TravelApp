@@ -7,6 +7,8 @@ class UserModel {
   final String emergencyPhone;
   final String bio;
   final String? photoUrl;
+  final String role; // 'user', 'business', 'premium'
+  final String preferredCurrency;
 
   UserModel({
     required this.uid,
@@ -17,6 +19,8 @@ class UserModel {
     this.emergencyPhone = '',
     this.bio = '',
     this.photoUrl,
+    this.role = 'user',
+    this.preferredCurrency = 'BRL',
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -29,6 +33,8 @@ class UserModel {
       emergencyPhone: data['emergencyPhone'] ?? '',
       bio: data['bio'] ?? '',
       photoUrl: data['photoUrl'],
+      role: data['role'] ?? 'user',
+      preferredCurrency: data['preferredCurrency'] ?? 'BRL',
     );
   }
 
@@ -42,6 +48,8 @@ class UserModel {
       'emergencyPhone': emergencyPhone,
       'bio': bio,
       'photoUrl': photoUrl,
+      'role': role,
+      'preferredCurrency': preferredCurrency,
     };
   }
 
@@ -53,6 +61,8 @@ class UserModel {
     String? emergencyPhone,
     String? bio,
     String? photoUrl,
+    String? role,
+    String? preferredCurrency,
   }) {
     return UserModel(
       uid: uid,
@@ -63,6 +73,8 @@ class UserModel {
       emergencyPhone: emergencyPhone ?? this.emergencyPhone,
       bio: bio ?? this.bio,
       photoUrl: photoUrl ?? this.photoUrl,
+      role: role ?? this.role,
+      preferredCurrency: preferredCurrency ?? this.preferredCurrency,
     );
   }
 }

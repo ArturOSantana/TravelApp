@@ -20,6 +20,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   String _selectedObjective = 'Descanso';
+  String _baseCurrency = 'BRL';
   bool _isNomad = false;
   bool _isLoading = false;
 
@@ -27,6 +28,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
   DateTime? _endDate;
 
   final List<String> _objectives = ['Descanso', 'Aventura', 'Trabalho', 'Cultural', 'Gastronômico'];
+  final List<String> _currencies = ['BRL', 'USD', 'EUR', 'GBP', 'ARS'];
 
   final List<String> _destinations = [
     'São Paulo, SP', 'Rio de Janeiro, RJ', 'Brasília, DF', 'Salvador, BA', 'Fortaleza, CE', 
@@ -89,6 +91,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
         ownerId: uid,
         destination: destinationController.text,
         budget: double.tryParse(budgetController.text) ?? 0.0,
+        baseCurrency: _baseCurrency,
         objective: _selectedObjective,
         isNomad: _isNomad,
         isGroup: false,
@@ -136,7 +139,6 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       destinationController.text = selection;
                     },
                     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                      // Sincroniza o controller externo com o interno do Autocomplete
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                          if (destinationController.text.isNotEmpty && controller.text.isEmpty) {
                             controller.text = destinationController.text;
@@ -195,14 +197,35 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   ),
 
                   const SizedBox(height: 25),
-                  TextFormField(
-                    controller: budgetController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: "Orçamento Planejado (R\$)", prefixIcon: Icon(Icons.payments), border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? "Informe o valor" : null,
+                  const Text("Orçamento e Moeda", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<String>(
+                          value: _baseCurrency,
+                          items: _currencies.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                          onChanged: (v) => setState(() => _baseCurrency = v!),
+                          decoration: const InputDecoration(labelText: "Moeda Base", border: OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          controller: budgetController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: "Orçamento Planejado", prefixIcon: Icon(Icons.payments), border: OutlineInputBorder()),
+                          validator: (v) => v!.isEmpty ? "Informe o valor" : null,
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 20),
+                  const Text("Estilo da Viagem", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
                     value: _selectedObjective,
                     items: _objectives.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),

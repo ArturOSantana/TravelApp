@@ -1,35 +1,69 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
+import '../models/user_model.dart';
 import 'trips_page.dart';
 import 'insights_page.dart';
 import 'services_library_page.dart';
 import 'profile_page.dart';
+import 'business_panel_page.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final AuthController _authController = AuthController();
+  UserModel? _user;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await _authController.getUserData();
+    if (mounted) {
+      setState(() {
+        _user = user;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final AuthController _authController = AuthController();
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Travel Planner"),
         actions: [
+          if (_user?.role == 'business')
+            IconButton(
+              icon: const Icon(Icons.business_center, color: Colors.blue),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BusinessPanelPage()),
+              ),
+              tooltip: "Painel Business",
+            ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ProfilePage()),
-            ),
+            ).then((_) => _loadUser()),
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
               await _authController.logout();
-              if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/');
-              }
+              if (context.mounted) Navigator.pushReplacementNamed(context, '/');
             },
           ),
         ],
@@ -39,13 +73,32 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Bem-vindo de volta!",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Olá, ${_user?.name.split(' ')[0]}!",
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    if (_user?.role == 'premium')
+                      const Text("Assinante Premium ⭐", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12)),
+                    if (_user?.role == 'business')
+                      const Text("Conta Business 💼", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
+                  ],
+                ),
+                if (_user?.role == 'user')
+                  ElevatedButton(
+                    onPressed: () => _upgradeToPremium(),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
+                    child: const Text("Seja Premium"),
+                  ),
+              ],
             ),
             const SizedBox(height: 20),
             
-            // Card Principal: Minhas Viagens
             _buildMainCard(
               context,
               "Minhas Viagens",
@@ -57,7 +110,6 @@ class DashboardPage extends StatelessWidget {
             
             const SizedBox(height: 15),
             
-            // Grid de ferramentas adicionais
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -78,6 +130,17 @@ class DashboardPage extends StatelessWidget {
                     Colors.indigo,
                     () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesLibraryPage())),
                   ),
+                  if (_user?.role == 'business')
+                    _buildGridItem(
+                      context,
+                      "Painel B2B",
+                      Icons.admin_panel_settings,
+                      Colors.blue[900]!,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const BusinessPanelPage()),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -85,6 +148,18 @@ class DashboardPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _upgradeToPremium() async {
+    if (_user == null) return;
+    final updated = _user!.copyWith(role: 'premium');
+    await _authController.updateUserProfile(updated);
+    _loadUser();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Parabéns! Você agora é Premium!"), backgroundColor: Colors.amber),
+      );
+    }
   }
 
   Widget _buildMainCard(BuildContext context, String title, String sub, IconData icon, Color color, VoidCallback onTap) {
