@@ -3,8 +3,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/service_model.dart';
-import '../models/expense.dart';
-import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 import 'add_recommendation_page.dart';
 
@@ -23,12 +21,12 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
   String _searchQuery = '';
   String _selectedCategory = 'Todas';
 
-  final List<String> _categories = ['Todas', 'Hospedagem', 'Restaurante', 'Transporte', 'Vôos', 'Outros'];
+  final List<String> _categories = ['Todas', 'Hospedagem', 'Restaurante', 'Transporte', 'Outros'];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -41,7 +39,7 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Marketplace & Serviços"),
+        title: const Text("Explorar Serviços"),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         bottom: PreferredSize(
@@ -57,7 +55,6 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
                 tabs: const [
                   Tab(text: "Favoritos", icon: Icon(Icons.star)),
                   Tab(text: "Comunidade", icon: Icon(Icons.public)),
-                  Tab(text: "Passagens", icon: Icon(Icons.flight)),
                 ],
               ),
               _buildFilterBar(),
@@ -70,7 +67,6 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
         children: [
           _buildServiceList(isCommunity: false),
           _buildServiceList(isCommunity: true),
-          _buildFlightsTab(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -146,6 +142,7 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
   }
 
   Widget _buildServiceCard(ServiceModel service, bool isCommunity) {
+    final bool isLiked = service.likes.contains(_currentUid);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -155,185 +152,54 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage> with SingleTi
             leading: Icon(_getIcon(service.category), color: Colors.indigo),
             title: Text(service.name, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(service.location),
-            trailing: Text("R\$ ${service.averageCost.toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (isCommunity)
-                  TextButton.icon(
-                    onPressed: () => _importService(service),
-                    icon: const Icon(Icons.bookmark_add_outlined),
-                    label: const Text("Salvar"),
-                  ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => _handleBooking(service),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
-                  child: Text(service.category == 'Restaurante' ? "Reservar" : "Contratar"),
+                IconButton(
+                  icon: const Icon(Icons.share, size: 20, color: Colors.indigo),
+                  onPressed: () => _shareService(service),
                 ),
+                if (isCommunity)
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline, color: Colors.indigo),
+                    onPressed: () => _importService(service),
+                  ),
               ],
             ),
-          )
+          ),
+          if (isCommunity)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => _controller.toggleLikeService(service.id, service.likes),
+                    child: Row(children: [
+                      Icon(isLiked ? Icons.favorite : Icons.favorite_border, color: isLiked ? Colors.red : Colors.grey, size: 20),
+                      const SizedBox(width: 4),
+                      Text("${service.likes.length}"),
+                    ]),
+                  ),
+                  const SizedBox(width: 20),
+                  const Icon(Icons.bookmark_border, color: Colors.grey, size: 20),
+                  const SizedBox(width: 4),
+                  Text("${service.savesCount}"),
+                  const Spacer(),
+                  Text("R\$ ${service.averageCost.toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildFlightsTab() {
-    final List<Map<String, dynamic>> flightOffers = [
-      {'company': 'LATAM', 'from': 'SAO', 'to': 'RIO', 'price': 350.0, 'date': '15/10'},
-      {'company': 'GOL', 'from': 'SAO', 'to': 'FOR', 'price': 890.0, 'date': '20/10'},
-      {'company': 'Azul', 'from': 'RIO', 'to': 'LIS', 'price': 4200.0, 'date': '12/11'},
-    ];
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text("Ofertas de Passagens (Exclusivo)", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 15),
-        ...flightOffers.map((offer) {
-          return Card(
-            elevation: 4,
-            margin: const EdgeInsets.only(bottom: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(offer['company'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue)),
-                      Text(offer['date'], style: const TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                  const Divider(height: 25),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Text(offer['from'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      const Icon(Icons.flight_takeoff, color: Colors.grey),
-                      Text(offer['to'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("R\$ ${offer['price']}", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green)),
-                      ElevatedButton(
-                        onPressed: () => _bookFlight(offer),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-                        child: const Text("COMPRAR AGORA"),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-        const SizedBox(height: 20),
-        const Text("Parceiros Oficiais", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _partnerLogo("Skyscanner", "https://skyscanner.com.br"),
-            _partnerLogo("Booking", "https://booking.com"),
-            _partnerLogo("Decolar", "https://decolar.com"),
-          ],
-        )
-      ],
-    );
-  }
-
-  Widget _partnerLogo(String name, String url) {
-    return ActionChip(
-      label: Text(name),
-      onPressed: () async => await launchUrl(Uri.parse(url)),
-    );
-  }
-
-  void _handleBooking(ServiceModel service) async {
-    final trip = await _selectTrip();
-    if (trip == null) return;
-
-    final expense = Expense(
-      id: '',
-      tripId: trip.id,
-      title: "Reserva: ${service.name}",
-      value: service.averageCost,
-      category: service.category,
-      payerId: _currentUid,
-      date: DateTime.now(),
-    );
-
-    await _controller.addExpense(expense);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Reserva confirmada em ${trip.destination}! Gasto adicionado."),
-        backgroundColor: Colors.green,
-      ));
-    }
-  }
-
-  void _bookFlight(Map<String, dynamic> offer) async {
-    final trip = await _selectTrip();
-    if (trip == null) return;
-
-    final expense = Expense(
-      id: '',
-      tripId: trip.id,
-      title: "Passagem ${offer['from']} -> ${offer['to']}",
-      value: offer['price'],
-      category: 'Transporte',
-      payerId: _currentUid,
-      date: DateTime.now(),
-    );
-
-    await _controller.addExpense(expense);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Passagem comprada com sucesso e vinculada à viagem!"),
-        backgroundColor: Colors.green,
-      ));
-    }
-  }
-
-  Future<Trip?> _selectTrip() async {
-    if (widget.tripId != null) {
-      final trips = await _controller.getTrips().first;
-      return trips.firstWhere((t) => t.id == widget.tripId);
-    }
-
-    return await showDialog<Trip>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Vincular a qual viagem?"),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: StreamBuilder<List<Trip>>(
-            stream: _controller.getTrips(),
-            builder: (context, snapshot) {
-              final trips = snapshot.data ?? [];
-              if (trips.isEmpty) return const Text("Crie uma viagem primeiro.");
-              return ListView.builder(
-                itemCount: trips.length,
-                itemBuilder: (context, i) => ListTile(
-                  title: Text(trips[i].destination),
-                  onTap: () => Navigator.pop(context, trips[i]),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
+  void _shareService(ServiceModel service) {
+    final String text = "Ei! Veja essa recomendação de ${service.category} no Travel App:\n\n"
+        "*${service.name}*\n"
+        " ${service.location}\n"
+        " \"${service.comment}\"";
+    Share.share(text);
   }
 
   void _importService(ServiceModel service) async {

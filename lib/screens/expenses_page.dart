@@ -43,8 +43,6 @@ class _ExpensesPageState extends State<ExpensesPage> with SingleTickerProviderSt
   }
 
   Future<void> _updateExchangeRate(String from) async {
-    if (_user?.role == 'user') return; // Bloqueado para grátis
-
     setState(() => _isConverting = true);
     final rate = await CurrencyService.getExchangeRate(from, 'BRL');
     if (mounted) {
@@ -67,20 +65,19 @@ class _ExpensesPageState extends State<ExpensesPage> with SingleTickerProviderSt
 
         return Scaffold(
           appBar: AppBar(
-            title: Text("Finanças"),
+            title: const Text("Finanças"),
             backgroundColor: Colors.green[700],
             foregroundColor: Colors.white,
             actions: [
-              if (_user?.role == 'premium' || _user?.role == 'business')
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.currency_exchange),
-                  onSelected: _updateExchangeRate,
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'USD', child: Text("Converter de Dólar (USD)")),
-                    const PopupMenuItem(value: 'EUR', child: Text("Converter de Euro (EUR)")),
-                    const PopupMenuItem(value: 'BRL', child: Text("Voltar para Real (BRL)")),
-                  ],
-                )
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.currency_exchange),
+                onSelected: _updateExchangeRate,
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'USD', child: Text("Converter de Dólar (USD)")),
+                  const PopupMenuItem(value: 'EUR', child: Text("Converter de Euro (EUR)")),
+                  const PopupMenuItem(value: 'BRL', child: Text("Voltar para Real (BRL)")),
+                ],
+              )
             ],
             bottom: TabBar(
               controller: _tabController,
@@ -256,7 +253,7 @@ class _ExpensesPageState extends State<ExpensesPage> with SingleTickerProviderSt
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: CircleAvatar(child: const Icon(Icons.person)),
+        leading: const CircleAvatar(child: Icon(Icons.person)),
         title: Text(isMe ? "Você" : member.name),
         subtitle: Text(balance >= 0 ? "A receber: R\$ ${balance.toStringAsFixed(2)}" : "Deve pagar: R\$ ${balance.abs().toStringAsFixed(2)}",
           style: TextStyle(color: balance >= 0 ? Colors.green : Colors.red)),
@@ -270,7 +267,6 @@ class _ExpensesPageState extends State<ExpensesPage> with SingleTickerProviderSt
     Share.share(text);
   }
 
-  // Auxiliares de UI
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
       case 'food': case 'alimentação': return Icons.restaurant;

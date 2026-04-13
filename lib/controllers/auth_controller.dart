@@ -6,6 +6,18 @@ class AuthController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Stream para monitorar mudanças no perfil em tempo real (Reatividade Ultra Rápida)
+  Stream<UserModel?> get userStream {
+    return _auth.authStateChanges().asyncMap((user) async {
+      if (user == null) return null;
+      var doc = await _db.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        return UserModel.fromMap(doc.data()!);
+      }
+      return null;
+    });
+  }
+
   Future<String?> register(String name, String email, String password, {String phone = ''}) async {
     try {
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
@@ -19,7 +31,6 @@ class AuthController {
           name: name,
           email: email,
           phone: phone,
-          role: 'user', // Padrão
         );
         
         await _db.collection('users').doc(newUser.uid).set({

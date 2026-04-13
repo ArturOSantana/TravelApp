@@ -7,8 +7,7 @@ class UserModel {
   final String emergencyPhone;
   final String bio;
   final String? photoUrl;
-  final String role; // 'user', 'business', 'premium'
-  final String preferredCurrency;
+  final bool isPremium; // Campo para diferenciar usuários
 
   UserModel({
     required this.uid,
@@ -19,8 +18,7 @@ class UserModel {
     this.emergencyPhone = '',
     this.bio = '',
     this.photoUrl,
-    this.role = 'user',
-    this.preferredCurrency = 'BRL',
+    this.isPremium = false,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -33,8 +31,7 @@ class UserModel {
       emergencyPhone: data['emergencyPhone'] ?? '',
       bio: data['bio'] ?? '',
       photoUrl: data['photoUrl'],
-      role: data['role'] ?? 'user',
-      preferredCurrency: data['preferredCurrency'] ?? 'BRL',
+      isPremium: data['isPremium'] ?? false,
     );
   }
 
@@ -48,8 +45,7 @@ class UserModel {
       'emergencyPhone': emergencyPhone,
       'bio': bio,
       'photoUrl': photoUrl,
-      'role': role,
-      'preferredCurrency': preferredCurrency,
+      'isPremium': isPremium,
     };
   }
 
@@ -61,8 +57,7 @@ class UserModel {
     String? emergencyPhone,
     String? bio,
     String? photoUrl,
-    String? role,
-    String? preferredCurrency,
+    bool? isPremium,
   }) {
     return UserModel(
       uid: uid,
@@ -73,8 +68,7 @@ class UserModel {
       emergencyPhone: emergencyPhone ?? this.emergencyPhone,
       bio: bio ?? this.bio,
       photoUrl: photoUrl ?? this.photoUrl,
-      role: role ?? this.role,
-      preferredCurrency: preferredCurrency ?? this.preferredCurrency,
+      isPremium: isPremium ?? this.isPremium,
     );
   }
 }

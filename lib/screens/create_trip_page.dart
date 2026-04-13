@@ -126,42 +126,58 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   const Text("Para onde você vai?", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
                   
-                  Autocomplete<String>(
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      if (textEditingValue.text == '') {
-                        return const Iterable<String>.empty();
-                      }
-                      return _destinations.where((String option) {
-                        return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
-                      });
-                    },
-                    onSelected: (String selection) {
-                      destinationController.text = selection;
-                    },
-                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                         if (destinationController.text.isNotEmpty && controller.text.isEmpty) {
-                            controller.text = destinationController.text;
-                         }
-                      });
-                      
+                  SearchAnchor(
+                    builder: (BuildContext context, SearchController searchController) {
                       return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        onFieldSubmitted: (String value) {
-                          onFieldSubmitted();
-                        },
+                        controller: destinationController,
+                        readOnly: true, 
+                        onTap: () => searchController.openView(),
                         decoration: const InputDecoration(
-                          hintText: "Digite o destino (Ex: Paris, França)",
+                          hintText: "Selecione o destino",
                           prefixIcon: Icon(Icons.location_on, color: Colors.deepPurple),
                           border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
-                        onChanged: (val) {
-                          destinationController.text = val;
-                        },
-                        validator: (v) => v!.isEmpty ? "Informe o destino" : null,
+                        validator: (v) => v == null || v.isEmpty ? "Informe o destino" : null,
                       );
                     },
+                    suggestionsBuilder: (BuildContext context, SearchController searchController) {
+                      final String keyword = searchController.text.toLowerCase();
+                      final filtered = _destinations.where((d) => d.toLowerCase().contains(keyword)).toList();
+
+                      return filtered.map((dest) => ListTile(
+                        title: Text(dest),
+                        onTap: () {
+                          setState(() {
+                            destinationController.text = dest;
+                            searchController.text = dest;
+                          });
+                          searchController.closeView(dest);
+                        },
+                      )).toList();
+                    },
+                  ),
+                  
+                  const SizedBox(height: 10),
+                  const Text("Sugestões rápidas:", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 5),
+                  SizedBox(
+                    height: 40,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: ['Rio', 'Paris', 'Lisboa', 'NY', 'Tóquio'].map((city) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            label: Text(city),
+                            onPressed: () {
+                              final match = _destinations.firstWhere((d) => d.contains(city), orElse: () => city);
+                              setState(() => destinationController.text = match);
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
 
                   const SizedBox(height: 30),
@@ -242,7 +258,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       onPressed: () {
                         if (formKey.currentState!.validate()) createTrip();
                       },
-                      child: const Text("CRIAR VIAGEM", style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text("CRIAR VIAGEM", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                 ],

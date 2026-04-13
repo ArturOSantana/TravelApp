@@ -5,7 +5,7 @@ import 'trips_page.dart';
 import 'insights_page.dart';
 import 'services_library_page.dart';
 import 'profile_page.dart';
-import 'business_panel_page.dart';
+import 'flight_search_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -43,15 +43,6 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: const Text("Travel Planner"),
         actions: [
-          if (_user?.role == 'business')
-            IconButton(
-              icon: const Icon(Icons.business_center, color: Colors.blue),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BusinessPanelPage()),
-              ),
-              tooltip: "Painel Business",
-            ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () => Navigator.push(
@@ -68,34 +59,14 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Olá, ${_user?.name.split(' ')[0]}!",
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    if (_user?.role == 'premium')
-                      const Text("Assinante Premium ⭐", style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12)),
-                    if (_user?.role == 'business')
-                      const Text("Conta Business 💼", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
-                  ],
-                ),
-                if (_user?.role == 'user')
-                  ElevatedButton(
-                    onPressed: () => _upgradeToPremium(),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
-                    child: const Text("Seja Premium"),
-                  ),
-              ],
+            Text(
+              "Olá, ${_user?.name.split(' ')[0]}!",
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             
@@ -109,57 +80,47 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             
             const SizedBox(height: 15),
+
+            _buildMainCard(
+              context,
+              "Busca de Vôos",
+              "Encontre as melhores passagens",
+              Icons.flight_takeoff_rounded,
+              Colors.blue[800]!,
+              () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FlightSearchPage())),
+            ),
             
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                children: [
-                  _buildGridItem(
-                    context,
-                    "Insights",
-                    Icons.analytics_rounded,
-                    Colors.deepOrange,
-                    () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InsightsPage())),
-                  ),
-                  _buildGridItem(
-                    context,
-                    "Biblioteca",
-                    Icons.local_library_rounded,
-                    Colors.indigo,
-                    () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesLibraryPage())),
-                  ),
-                  if (_user?.role == 'business')
-                    _buildGridItem(
-                      context,
-                      "Painel B2B",
-                      Icons.admin_panel_settings,
-                      Colors.blue[900]!,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const BusinessPanelPage()),
-                      ),
-                    ),
-                ],
-              ),
+            const SizedBox(height: 25),
+            const Text("Ferramentas", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 15),
+            
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 15,
+              mainAxisSpacing: 15,
+              children: [
+                _buildGridItem(
+                  context,
+                  "Insights",
+                  Icons.analytics_rounded,
+                  Colors.deepOrange,
+                  () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InsightsPage())),
+                ),
+                _buildGridItem(
+                  context,
+                  "Biblioteca",
+                  Icons.local_library_rounded,
+                  Colors.indigo,
+                  () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesLibraryPage())),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _upgradeToPremium() async {
-    if (_user == null) return;
-    final updated = _user!.copyWith(role: 'premium');
-    await _authController.updateUserProfile(updated);
-    _loadUser();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Parabéns! Você agora é Premium!"), backgroundColor: Colors.amber),
-      );
-    }
   }
 
   Widget _buildMainCard(BuildContext context, String title, String sub, IconData icon, Color color, VoidCallback onTap) {
