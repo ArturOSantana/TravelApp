@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Álbum de Viagem - Travel App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            margin-top: 100px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .entry-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .entry-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .entry-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .entry-content {
+            padding: 20px;
+        }
+
+        .entry-date {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .entry-location {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .entry-text {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .mood-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .mood-excellent { background: #d4edda; color: #155724; }
+        .mood-good { background: #d1ecf1; color: #0c5460; }
+        .mood-ok { background: #fff3cd; color: #856404; }
+        .mood-tired { background: #f8d7da; color: #721c24; }
+
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 100px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(0,0,0,0.8);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .header p {
+                font-size: 1em;
+            }
+            
+            .gallery {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .entry-card {
+                border-radius: 12px;
+            }
+
+            .entry-image {
+                height: 200px;
+            }
+
+            .entry-content {
+                padding: 15px;
+            }
+
+            .modal-content {
+                max-width: 95%;
+                max-height: 80%;
+            }
+
+            .modal-close {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .gallery {
+                gap: 10px;
+            }
+
+            .entry-image {
+                height: 180px;
+            }
+        }
+
+        /* Melhorias para touch */
+        @media (hover: none) and (pointer: coarse) {
+            .entry-card:active {
+                transform: scale(0.98);
+            }
+
+            .modal-close:active {
+                background: rgba(0,0,0,0.8);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📸 Álbum de Viagem</h1>
+            <p id="trip-destination">Carregando...</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Carregando memórias...</p>
+        </div>
+
+        <div id="gallery" class="gallery" style="display: none;"></div>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📷</div>
+            <h2>Nenhuma memória ainda</h2>
+            <p>As fotos da viagem aparecerão aqui em tempo real</p>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <img id="modal-image" class="modal-content" src="" alt="Foto ampliada">
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Configuração do Firebase (mesma do app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDytPi-Xzk1l-pZMN4sVJf8fDnY5JuwouA",
+            authDomain: "travel-app-tcc.firebaseapp.com",
+            projectId: "travel-app-tcc",
+            storageBucket: "travel-app-tcc.firebasestorage.app",
+            messagingSenderId: "660606500922",
+            appId: "1:660606500922:web:904a0286a86224b034f503"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Obter ID da viagem da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const tripId = urlParams.get('tripId') || window.location.pathname.split('/').pop();
+
+        if (!tripId) {
+            document.getElementById('loading').innerHTML = '<p>❌ ID da viagem não encontrado</p>';
+        } else {
+            loadAlbum(tripId);
+        }
+
+        function loadAlbum(tripId) {
+            const q = query(
+                collection(db, 'journal'),
+                where('tripId', '==', tripId),
+                orderBy('date', 'desc')
+            );
+
+            onSnapshot(q, (snapshot) => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (snapshot.empty) {
+                    document.getElementById('empty-state').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('gallery').style.display = 'grid';
+                const gallery = document.getElementById('gallery');
+                gallery.innerHTML = '';
+
+                snapshot.forEach((doc) => {
+                    const entry = doc.data();
+                    const card = createEntryCard(entry);
+                    gallery.appendChild(card);
+                });
+            }, (error) => {
+                console.error('Erro ao carregar álbum:', error);
+                document.getElementById('loading').innerHTML = '<p>❌ Erro ao carregar álbum</p>';
+            });
+        }
+
+        function createEntryCard(entry) {
+            const card = document.createElement('div');
+            card.className = 'entry-card';
+
+            const date = entry.date?.toDate ? entry.date.toDate() : new Date(entry.date);
+            const formattedDate = date.toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: 'long', 
+                year: 'numeric' 
+            });
+
+            const moodClass = getMoodClass(entry.moodScore || 3);
+            const moodLabel = getMoodLabel(entry.moodScore || 3);
+            const moodEmoji = getMoodEmoji(entry.moodScore || 3);
+
+            // Usar primeira foto se houver
+            const photoUrl = entry.photos && entry.photos.length > 0 ? entry.photos[0] : '';
+
+            card.innerHTML = `
+                ${photoUrl ? `<img src="${photoUrl}" alt="Foto" class="entry-image" onclick="openModal('${photoUrl}')">` : ''}
+                <div class="entry-content">
+                    <div class="entry-date">
+                        📅 ${formattedDate}
+                    </div>
+                    ${entry.locationName ? `
+                        <div class="entry-location">
+                            📍 ${entry.locationName}
+                        </div>
+                    ` : ''}
+                    <p class="entry-text">${entry.content || ''}</p>
+                    <span class="mood-tag ${moodClass}">
+                        ${moodEmoji} ${moodLabel}
+                    </span>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function getMoodClass(score) {
+            if (score >= 4.5) return 'mood-excellent';
+            if (score >= 3.5) return 'mood-good';
+            if (score >= 2.5) return 'mood-ok';
+            return 'mood-tired';
+        }
+
+        function getMoodLabel(score) {
+            if (score >= 4.5) return 'Incrível';
+            if (score >= 3.5) return 'Bom';
+            if (score >= 2.5) return 'Ok';
+            return 'Cansativo';
+        }
+
+        function getMoodEmoji(score) {
+            if (score >= 4.5) return '😍';
+            if (score >= 3.5) return '😊';
+            if (score >= 2.5) return '😐';
+            return '😕';
+        }
+
+        window.openModal = function(imageUrl) {
+            document.getElementById('modal-image').src = imageUrl;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        window.closeModal = function() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Fechar modal ao clicar fora da imagem
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -6,12 +6,12 @@ class Expense {
   final String id;
   final String tripId;
   final String title;
-  final double value; // Total converted to trip's base currency
-  final double originalValue; // Value in spent currency
-  final String currency; // Currency of the expense (USD, BRL, etc.)
+  final double value;
+  final double originalValue; 
+  final String currency; 
   final String category;
-  final String payerId; // User who paid
-  final Map<String, double> splits; // userId: amount/percentage/share
+  final String payerId; 
+  final Map<String, double> splits; 
   final SplitType splitType;
   final DateTime date;
 

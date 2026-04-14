@@ -15,8 +15,8 @@ class ServiceModel {
   final DateTime lastUsed;
   final bool isPublic;
   final String? userName;
-  final List<String> likes; // Lista de UIDs que curtiram
-  final int savesCount;     // Quantas vezes foi importado/salvo
+  final List<String> likes;
+  final int savesCount;     
 
   ServiceModel({
     required this.id,

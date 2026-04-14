@@ -6,7 +6,7 @@ class SafetyCheckIn {
   final String userId;
   final DateTime timestamp;
   final String locationName;
-  final bool isPanic; // true se for um pedido de ajuda, false se for "Estou Seguro"
+  final bool isPanic; 
 
   SafetyCheckIn({
     required this.id,

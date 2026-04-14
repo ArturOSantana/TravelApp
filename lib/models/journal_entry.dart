@@ -5,7 +5,7 @@ class JournalEntry {
   final String tripId;
   final DateTime date;
   final String content;
-  final double moodScore; // Scale 1-5 or similar
+  final double moodScore; 
   final List<String> photos;
   final String? locationName;
   final DateTime createdAt;

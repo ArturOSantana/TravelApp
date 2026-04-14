@@ -10,6 +10,8 @@ import 'expenses_page.dart';
 import 'journal_page.dart';
 import 'safety_page.dart';
 import 'group_members_page.dart';
+import 'packing_checklist_page.dart';
+import 'photo_gallery_page.dart';
 
 class TripDashboardPage extends StatefulWidget {
   final Trip trip;
@@ -45,10 +47,11 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
   Widget build(BuildContext context) {
     final controller = TripController();
     final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    
-    final bool isAdm = widget.trip.ownerId.isNotEmpty 
-        ? currentUid == widget.trip.ownerId 
-        : (widget.trip.members.isNotEmpty && widget.trip.members.first == currentUid);
+
+    final bool isAdm = widget.trip.ownerId.isNotEmpty
+        ? currentUid == widget.trip.ownerId
+        : (widget.trip.members.isNotEmpty &&
+              widget.trip.members.first == currentUid);
 
     final bool canFinish = widget.trip.status == 'active';
 
@@ -67,7 +70,12 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.group, color: Colors.white),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: widget.trip))),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GroupMembersPage(trip: widget.trip),
+                  ),
+                ),
                 tooltip: "Ver Membros",
               ),
               if (isAdm && widget.trip.status != 'completed')
@@ -81,36 +89,55 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
               children: [
                 // CLIMA: Agora reage na hora se o usuário virar Premium
                 if (isPremium)
-                  _isLoadingWeather 
-                    ? _buildWeatherSkeleton() 
-                    : (_weather != null ? _buildWeatherCard() : const SizedBox.shrink())
+                  _isLoadingWeather
+                      ? _buildWeatherSkeleton()
+                      : (_weather != null
+                            ? _buildWeatherCard()
+                            : const SizedBox.shrink())
                 else
                   _buildPremiumAdCard(),
-                
+
                 const SizedBox(height: 15),
 
                 _buildTripInfoCard(),
 
                 const SizedBox(height: 30),
-                const Text("Gerenciamento", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Gerenciamento",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 15),
 
                 _buildOptionCard(
-                  context, 
-                  Icons.calendar_month, 
-                  "Roteiro Inteligente", 
+                  context,
+                  Icons.calendar_month,
+                  "Roteiro Inteligente",
                   "Organize atividades e vote em grupo",
-                  () => Navigator.push(context, MaterialPageRoute(builder: (context) => ItineraryPage(tripId: widget.trip.id)))
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ItineraryPage(tripId: widget.trip.id),
+                    ),
+                  ),
                 ),
-                
+
                 _buildOptionCard(
-                  context, 
-                  Icons.account_balance_wallet, 
-                  "Controle Financeiro", 
-                  isPremium ? "Gastos, divisão e câmbio real" : "Acesso limitado (Seja Premium)",
+                  context,
+                  Icons.account_balance_wallet,
+                  "Controle Financeiro",
+                  isPremium
+                      ? "Gastos, divisão e câmbio real"
+                      : "Acesso limitado (Seja Premium)",
                   () {
                     if (isPremium) {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ExpensesPage(tripId: widget.trip.id)));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ExpensesPage(tripId: widget.trip.id),
+                        ),
+                      );
                     } else {
                       _showPremiumModal();
                     }
@@ -119,21 +146,68 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                 ),
 
                 _buildOptionCard(
-                  context, 
-                  Icons.auto_stories, 
+                  context,
+                  Icons.auto_stories,
                   "Álbum de Viagem",
                   "Registre memórias e sentimentos",
-                  () => Navigator.push(context, MaterialPageRoute(builder: (context) => JournalPage(tripId: widget.trip.id)))
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => JournalPage(tripId: widget.trip.id),
+                    ),
+                  ),
                 ),
-                
+
                 _buildOptionCard(
-                  context, 
-                  Icons.gpp_good, 
-                  "Segurança e SOS", 
-                  isPremium ? "Compartilhamento de localização real" : "SOS Básico (Seja Premium)",
+                  context,
+                  Icons.photo_library,
+                  "Galeria de Fotos",
+                  "Organize fotos por pastas e compartilhe",
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PhotoGalleryPage(
+                          tripId: widget.trip.id,
+                          tripName: widget.trip.destination,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+                _buildOptionCard(
+                  context,
+                  Icons.luggage,
+                  "Checklist de Bagagem",
+                  "Organize o que levar na viagem",
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PackingChecklistPage(tripId: widget.trip.id),
+                      ),
+                    );
+                  },
+                ),
+
+                _buildOptionCard(
+                  context,
+                  Icons.gpp_good,
+                  "Segurança e SOS",
+                  isPremium
+                      ? "Compartilhamento de localização real"
+                      : "SOS Básico (Seja Premium)",
                   () {
                     if (isPremium) {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => SafetyPage(tripId: widget.trip.id)));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              SafetyPage(tripId: widget.trip.id),
+                        ),
+                      );
                     } else {
                       _showPremiumModal();
                     }
@@ -144,21 +218,32 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
             ),
           ),
         );
-      }
+      },
     );
   }
 
   Widget _buildFinishButton(bool canFinish, TripController controller) {
     return TextButton.icon(
-      onPressed: canFinish 
-        ? () => _showFinishDialog(context, controller)
-        : () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("A viagem precisa estar 'Em andamento' para ser concluída."), backgroundColor: Colors.orange),
-            );
-          },
-      icon: Icon(Icons.check_circle, color: canFinish ? Colors.white : Colors.white54),
-      label: Text("Concluir", style: TextStyle(color: canFinish ? Colors.white : Colors.white54)),
+      onPressed: canFinish
+          ? () => _showFinishDialog(context, controller)
+          : () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    "A viagem precisa estar 'Em andamento' para ser concluída.",
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+      icon: Icon(
+        Icons.check_circle,
+        color: canFinish ? Colors.white : Colors.white54,
+      ),
+      label: Text(
+        "Concluir",
+        style: TextStyle(color: canFinish ? Colors.white : Colors.white54),
+      ),
     );
   }
 
@@ -167,9 +252,17 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
       padding: const EdgeInsets.all(15),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Colors.blue, Colors.lightBlueAccent]),
+        gradient: const LinearGradient(
+          colors: [Colors.blue, Colors.lightBlueAccent],
+        ),
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -177,9 +270,26 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("CLIMA PREMIUM", style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
-              Text("${_weather!['temp']}°C", style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-              Text(_weather!['desc'], style: const TextStyle(color: Colors.white, fontSize: 14)),
+              const Text(
+                "CLIMA PREMIUM",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                "${_weather!['temp']}°C",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                _weather!['desc'],
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
             ],
           ),
           Text(_weather!['icon'], style: const TextStyle(fontSize: 50)),
@@ -192,7 +302,10 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     return Container(
       height: 80,
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(15)),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
     );
   }
@@ -212,7 +325,12 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
           children: [
             Icon(Icons.star, color: Colors.amber),
             SizedBox(width: 10),
-            Expanded(child: Text("Previsão do Tempo e Câmbio estão bloqueados. Seja Premium!", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+            Expanded(
+              child: Text(
+                "Previsão do Tempo e Câmbio estão bloqueados. Seja Premium!",
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
             Icon(Icons.arrow_forward_ios, size: 14, color: Colors.amber),
           ],
         ),
@@ -223,21 +341,44 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
   Widget _buildTripInfoCard() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.deepPurple.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: widget.trip.status == 'completed' ? Colors.grey : Colors.deepPurple,
-            child: Icon(widget.trip.status == 'completed' ? Icons.archive : Icons.flight_takeoff, color: Colors.white, size: 30),
+            backgroundColor: widget.trip.status == 'completed'
+                ? Colors.grey
+                : Colors.deepPurple,
+            child: Icon(
+              widget.trip.status == 'completed'
+                  ? Icons.archive
+                  : Icons.flight_takeoff,
+              color: Colors.white,
+              size: 30,
+            ),
           ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.trip.destination, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                Text("Status: ${widget.trip.status == 'active' ? 'Em andamento' : 'Planejada'}", style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
+                Text(
+                  widget.trip.destination,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Status: ${widget.trip.status == 'active' ? 'Em andamento' : 'Planejada'}",
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -249,7 +390,9 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
   void _showPremiumModal() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(25),
         child: Column(
@@ -257,28 +400,46 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
           children: [
             const Icon(Icons.stars, size: 60, color: Colors.amber),
             const SizedBox(height: 15),
-            const Text("Travel App Premium", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              "Travel App Premium",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
-            const Text("Acesse câmbio em tempo real, clima detalhado e segurança avançada.", textAlign: TextAlign.center),
+            const Text(
+              "Acesse câmbio em tempo real, clima detalhado e segurança avançada.",
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                ),
                 onPressed: () async {
                   final user = await _authController.getUserData();
                   if (user != null) {
-                    await _authController.updateUserProfile(user.copyWith(isPremium: true));
+                    await _authController.updateUserProfile(
+                      user.copyWith(isPremium: true),
+                    );
                     if (mounted) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Agora você é PREMIUM! ⭐")));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Agora você é PREMIUM! ⭐"),
+                        ),
+                      );
                     }
                   }
                 },
-                child: const Text("ASSINAR AGORA", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "ASSINAR AGORA",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -291,11 +452,17 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
       builder: (context) => AlertDialog(
         title: const Text("Concluir Viagem?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
           TextButton(
             onPressed: () async {
               await controller.updateTripStatus(widget.trip.id, 'completed');
-              if (mounted) { Navigator.pop(context); Navigator.pop(context); }
+              if (mounted) {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              }
             },
             child: const Text("Concluir"),
           ),
@@ -304,7 +471,14 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     );
   }
 
-  Widget _buildOptionCard(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap, {bool isLocked = false}) {
+  Widget _buildOptionCard(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap, {
+    bool isLocked = false,
+  }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -312,12 +486,16 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
       child: ListTile(
         contentPadding: const EdgeInsets.all(15),
         leading: CircleAvatar(
-          backgroundColor: isLocked ? Colors.grey[200] : Colors.deepPurple.withOpacity(0.1),
+          backgroundColor: isLocked
+              ? Colors.grey[200]
+              : Colors.deepPurple.withOpacity(0.1),
           child: Icon(icon, color: isLocked ? Colors.grey : Colors.deepPurple),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle),
-        trailing: isLocked ? const Icon(Icons.lock, size: 16, color: Colors.grey) : const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: isLocked
+            ? const Icon(Icons.lock, size: 16, color: Colors.grey)
+            : const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: onTap,
       ),
     );

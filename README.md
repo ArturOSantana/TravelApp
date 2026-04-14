@@ -1,57 +1,194 @@
 # Travel App - Sistema Inteligente de Planejamento e Gestão de Viagens
 
-## Visão Geral
-O Travel App é uma plataforma robusta desenvolvida para otimizar a experiência de planejamento e execução de viagens individuais e coletivas. O sistema foca em três pilares fundamentais: organização logística, controle financeiro compartilhado e documentação colaborativa de experiências.
+## Sobre o Projeto
 
-Este projeto foi estruturado seguindo padrões de arquitetura modernos, garantindo escalabilidade e facilidade de manutenção, sendo ideal para apresentação acadêmica (TCC) ou como base para soluções corporativas no setor de turismo.
+Este é um Trabalho de Conclusão de Curso (TCC) que apresenta uma solução completa para planejamento e gestão de viagens individuais e em grupo. O Travel App foi desenvolvido com Flutter e Firebase, oferecendo uma plataforma robusta que combina organização logística, controle financeiro compartilhado e documentação colaborativa de experiências de viagem.
 
----
+## Finalidade do Aplicativo
 
-## Funcionalidades do Sistema
+O Travel App foi criado para resolver os principais desafios enfrentados por viajantes modernos:
 
-### 1. Gestão de Itinerários e Grupos
-*   **Planejamento Flexível:** Suporte para viagens com roteiros definidos ou modalidade nômade (sem data de término).
-*   **Colaboração em Grupo:** Sistema de ingresso via código de convite único, permitindo a gestão multiusuário em um mesmo projeto de viagem.
-*   **Controle de Acesso:** Hierarquia de permissões entre Administrador (criador) e Membros.
+### Problemas que o App Resolve
 
-### 2. Roteirização e Governança Colaborativa
-*   **Cronograma de Atividades:** Organização detalhada por data, horário, localização e categoria.
-*   **Sistema de Votação:** Mecanismo democrático para aprovação de atividades em grupo, visando a resolução de conflitos no planejamento.
+1. **Desorganização no Planejamento**
+   - Centraliza todas as informações da viagem em um único lugar
+   - Permite criar itinerários detalhados com atividades, horários e localizações
+   - Suporta viagens planejadas e viagens nômades (sem data de término definida)
 
-### 3. Gestão Financeira e Divisão de Custos
-*   **Lançamento de Despesas:** Registro categorizado de gastos com suporte a múltiplas moedas (conversão base).
-*   **Split de Gastos:** Algoritmo de divisão automática de despesas entre membros do grupo, gerando relatórios de "quem deve para quem" em tempo real.
+2. **Conflitos em Viagens em Grupo**
+   - Sistema de votação democrática para aprovação de atividades
+   - Gestão de membros com controle de permissões (administrador e membros)
+   - Código de convite único para entrada no grupo
 
-### 4. Inteligência de Comunidade e Serviços
-*   **Curadoria de Recomendações:** Biblioteca pessoal de serviços (hospedagem, gastronomia, transporte) com avaliações técnicas e evidências fotográficas.
-*   **Módulo de Comunidade:** Feed público para exploração de recomendações de terceiros, com funcionalidade de importação para a biblioteca privada.
+3. **Dificuldade na Divisão de Gastos**
+   - Registro categorizado de todas as despesas da viagem
+   - Algoritmo automático de divisão de custos entre membros
+   - Relatório em tempo real de "quem deve para quem"
+   - Suporte a múltiplas moedas com conversão automática
+   - Função de cobrança via WhatsApp integrada
 
-### 5. Documentação e Segurança
-*   **Diário de Bordo Digital:** Registro de memórias com análise de humor (mood tracking) e galeria de fotos sincronizada.
-*   **Álbum em Tempo Real:** Compartilhamento de link externo para visualização pública do progresso da viagem por familiares ou seguidores.
-*   **Monitoramento de Segurança:** Ferramenta de check-in de localização e alertas de status para a rede de contatos.
+4. **Perda de Memórias e Experiências**
+   - Diário de bordo digital com fotos e análise de humor (mood tracking)
+   - Álbum de viagem compartilhável via link público
+   - Registro de localização em cada entrada do diário
 
----
+5. **Falta de Recomendações Confiáveis**
+   - Biblioteca pessoal de serviços (hospedagem, restaurantes, transporte)
+   - Comunidade para compartilhar e descobrir recomendações de outros viajantes
+   - Sistema de avaliações com fotos e custos médios
+
+6. **Preocupação com Segurança**
+   - Botão de pânico que envia SMS e WhatsApp automáticos para contato de emergência
+   - Check-ins de segurança com histórico
+   - Compartilhamento de localização em tempo real
+
+## Funcionalidades Principais
+
+### Gestão de Viagens
+- Criação de viagens individuais ou em grupo
+- Planejamento com datas definidas ou modo nômade
+- Controle de orçamento e gastos
+- Status da viagem (planejada, ativa, finalizada)
+
+### Itinerário e Atividades
+- Cronograma detalhado de atividades
+- Organização por data, horário e categoria
+- Sistema de votação para atividades em grupo
+- Integração com busca de voos
+
+### Finanças
+- Registro de despesas por categoria
+- Divisão automática de custos
+- Conversão de moedas em tempo real
+- Relatórios de balanço do grupo
+- Compartilhamento de cobranças
+
+### Diário de Viagem
+- Registro de memórias com fotos
+- Análise de humor (mood tracking)
+- Localização de cada entrada
+- Álbum compartilhável publicamente
+- Busca por localização
+
+### Comunidade
+- Feed público de recomendações
+- Importação para biblioteca pessoal
+- Avaliações com fotos e custos
+- Busca por nome, local ou categoria
+
+### Segurança
+- Botão de pânico com envio automático de SMS e WhatsApp
+- Check-ins de segurança
+- Histórico de registros
+- Configuração de contato de emergência
 
 ## Especificações Técnicas
-*   **Framework:** Flutter (Dart)
-*   **Backend:** Firebase (Authentication, Cloud Firestore, Firebase Storage)
-*   **Gerenciamento de Estado:** Controller Pattern (Pattern-based abstraction)
-*   **Integrações:** Share Plus (Social Sharing), Image Picker (Captura de Mídia), Intl (Internacionalização).
 
----
+- **Framework:** Flutter (Dart)
+- **Backend:** Firebase (Authentication, Cloud Firestore, Firebase Storage)
+- **Arquitetura:** Controller Pattern
+- **Plataformas:** Android, iOS, Web, Windows, macOS, Linux
+- **Principais Dependências:**
+  - firebase_core, firebase_auth, cloud_firestore
+  - image_picker, share_plus
+  - intl (internacionalização)
+  - url_launcher (integração com SMS/WhatsApp)
+  - http (conversão de moedas)
 
-## Garantia de Qualidade e Testes
-O projeto conta com uma suíte de testes automatizados que cobrem as principais regras de negócio.
+## Como Executar o Projeto
 
-### Execução dos Testes
-Para validar a integridade do sistema, execute o seguinte comando no terminal:
+### Pré-requisitos
+
+Antes de começar, certifique-se de ter instalado:
+- Flutter SDK (versão 3.11.1 ou superior)
+- Dart (incluído no Flutter)
+- Git
+
+Para desenvolvimento em plataformas específicas:
+- **Android:** Android Studio com Android SDK
+- **iOS/macOS:** Xcode (apenas em macOS)
+- **Web:** Google Chrome
+- **Windows:** Visual Studio 2022 com desenvolvimento para desktop C++
+
+### Passos para Instalação
+
+1. Clone o repositório:
+```bash
+git clone <url-do-repositorio>
+cd TCC
+```
+
+2. Instale as dependências do Flutter:
+```bash
+flutter pub get
+```
+
+3. Execute o aplicativo:
+
+**Para Android (com dispositivo conectado ou emulador):**
+```bash
+flutter run
+```
+
+**Para iOS (apenas em macOS):**
+```bash
+flutter run -d ios
+```
+
+**Para Web:**
+```bash
+flutter run -d chrome
+```
+
+**Para Windows:**
+```bash
+flutter run -d windows
+```
+
+**Para macOS:**
+```bash
+flutter run -d macos
+```
+
+**Para Linux:**
+```bash
+flutter run -d linux
+```
+
+### Executar Testes
+
+Para validar a integridade do sistema:
 ```bash
 flutter test
 ```
 
-Os testes abrangem:
-1.  **Modelos de Dados:** Validação de integridade e parsing de objetos.
-2.  **Lógica Financeira:** Precisão nos cálculos de divisão de despesas.
-3.  **Regras de Negócio:** Permissões de usuários e fluxos de votação.
-4.  **Integração de Componentes:** Fluxo de dados entre modelos e controladores.
+Os testes cobrem:
+- Modelos de dados e validações
+- Lógica financeira e divisão de despesas
+- Regras de negócio e permissões
+- Integração entre componentes
+
+## Observações Importantes
+
+- O Firebase já está configurado no projeto com credenciais para todas as plataformas
+- Não é necessário configurar o Firebase manualmente
+- O comando `flutter pub get` é obrigatório após clonar o repositório
+- Para desenvolvimento, recomenda-se usar um IDE como VS Code ou Android Studio
+- O projeto suporta hot reload para desenvolvimento mais rápido
+
+## Estrutura do Projeto
+
+```
+lib/
+├── controllers/      # Lógica de negócio e gerenciamento de estado
+├── data/            # Dados mockados para desenvolvimento
+├── models/          # Modelos de dados
+├── screens/         # Telas do aplicativo
+├── services/        # Serviços (Firebase, API, notificações)
+├── firebase_options.dart  # Configurações do Firebase
+└── main.dart        # Ponto de entrada do aplicativo
+```
+
+## Licença
+
+Este é um projeto acadêmico desenvolvido como Trabalho de Conclusão de Curso (TCC).
