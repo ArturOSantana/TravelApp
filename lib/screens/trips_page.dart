@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip.dart';
 import 'create_trip_page.dart';
 import 'trip_dashboard_page.dart';
@@ -12,9 +13,12 @@ class TripsPage extends StatefulWidget {
   State<TripsPage> createState() => _TripsPageState();
 }
 
-class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMixin {
+class _TripsPageState extends State<TripsPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TripController _controller = TripController();
+
+  final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   @override
   void initState() {
@@ -31,7 +35,10 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
           IconButton(
             icon: const Icon(Icons.public),
             tooltip: "Explorar Comunidade",
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CommunityPage())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CommunityPage()),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.group_add),
@@ -79,7 +86,9 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Cole o código da viagem que seu amigo compartilhou com você:"),
+            const Text(
+              "Cole o código da viagem que seu amigo compartilhou com você:",
+            ),
             const SizedBox(height: 15),
             TextField(
               controller: codeController,
@@ -92,7 +101,10 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (codeController.text.isNotEmpty) {
@@ -101,13 +113,19 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Você entrou no grupo com sucesso!"), backgroundColor: Colors.green),
+                      const SnackBar(
+                        content: Text("Você entrou no grupo com sucesso!"),
+                        backgroundColor: Colors.green,
+                      ),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Erro ao entrar no grupo: $e"), backgroundColor: Colors.red),
+                      SnackBar(
+                        content: Text("Erro ao entrar no grupo: $e"),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                   }
                 }
@@ -133,8 +151,8 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
         if (trips.isEmpty) {
           IconData icon;
           String message;
-          
-          switch(status) {
+
+          switch (status) {
             case 'active':
               icon = Icons.explore_off;
               message = "Nenhuma viagem ativa.";
@@ -166,21 +184,54 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
             final trip = trips[index];
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: ListTile(
                 leading: Icon(
-                  status == 'completed' ? Icons.archive : Icons.flight, 
-                  color: status == 'completed' ? Colors.grey : Colors.deepPurple
+                  status == 'completed' ? Icons.archive : Icons.flight,
+                  color: status == 'completed'
+                      ? Colors.grey
+                      : Colors.deepPurple,
                 ),
-                title: Text(trip.destination, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text("Orçamento: R\$ ${trip.budget.toStringAsFixed(2)}"),
+                title: Text(
+                  trip.destination,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  "Orçamento: R\$ ${trip.budget.toStringAsFixed(2)}",
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (status == 'planned')
+                    if (status == 'planned' && trip.isAdmin(_currentUid))
                       IconButton(
                         icon: const Icon(Icons.play_arrow, color: Colors.green),
-                        onPressed: () => _controller.updateTripStatus(trip.id, 'active'),
+                        onPressed: () async {
+                          try {
+                            await _controller.updateTripStatus(
+                              trip.id,
+                              'active',
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Viagem iniciada com sucesso.'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Erro ao iniciar viagem: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
                         tooltip: "Iniciar Viagem",
                       ),
                     IconButton(
@@ -191,7 +242,9 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
                 ),
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => TripDashboardPage(trip: trip)),
+                  MaterialPageRoute(
+                    builder: (context) => TripDashboardPage(trip: trip),
+                  ),
                 ),
               ),
             );
@@ -206,9 +259,14 @@ class _TripsPageState extends State<TripsPage> with SingleTickerProviderStateMix
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Excluir Viagem"),
-        content: Text("Tem certeza que deseja excluir sua viagem para ${trip.destination}?"),
+        content: Text(
+          "Tem certeza que deseja excluir sua viagem para ${trip.destination}?",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
           TextButton(
             onPressed: () {
               _controller.deleteTrip(trip.id);

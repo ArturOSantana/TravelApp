@@ -48,7 +48,10 @@ class ItineraryPage extends StatelessWidget {
                 children: [
                   Icon(Icons.event_note, size: 80, color: Colors.grey),
                   SizedBox(height: 20),
-                  Text("Seu roteiro está vazio.", style: TextStyle(fontSize: 18, color: Colors.grey)),
+                  Text(
+                    "Seu roteiro está vazio.",
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
                   Text("Adicione atividades para começar!"),
                 ],
               ),
@@ -61,70 +64,174 @@ class ItineraryPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final activity = activities[index];
               int upVotes = activity.votes.values.where((v) => v == 1).length;
-              int downVotes = activity.votes.values.where((v) => v == -1).length;
+              int downVotes = activity.votes.values
+                  .where((v) => v == -1)
+                  .length;
               int myVote = activity.votes[uid] ?? 0;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: ExpansionTile(
                   leading: CircleAvatar(
                     backgroundColor: Colors.deepPurple.withOpacity(0.1),
-                    child: Text("${activity.time.hour}:${activity.time.minute.toString().padLeft(2, '0')}", 
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                    child: Text(
+                      "${activity.time.hour}:${activity.time.minute.toString().padLeft(2, '0')}",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
+                      ),
+                    ),
                   ),
-                  title: Text(activity.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    activity.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Text(activity.location),
                   children: [
                     const Divider(),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text("O grupo concorda?", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              const Text(
+                                "O grupo concorda?",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               Row(
                                 children: [
-                                  Text("$upVotes", style: const TextStyle(color: Colors.green)),
-                                  IconButton(
-                                    icon: Icon(Icons.thumb_up, color: myVote == 1 ? Colors.green : Colors.grey, size: 20),
-                                    onPressed: () => controller.voteActivity(activity.id, uid, 1),
+                                  Text(
+                                    "$upVotes",
+                                    style: const TextStyle(color: Colors.green),
                                   ),
-                                  Text("$downVotes", style: const TextStyle(color: Colors.red)),
                                   IconButton(
-                                    icon: Icon(Icons.thumb_down, color: myVote == -1 ? Colors.red : Colors.grey, size: 20),
-                                    onPressed: () => controller.voteActivity(activity.id, uid, -1),
+                                    icon: Icon(
+                                      Icons.thumb_up,
+                                      color: myVote == 1
+                                          ? Colors.green
+                                          : Colors.grey,
+                                      size: 20,
+                                    ),
+                                    onPressed: () => controller.voteActivity(
+                                      activity.id,
+                                      uid,
+                                      1,
+                                    ),
+                                  ),
+                                  Text(
+                                    "$downVotes",
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.thumb_down,
+                                      color: myVote == -1
+                                          ? Colors.red
+                                          : Colors.grey,
+                                      size: 20,
+                                    ),
+                                    onPressed: () => controller.voteActivity(
+                                      activity.id,
+                                      uid,
+                                      -1,
+                                    ),
                                   ),
                                 ],
-                              )
+                              ),
                             ],
                           ),
                           const SizedBox(height: 10),
-                          const Text("Opiniões do Grupo:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ...activity.opinions.map((op) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(op['userName'] ?? 'Viajante', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                            subtitle: Text(op['text'] ?? ''),
-                          )).toList(),
-                          TextField(
-                            decoration: const InputDecoration(
-                              hintText: "Dê sua opinião...",
-                              hintStyle: TextStyle(fontSize: 12),
-                              suffixIcon: Icon(Icons.send, size: 18),
+                          const Text(
+                            "Opiniões do Grupo:",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
-                            onSubmitted: (val) {
-                              if (val.isNotEmpty) {
-                                controller.addOpinion(activity.id, val);
-                              }
-                            },
+                          ),
+                          ...activity.opinions.map((op) {
+                            final author =
+                                (op['userName'] ?? '')
+                                    .toString()
+                                    .trim()
+                                    .isNotEmpty
+                                ? op['userName'].toString().trim()
+                                : 'Viajante';
+                            return ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              leading: CircleAvatar(
+                                radius: 14,
+                                backgroundColor: Colors.deepPurple.withOpacity(
+                                  0.1,
+                                ),
+                                child: const Icon(
+                                  Icons.person_outline,
+                                  size: 14,
+                                  color: Colors.deepPurple,
+                                ),
+                              ),
+                              title: Text(
+                                author,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              subtitle: Text(op['text'] ?? ''),
+                            );
+                          }).toList(),
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  minLines: 1,
+                                  maxLines: 3,
+                                  textInputAction: TextInputAction.send,
+                                  decoration: const InputDecoration(
+                                    hintText: "Dê sua opinião...",
+                                    hintStyle: TextStyle(fontSize: 12),
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                  ),
+                                  onSubmitted: (val) {
+                                    if (val.trim().isNotEmpty) {
+                                      controller.addOpinion(
+                                        activity.id,
+                                        val.trim(),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: null,
+                                icon: const Icon(Icons.send),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               );

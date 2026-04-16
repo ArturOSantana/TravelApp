@@ -21,17 +21,19 @@ class _JournalPageState extends State<JournalPage> {
 
   Future<void> _shareLiveAlbumLink(BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
-    final String albumUrl = "https://travel-app-tcc.web.app/journal/${widget.tripId}";
-    
-    final String message = "Confira o meu álbum de fotos e memórias da viagem!\n\n"
+    final String albumUrl =
+        "https://travel-app-tcc.web.app/journal/${widget.tripId}";
+
+    final String message =
+        "Confira o meu álbum de fotos e memórias da viagem!\n\n"
         "Acesse pelo link:\n"
         "$albumUrl";
 
     await Share.share(
       message,
       subject: "Álbum de Viagem",
-      sharePositionOrigin: box != null 
-          ? box.localToGlobal(Offset.zero) & box.size 
+      sharePositionOrigin: box != null
+          ? box.localToGlobal(Offset.zero) & box.size
           : null,
     );
   }
@@ -43,7 +45,10 @@ class _JournalPageState extends State<JournalPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Álbum de Viagem", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Álbum de Viagem",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -70,17 +75,17 @@ class _JournalPageState extends State<JournalPage> {
                 filled: true,
                 fillColor: Colors.grey[100],
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                suffixIcon: _searchQuery.isNotEmpty 
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_outlined),
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchQuery = '';
-                        });
-                      },
-                    )
-                  : null,
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_outlined),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
               ),
               onChanged: (value) {
                 setState(() {
@@ -93,13 +98,17 @@ class _JournalPageState extends State<JournalPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.deepPurple,
-        label: const Text("ADICIONAR FOTO", style: TextStyle(color: Colors.white)),
+        label: const Text(
+          "ADICIONAR FOTO",
+          style: TextStyle(color: Colors.white),
+        ),
         icon: const Icon(Icons.add_a_photo_outlined, color: Colors.white),
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CreateJournalEntryPage(tripId: widget.tripId),
+              builder: (context) =>
+                  CreateJournalEntryPage(tripId: widget.tripId),
             ),
           );
         },
@@ -122,16 +131,24 @@ class _JournalPageState extends State<JournalPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.photo_library_outlined, size: 80, color: Colors.grey[300]),
+                  Icon(
+                    Icons.photo_library_outlined,
+                    size: 80,
+                    color: Colors.grey[300],
+                  ),
                   const SizedBox(height: 20),
                   Text(
-                    _searchQuery.isEmpty ? "Seu álbum está vazio." : "Nenhuma memória encontrada.",
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600])
+                    _searchQuery.isEmpty
+                        ? "Seu álbum está vazio."
+                        : "Nenhuma memória encontrada.",
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _searchQuery.isEmpty ? "Registre suas memórias de viagem." : "Tente outro termo de busca.",
-                    style: const TextStyle(color: Colors.grey)
+                    _searchQuery.isEmpty
+                        ? "Registre suas memórias de viagem."
+                        : "Tente outro termo de busca.",
+                    style: const TextStyle(color: Colors.grey),
                   ),
                 ],
               ),
@@ -141,7 +158,8 @@ class _JournalPageState extends State<JournalPage> {
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: entries.length,
-            itemBuilder: (context, index) => _buildAlbumEntry(context, entries[index]),
+            itemBuilder: (context, index) =>
+                _buildAlbumEntry(context, entries[index]),
           );
         },
       ),
@@ -167,30 +185,74 @@ class _JournalPageState extends State<JournalPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(
-                  DateFormat('dd/MM/yyyy').format(entry.date),
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
-                ),
-                if (entry.locationName != null && entry.locationName!.isNotEmpty) ...[
-                  const SizedBox(width: 12),
-                  const Icon(Icons.location_on_outlined, size: 14, color: Colors.redAccent),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      entry.locationName!,
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
-                      overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                      child: const Icon(
+                        Icons.person_outline,
+                        size: 16,
+                        color: Colors.deepPurple,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        entry.userName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(entry.date),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    if (entry.locationName != null &&
+                        entry.locationName!.isNotEmpty) ...[
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 14,
+                        color: Colors.redAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          entry.locationName!,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
-          
+
           if (entry.photos.isNotEmpty)
             ClipRRect(
               child: entry.photos.length == 1
@@ -205,7 +267,11 @@ class _JournalPageState extends State<JournalPage> {
               children: [
                 Text(
                   entry.content,
-                  style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    height: 1.5,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 _buildMoodTag(entry.moodScore),
@@ -262,20 +328,43 @@ class _JournalPageState extends State<JournalPage> {
     IconData icon;
     Color color;
 
-    if (score >= 4.5) { label = "Incrível"; icon = Icons.sentiment_very_satisfied_outlined; color = Colors.green; }
-    else if (score >= 3.5) { label = "Bom"; icon = Icons.sentiment_satisfied_outlined; color = Colors.blue; }
-    else if (score >= 2.5) { label = "Ok"; icon = Icons.sentiment_neutral_outlined; color = Colors.amber; }
-    else { label = "Cansativo"; icon = Icons.sentiment_dissatisfied_outlined; color = Colors.orange; }
+    if (score >= 4.5) {
+      label = "Incrível";
+      icon = Icons.sentiment_very_satisfied_outlined;
+      color = Colors.green;
+    } else if (score >= 3.5) {
+      label = "Bom";
+      icon = Icons.sentiment_satisfied_outlined;
+      color = Colors.blue;
+    } else if (score >= 2.5) {
+      label = "Ok";
+      icon = Icons.sentiment_neutral_outlined;
+      color = Colors.amber;
+    } else {
+      label = "Cansativo";
+      icon = Icons.sentiment_dissatisfied_outlined;
+      color = Colors.orange;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

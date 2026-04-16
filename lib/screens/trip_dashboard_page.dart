@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
@@ -48,175 +49,179 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     final controller = TripController();
     final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    final bool isAdm = widget.trip.ownerId.isNotEmpty
-        ? currentUid == widget.trip.ownerId
-        : (widget.trip.members.isNotEmpty &&
-              widget.trip.members.first == currentUid);
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('trips')
+          .doc(widget.trip.id)
+          .snapshots(),
+      builder: (context, tripSnapshot) {
+        if (!tripSnapshot.hasData || !tripSnapshot.data!.exists) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    final bool canFinish = widget.trip.status == 'active';
+        final liveTrip = Trip.fromFirestore(tripSnapshot.data!);
+        final bool isAdm = liveTrip.isAdmin(currentUid);
+        final bool canFinish = liveTrip.status == 'active';
 
-    // Usamos StreamBuilder para reagir INSTANTANEAMENTE às mudanças de Premium
-    return StreamBuilder<UserModel?>(
-      stream: _authController.userStream,
-      builder: (context, userSnapshot) {
-        final user = userSnapshot.data;
-        final bool isPremium = user?.isPremium ?? false;
+        return StreamBuilder<UserModel?>(
+          stream: _authController.userStream,
+          builder: (context, userSnapshot) {
+            final user = userSnapshot.data;
+            final bool isPremium = user?.isPremium ?? false;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(widget.trip.destination),
-            backgroundColor: Colors.deepPurple,
-            foregroundColor: Colors.white,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.group, color: Colors.white),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GroupMembersPage(trip: widget.trip),
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(liveTrip.destination),
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.group, color: Colors.white),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GroupMembersPage(trip: liveTrip),
+                      ),
+                    ),
+                    tooltip: "Ver Membros",
                   ),
-                ),
-                tooltip: "Ver Membros",
+                  if (isAdm && liveTrip.status != 'completed')
+                    _buildFinishButton(canFinish, controller),
+                ],
               ),
-              if (isAdm && widget.trip.status != 'completed')
-                _buildFinishButton(canFinish, controller),
-            ],
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // CLIMA: Agora reage na hora se o usuário virar Premium
-                if (isPremium)
-                  _isLoadingWeather
-                      ? _buildWeatherSkeleton()
-                      : (_weather != null
-                            ? _buildWeatherCard()
-                            : const SizedBox.shrink())
-                else
-                  _buildPremiumAdCard(),
-
-                const SizedBox(height: 15),
-
-                _buildTripInfoCard(),
-
-                const SizedBox(height: 30),
-                const Text(
-                  "Gerenciamento",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 15),
-
-                _buildOptionCard(
-                  context,
-                  Icons.calendar_month,
-                  "Roteiro Inteligente",
-                  "Organize atividades e vote em grupo",
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ItineraryPage(tripId: widget.trip.id),
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isPremium)
+                      _isLoadingWeather
+                          ? _buildWeatherSkeleton()
+                          : (_weather != null
+                                ? _buildWeatherCard()
+                                : const SizedBox.shrink())
+                    else
+                      _buildPremiumAdCard(),
+                    const SizedBox(height: 15),
+                    _buildTripInfoCard(liveTrip),
+                    const SizedBox(height: 30),
+                    const Text(
+                      "Gerenciamento",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ),
-
-                _buildOptionCard(
-                  context,
-                  Icons.account_balance_wallet,
-                  "Controle Financeiro",
-                  isPremium
-                      ? "Gastos, divisão e câmbio real"
-                      : "Acesso limitado (Seja Premium)",
-                  () {
-                    if (isPremium) {
-                      Navigator.push(
+                    const SizedBox(height: 15),
+                    _buildOptionCard(
+                      context,
+                      Icons.calendar_month,
+                      "Roteiro Inteligente",
+                      "Organize atividades e vote em grupo",
+                      () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              ExpensesPage(tripId: widget.trip.id),
+                              ItineraryPage(tripId: liveTrip.id),
                         ),
-                      );
-                    } else {
-                      _showPremiumModal();
-                    }
-                  },
-                  isLocked: !isPremium,
-                ),
-
-                _buildOptionCard(
-                  context,
-                  Icons.auto_stories,
-                  "Álbum de Viagem",
-                  "Registre memórias e sentimentos",
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => JournalPage(tripId: widget.trip.id),
+                      ),
                     ),
-                  ),
-                ),
-
-                _buildOptionCard(
-                  context,
-                  Icons.photo_library,
-                  "Galeria de Fotos",
-                  "Organize fotos por pastas e compartilhe",
-                  () {
-                    Navigator.push(
+                    _buildOptionCard(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => PhotoGalleryPage(
-                          tripId: widget.trip.id,
-                          tripName: widget.trip.destination,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                _buildOptionCard(
-                  context,
-                  Icons.luggage,
-                  "Checklist de Bagagem",
-                  "Organize o que levar na viagem",
-                  () {
-                    Navigator.push(
+                      Icons.account_balance_wallet,
+                      "Controle Financeiro",
+                      isPremium
+                          ? "Gastos, divisão e câmbio real"
+                          : "Acesso limitado (Seja Premium)",
+                      () {
+                        if (isPremium) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ExpensesPage(tripId: liveTrip.id),
+                            ),
+                          );
+                        } else {
+                          _showPremiumModal();
+                        }
+                      },
+                      isLocked: !isPremium,
+                    ),
+                    _buildOptionCard(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            PackingChecklistPage(tripId: widget.trip.id),
-                      ),
-                    );
-                  },
-                ),
-
-                _buildOptionCard(
-                  context,
-                  Icons.gpp_good,
-                  "Segurança e SOS",
-                  isPremium
-                      ? "Compartilhamento de localização real"
-                      : "SOS Básico (Seja Premium)",
-                  () {
-                    if (isPremium) {
-                      Navigator.push(
+                      Icons.auto_stories,
+                      "Álbum de Viagem",
+                      "Registre memórias e sentimentos",
+                      () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              SafetyPage(tripId: widget.trip.id),
+                              JournalPage(tripId: liveTrip.id),
                         ),
-                      );
-                    } else {
-                      _showPremiumModal();
-                    }
-                  },
-                  isLocked: !isPremium,
+                      ),
+                    ),
+                    _buildOptionCard(
+                      context,
+                      Icons.photo_library,
+                      "Galeria de Fotos",
+                      "Organize fotos por pastas e compartilhe",
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PhotoGalleryPage(
+                              tripId: liveTrip.id,
+                              tripName: liveTrip.destination,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildOptionCard(
+                      context,
+                      Icons.luggage,
+                      "Checklist de Bagagem",
+                      "Organize o que levar na viagem",
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                PackingChecklistPage(tripId: liveTrip.id),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildOptionCard(
+                      context,
+                      Icons.gpp_good,
+                      "Segurança e SOS",
+                      isPremium
+                          ? "Compartilhamento de localização real"
+                          : "SOS Básico (Seja Premium)",
+                      () {
+                        if (isPremium) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SafetyPage(tripId: liveTrip.id),
+                            ),
+                          );
+                        } else {
+                          _showPremiumModal();
+                        }
+                      },
+                      isLocked: !isPremium,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -258,7 +263,7 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.blue.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -338,24 +343,22 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     );
   }
 
-  Widget _buildTripInfoCard() {
+  Widget _buildTripInfoCard(Trip trip) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
+        color: Colors.deepPurple.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: widget.trip.status == 'completed'
+            backgroundColor: trip.status == 'completed'
                 ? Colors.grey
                 : Colors.deepPurple,
             child: Icon(
-              widget.trip.status == 'completed'
-                  ? Icons.archive
-                  : Icons.flight_takeoff,
+              trip.status == 'completed' ? Icons.archive : Icons.flight_takeoff,
               color: Colors.white,
               size: 30,
             ),
@@ -366,14 +369,14 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.trip.destination,
+                  trip.destination,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  "Status: ${widget.trip.status == 'active' ? 'Em andamento' : 'Planejada'}",
+                  "Status: ${trip.status == 'active' ? 'Em andamento' : (trip.status == 'completed' ? 'Concluída' : 'Planejada')}",
                   style: TextStyle(
                     color: Colors.grey[700],
                     fontWeight: FontWeight.bold,
@@ -419,20 +422,26 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                   foregroundColor: Colors.black,
                 ),
                 onPressed: () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
                   final user = await _authController.getUserData();
-                  if (user != null) {
-                    await _authController.updateUserProfile(
-                      user.copyWith(isPremium: true),
-                    );
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Agora você é PREMIUM! ⭐"),
-                        ),
-                      );
-                    }
+
+                  if (user == null) {
+                    return;
                   }
+
+                  await _authController.updateUserProfile(
+                    user.copyWith(isPremium: true),
+                  );
+
+                  if (!mounted) {
+                    return;
+                  }
+
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text("Agora você é PREMIUM! ⭐")),
+                  );
                 },
                 child: const Text(
                   "ASSINAR AGORA",
@@ -458,10 +467,34 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
           ),
           TextButton(
             onPressed: () async {
-              await controller.updateTripStatus(widget.trip.id, 'completed');
-              if (mounted) {
-                Navigator.pop(context);
-                Navigator.pop(context);
+              final dialogNavigator = Navigator.of(context);
+              final pageNavigator = Navigator.of(this.context);
+              final messenger = ScaffoldMessenger.of(this.context);
+
+              try {
+                await controller.updateTripStatus(widget.trip.id, 'completed');
+                if (!mounted) {
+                  return;
+                }
+                dialogNavigator.pop();
+                pageNavigator.pop();
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Viagem concluída com sucesso.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) {
+                  return;
+                }
+                dialogNavigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Erro ao concluir viagem: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             child: const Text("Concluir"),
@@ -488,7 +521,7 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
         leading: CircleAvatar(
           backgroundColor: isLocked
               ? Colors.grey[200]
-              : Colors.deepPurple.withOpacity(0.1),
+              : Colors.deepPurple.withValues(alpha: 0.1),
           child: Icon(icon, color: isLocked ? Colors.grey : Colors.deepPurple),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),

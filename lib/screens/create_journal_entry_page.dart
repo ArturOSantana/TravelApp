@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/journal_entry.dart';
 import '../controllers/trip_controller.dart';
@@ -26,10 +27,11 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   Future<void> _pickImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(
       source: source,
-      imageQuality: 25, // Qualidade baixa para não exceder o limite de 1MB do Firestore
+      imageQuality:
+          25, // Qualidade baixa para não exceder o limite de 1MB do Firestore
       maxWidth: 600,
     );
-    
+
     if (image != null) {
       setState(() {
         _selectedImages.add(File(image.path));
@@ -45,7 +47,9 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
 
   void _saveEntry() async {
     if (_contentController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Adicione um comentário!")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Adicione um comentário!")));
       return;
     }
 
@@ -58,23 +62,31 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
         base64Images.add(base64);
       }
 
+      final user = FirebaseAuth.instance.currentUser;
+
       final entry = JournalEntry(
         id: '',
         tripId: widget.tripId,
+        userId: user?.uid ?? '',
+        userName: user?.displayName ?? 'Viajante',
         date: DateTime.now(),
         content: _contentController.text.trim(),
         moodScore: _moodScore,
-        photos: base64Images, // Agora salvamos o texto da imagem
-        locationName: _locationController.text.trim().isNotEmpty ? _locationController.text.trim() : null,
+        photos: base64Images,
+        locationName: _locationController.text.trim().isNotEmpty
+            ? _locationController.text.trim()
+            : null,
         createdAt: DateTime.now(),
       );
 
       await _controller.addJournalEntry(entry);
-      
+
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro ao salvar: $e")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erro ao salvar: $e")));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -85,7 +97,12 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text("Nova Memória"), elevation: 0, backgroundColor: Colors.white, foregroundColor: Colors.black),
+      appBar: AppBar(
+        title: const Text("Nova Memória"),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -97,7 +114,9 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                   decoration: InputDecoration(
                     hintText: "Localização",
                     prefixIcon: const Icon(Icons.pin_drop, color: Colors.red),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 15),
@@ -106,7 +125,9 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                   maxLines: 4,
                   decoration: InputDecoration(
                     hintText: "Comentário...",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 25),
@@ -120,7 +141,12 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                         padding: const EdgeInsets.only(right: 10),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(15),
-                          child: Image.file(_selectedImages[index], width: 120, height: 120, fit: BoxFit.cover),
+                          child: Image.file(
+                            _selectedImages[index],
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
@@ -130,7 +156,9 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                   onPressed: () => _pickImage(ImageSource.gallery),
                   icon: const Icon(Icons.add_a_photo),
                   label: const Text("ADICIONAR FOTO"),
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
                 ),
                 const SizedBox(height: 40),
                 ElevatedButton(
@@ -139,9 +167,14 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                     backgroundColor: Colors.deepPurple,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 55),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
-                  child: const Text("SALVAR NO ÁLBUM", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "SALVAR NO ÁLBUM",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -149,7 +182,9 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
           if (_isSaving)
             Container(
               color: Colors.black54,
-              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
             ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
@@ -17,11 +18,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   final controller = TripController();
   final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-  bool get isAdm {
-    return widget.trip.ownerId.isNotEmpty 
-        ? currentUid == widget.trip.ownerId 
-        : (widget.trip.members.isNotEmpty && widget.trip.members.first == currentUid);
-  }
+  bool _isAdmin(Trip trip) => trip.isAdmin(currentUid);
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +28,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         actions: [
-          if (isAdm)
+          if (_isAdmin(widget.trip))
             IconButton(
               icon: const Icon(Icons.person_add),
               onPressed: () => _showInviteDialog(context),
@@ -39,68 +36,162 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             ),
         ],
       ),
-      body: FutureBuilder<List<UserModel>>(
-        future: controller.getTripMembers(widget.trip.members),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('trips')
+            .doc(widget.trip.id)
+            .snapshots(),
+        builder: (context, tripSnapshot) {
+          if (tripSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final members = snapshot.data ?? [];
+          if (!tripSnapshot.hasData || !tripSnapshot.data!.exists) {
+            return const Center(
+              child: Text("Erro ao carregar dados da viagem."),
+            );
+          }
 
-          return Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                color: Colors.deepPurple.withOpacity(0.05),
-                child: Column(
-                  children: [
-                    const Icon(Icons.group, size: 50, color: Colors.deepPurple),
-                    const SizedBox(height: 10),
-                    Text(
-                      "${members.length} Pessoas na Viagem",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    if (isAdm)
-                      const Text("Você é o Administrador", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))
-                    else
-                      const Text("Apenas o ADM pode gerenciar membros.", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: members.length,
-                  itemBuilder: (context, index) {
-                    final member = members[index];
-                    // O dono original ou o primeiro da lista (se ownerId for vazio) é o ADM
-                    bool isMemberOwner = widget.trip.ownerId.isNotEmpty 
-                        ? member.uid == widget.trip.ownerId 
-                        : (widget.trip.members.indexOf(member.uid) == 0);
+          final liveTrip = Trip.fromFirestore(tripSnapshot.data!);
+          final memberIds = <String>{
+            if (liveTrip.ownerId.trim().isNotEmpty) liveTrip.ownerId.trim(),
+            ...liveTrip.members
+                .where((id) => id.trim().isNotEmpty)
+                .map((id) => id.trim()),
+          }.toList();
+          final isAdm = _isAdmin(liveTrip);
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _getMemberColor(index),
-                          child: Text(member.name.isNotEmpty ? member.name[0].toUpperCase() : "?", style: const TextStyle(color: Colors.white)),
-                        ),
-                        title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(member.email),
-                        trailing: isMemberOwner 
-                          ? const BadgeADM()
-                          : (isAdm ? IconButton(
-                              icon: const Icon(Icons.person_remove, color: Colors.red),
-                              onPressed: () => _confirmRemove(context, member),
-                            ) : null), // Se não for ADM, o trailing é null (membro só olha)
+          return FutureBuilder<List<UserModel>>(
+            future: controller.getTripMembers(memberIds),
+            builder: (context, userSnapshot) {
+              // Correção do Loading Eterno: verifica se está esperando E se não tem dados
+              if (userSnapshot.connectionState == ConnectionState.waiting &&
+                  !userSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              // Se não conseguiu carregar, mostra erro
+              if (userSnapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
                       ),
-                    );
-                  },
-                ),
-              ),
-            ],
+                      const SizedBox(height: 16),
+                      Text('Erro ao carregar membros: ${userSnapshot.error}'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => setState(() {}),
+                        child: const Text('Tentar novamente'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Usa os dados retornados pelo controller (que já tem lógica de fallback)
+              final members = userSnapshot.data ?? [];
+
+              // Se não há membros, mostra mensagem
+              if (members.isEmpty) {
+                return const Center(child: Text('Nenhum membro encontrado.'));
+              }
+
+              return Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    color: Colors.deepPurple.withValues(alpha: 0.05),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.group,
+                          size: 50,
+                          color: Colors.deepPurple,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "${memberIds.length} ${memberIds.length == 1 ? 'Pessoa' : 'Pessoas'} na Viagem",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (isAdm)
+                          const Text(
+                            "Você é o Administrador",
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        else
+                          const Text(
+                            "Apenas o ADM pode gerenciar membros.",
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: members.length,
+                      itemBuilder: (context, index) {
+                        final member = members[index];
+                        final bool isMemberOwner = liveTrip.ownerId.isNotEmpty
+                            ? member.uid == liveTrip.ownerId
+                            : (memberIds.isNotEmpty &&
+                                  member.uid == memberIds.first);
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: _getMemberColor(index),
+                              child: Text(
+                                member.name.isNotEmpty
+                                    ? member.name[0].toUpperCase()
+                                    : "?",
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            title: Text(
+                              member.uid == currentUid
+                                  ? "${member.name} (Você)"
+                                  : member.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              member.email.isEmpty ? "Convidado" : member.email,
+                            ),
+                            trailing: isMemberOwner
+                                ? const BadgeADM()
+                                : (isAdm
+                                      ? IconButton(
+                                          icon: const Icon(
+                                            Icons.person_remove,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () =>
+                                              _confirmRemove(context, member),
+                                        )
+                                      : null),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -119,8 +210,17 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             const SizedBox(height: 15),
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
-              child: SelectableText(widget.trip.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SelectableText(
+                widget.trip.id,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ],
         ),
@@ -128,12 +228,17 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
           TextButton(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: widget.trip.id));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Código copiado!")));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text("Código copiado!")));
               Navigator.pop(context);
-            }, 
-            child: const Text("Copiar Código")
+            },
+            child: const Text("Copiar Código"),
           ),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Fechar")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Fechar"),
+          ),
         ],
       ),
     );
@@ -146,13 +251,37 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         title: const Text("Remover Membro"),
         content: Text("Deseja realmente remover ${member.name} do grupo?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
           TextButton(
             onPressed: () async {
-              await controller.removeMember(widget.trip.id, member.uid);
-              if (context.mounted) {
-                Navigator.pop(context);
-                setState(() {}); // Recarrega a lista
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
+              try {
+                await controller.removeMember(widget.trip.id, member.uid);
+                if (!mounted) {
+                  return;
+                }
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('${member.name} foi removido do grupo.'),
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) {
+                  return;
+                }
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Erro ao remover membro: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             child: const Text("Remover", style: TextStyle(color: Colors.red)),
@@ -163,7 +292,14 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   Color _getMemberColor(int index) {
-    List<Color> colors = [Colors.blue, Colors.orange, Colors.green, Colors.purple, Colors.red, Colors.teal];
+    List<Color> colors = [
+      Colors.blue,
+      Colors.orange,
+      Colors.green,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+    ];
     return colors[index % colors.length];
   }
 }
@@ -174,8 +310,18 @@ class BadgeADM extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: Colors.amber[100], borderRadius: BorderRadius.circular(5)),
-      child: const Text("ADM", style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: Colors.amber[100],
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: const Text(
+        "ADM",
+        style: TextStyle(
+          fontSize: 10,
+          color: Colors.orange,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

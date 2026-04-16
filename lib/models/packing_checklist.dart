@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class PackingItem {
   final String id;
   final String name;
-  final String
-  category; 
+  final String category;
   final int quantity;
   final bool isChecked;
   final String? notes;
   final DateTime createdAt;
+  final String? createdBy;
+  final bool isPriority;
 
   PackingItem({
     required this.id,
@@ -19,6 +19,8 @@ class PackingItem {
     this.isChecked = false,
     this.notes,
     required this.createdAt,
+    this.createdBy,
+    this.isPriority = false,
   });
 
   PackingItem copyWith({
@@ -27,6 +29,9 @@ class PackingItem {
     int? quantity,
     bool? isChecked,
     String? notes,
+    DateTime? createdAt,
+    String? createdBy,
+    bool? isPriority,
   }) {
     return PackingItem(
       id: id,
@@ -35,36 +40,88 @@ class PackingItem {
       quantity: quantity ?? this.quantity,
       isChecked: isChecked ?? this.isChecked,
       notes: notes ?? this.notes,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
+      isPriority: isPriority ?? this.isPriority,
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toMap({
+    String? tripId,
+    String? userId,
+    String? createdBy,
+  }) {
     return {
+      'tripId': tripId,
+      'userId': userId,
+      'createdBy': createdBy ?? userId,
       'name': name,
       'category': category,
       'quantity': quantity,
       'isChecked': isChecked,
       'notes': notes,
-      'createdAt': createdAt,
-    };
+      'isPriority': isPriority,
+      'createdAt': Timestamp.fromDate(createdAt),
+    }..removeWhere((key, value) => value == null);
   }
 
   factory PackingItem.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map;
+    final data = doc.data() as Map<String, dynamic>? ?? {};
     return PackingItem(
       id: doc.id,
-      name: data['name'] ?? '',
-      category: data['category'] ?? 'Outros',
-      quantity: data['quantity'] ?? 1,
+      name: (data['name'] ?? '').toString(),
+      category: (data['category'] ?? 'Outros').toString(),
+      quantity: (data['quantity'] ?? 1) as int,
       isChecked: data['isChecked'] ?? false,
-      notes: data['notes'],
+      notes: data['notes']?.toString(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdBy: data['createdBy']?.toString(),
+      isPriority: data['isPriority'] ?? false,
     );
   }
 }
 
-/// Checklist completo de bagagem para uma viagem
+class PackingChecklistViewData {
+  final List<PackingItem> allItems;
+  final List<PackingItem> filteredItems;
+  final Map<String, List<PackingItem>> groupedItems;
+  final int totalCount;
+  final int checkedCount;
+  final int pendingCount;
+  final int priorityCount;
+  final int pendingPriorityCount;
+  final int categoriesCount;
+  final double progress;
+
+  const PackingChecklistViewData({
+    required this.allItems,
+    required this.filteredItems,
+    required this.groupedItems,
+    required this.totalCount,
+    required this.checkedCount,
+    required this.pendingCount,
+    required this.priorityCount,
+    required this.pendingPriorityCount,
+    required this.categoriesCount,
+    required this.progress,
+  });
+
+  factory PackingChecklistViewData.empty() {
+    return const PackingChecklistViewData(
+      allItems: [],
+      filteredItems: [],
+      groupedItems: {},
+      totalCount: 0,
+      checkedCount: 0,
+      pendingCount: 0,
+      priorityCount: 0,
+      pendingPriorityCount: 0,
+      categoriesCount: 0,
+      progress: 0,
+    );
+  }
+}
+
 class PackingChecklist {
   final String id;
   final String tripId;
@@ -82,20 +139,18 @@ class PackingChecklist {
     this.lastModified,
   });
 
-  /// Retorna o progresso do checklist (0.0 a 1.0)
   double get progress {
     if (items.isEmpty) return 0.0;
     final checkedCount = items.where((item) => item.isChecked).length;
     return checkedCount / items.length;
   }
 
-  /// Retorna quantos itens estão marcados
   int get checkedItemsCount => items.where((item) => item.isChecked).length;
 
-  /// Retorna total de itens
   int get totalItemsCount => items.length;
 
-  /// Verifica se o checklist está completo
+  int get pendingItemsCount => items.where((item) => !item.isChecked).length;
+
   bool get isComplete =>
       items.isNotEmpty && items.every((item) => item.isChecked);
 
@@ -103,33 +158,36 @@ class PackingChecklist {
     return {
       'tripId': tripId,
       'userId': userId,
-      'createdAt': createdAt,
-      'lastModified': lastModified ?? DateTime.now(),
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastModified': Timestamp.fromDate(lastModified ?? DateTime.now()),
     };
   }
 
-  factory PackingChecklist.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map;
+  factory PackingChecklist.fromFirestore(
+    DocumentSnapshot doc, {
+    List<PackingItem> items = const [],
+  }) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
     return PackingChecklist(
       id: doc.id,
-      tripId: data['tripId'] ?? '',
-      userId: data['userId'] ?? '',
+      tripId: (data['tripId'] ?? '').toString(),
+      userId: (data['userId'] ?? '').toString(),
+      items: items,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       lastModified: (data['lastModified'] as Timestamp?)?.toDate(),
     );
   }
 }
 
-/// Templates pré-definidos de checklist por tipo de viagem
 class PackingTemplate {
   static List<Map<String, String>> getBeachTemplate() {
     return [
       {'name': 'Protetor solar', 'category': 'Higiene'},
       {'name': 'Óculos de sol', 'category': 'Acessórios'},
       {'name': 'Chinelo', 'category': 'Calçados'},
-      {'name': 'Maiô/Sunga', 'category': 'Roupas'},
-      {'name': 'Canga/Toalha de praia', 'category': 'Roupas'},
-      {'name': 'Boné/Chapéu', 'category': 'Acessórios'},
+      {'name': 'Maiô ou sunga', 'category': 'Roupas'},
+      {'name': 'Toalha de praia', 'category': 'Roupas'},
+      {'name': 'Boné ou chapéu', 'category': 'Acessórios'},
       {'name': 'Roupa leve', 'category': 'Roupas'},
       {'name': 'Sandália', 'category': 'Calçados'},
     ];
@@ -151,19 +209,19 @@ class PackingTemplate {
   static List<Map<String, String>> getCityTemplate() {
     return [
       {'name': 'Tênis confortável', 'category': 'Calçados'},
-      {'name': 'Mochila/Bolsa', 'category': 'Acessórios'},
+      {'name': 'Mochila ou bolsa', 'category': 'Acessórios'},
       {'name': 'Carregador portátil', 'category': 'Eletrônicos'},
       {'name': 'Guarda-chuva', 'category': 'Acessórios'},
       {'name': 'Roupa casual', 'category': 'Roupas'},
       {'name': 'Documentos', 'category': 'Documentos'},
       {'name': 'Cartão de crédito', 'category': 'Documentos'},
-      {'name': 'Câmera/Celular', 'category': 'Eletrônicos'},
+      {'name': 'Celular ou câmera', 'category': 'Eletrônicos'},
     ];
   }
 
   static List<Map<String, String>> getEssentialsTemplate() {
     return [
-      {'name': 'Passaporte/RG', 'category': 'Documentos'},
+      {'name': 'Passaporte ou RG', 'category': 'Documentos'},
       {'name': 'Cartão de crédito', 'category': 'Documentos'},
       {'name': 'Dinheiro', 'category': 'Documentos'},
       {'name': 'Celular', 'category': 'Eletrônicos'},

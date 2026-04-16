@@ -18,31 +18,49 @@ class AuthController {
     });
   }
 
-  Future<String?> register(String name, String email, String password, {String phone = ''}) async {
+  Future<String?> register(
+    String name,
+    String email,
+    String password, {
+    String phone = '',
+  }) async {
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       if (userCredential.user != null) {
+        final normalizedName = name.trim();
+
+        await userCredential.user!.updateDisplayName(normalizedName);
+
         UserModel newUser = UserModel(
           uid: userCredential.user!.uid,
-          name: name,
-          email: email,
-          phone: phone,
+          name: normalizedName,
+          email: email.trim(),
+          phone: phone.trim(),
         );
-        
+
         await _db.collection('users').doc(newUser.uid).set({
           ...newUser.toMap(),
+          'name': normalizedName,
+          'userName': normalizedName,
+          'email': email.trim(),
+          'phone': phone.trim(),
           'createdAt': FieldValue.serverTimestamp(),
-        });
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       }
       return null;
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'email-already-in-use') return 'Este e-mail já está cadastrado.';
-      if (e.code == 'weak-password') return 'A senha é muito fraca.';
-      if (e.code == 'invalid-email') return 'O formato do e-mail é inválido.';
+      if (e.code == 'email-already-in-use') {
+        return 'Este e-mail já está cadastrado.';
+      }
+      if (e.code == 'weak-password') {
+        return 'A senha é muito fraca.';
+      }
+      if (e.code == 'invalid-email') {
+        return 'O formato do e-mail é inválido.';
+      }
       return e.message;
     } catch (e) {
       return 'Erro inesperado: $e';
@@ -51,9 +69,39 @@ class AuthController {
 
   Future<String?> login(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user;
+      if (user != null) {
+        final docRef = _db.collection('users').doc(user.uid);
+        final doc = await docRef.get();
+        final data = doc.data();
+
+        final storedName = (data?['name'] ?? data?['userName'] ?? '')
+            .toString()
+            .trim();
+        final authName = user.displayName?.trim() ?? '';
+        final normalizedName = storedName.isNotEmpty ? storedName : authName;
+
+        if (normalizedName.isNotEmpty &&
+            (user.displayName == null || user.displayName!.trim().isEmpty)) {
+          await user.updateDisplayName(normalizedName);
+        }
+
+        await docRef.set({
+          'uid': user.uid,
+          'name': normalizedName,
+          'userName': normalizedName,
+          'email': user.email?.trim() ?? '',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
       return null;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       return 'E-mail ou senha inválidos.';
     }
   }
@@ -72,8 +120,25 @@ class AuthController {
     try {
       String uid = _auth.currentUser?.uid ?? '';
       if (uid.isEmpty) return 'Usuário não autenticado';
-      
-      await _db.collection('users').doc(uid).update(user.toMap());
+
+      final normalizedName = user.name.trim();
+      final payload = {
+        ...user.toMap(),
+        'name': normalizedName,
+        'userName': normalizedName,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _db
+          .collection('users')
+          .doc(uid)
+          .set(payload, SetOptions(merge: true));
+
+      final authUser = _auth.currentUser;
+      if (authUser != null && normalizedName.isNotEmpty) {
+        await authUser.updateDisplayName(normalizedName);
+      }
+
       return null;
     } catch (e) {
       return 'Erro ao atualizar perfil: $e';

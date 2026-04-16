@@ -18,20 +18,23 @@ void main() {
       expect(trip.isAdmin('user_member'), isFalse);
     });
 
-    test('Should return true for the first member if ownerId is empty (legacy support)', () {
-      final trip = Trip(
-        id: '123',
-        ownerId: '', // Viagem antiga
-        destination: 'London',
-        budget: 1000,
-        objective: 'Tour',
-        createdAt: DateTime.now(),
-        members: ['first_user', 'second_user'],
-      );
+    test(
+      'Should return true for the first member if ownerId is empty (legacy support)',
+      () {
+        final trip = Trip(
+          id: '123',
+          ownerId: '', // Viagem antiga
+          destination: 'London',
+          budget: 1000,
+          objective: 'Tour',
+          createdAt: DateTime.now(),
+          members: ['first_user', 'second_user'],
+        );
 
-      expect(trip.isAdmin('first_user'), isTrue);
-      expect(trip.isAdmin('second_user'), isFalse);
-    });
+        expect(trip.isAdmin('first_user'), isTrue);
+        expect(trip.isAdmin('second_user'), isFalse);
+      },
+    );
 
     test('Should return false if uid is empty', () {
       final trip = Trip(
@@ -44,6 +47,37 @@ void main() {
       );
 
       expect(trip.isAdmin(''), isFalse);
+    });
+
+    test('Should return false for non admin in a group trip', () {
+      final trip = Trip(
+        id: '789',
+        ownerId: 'owner_1',
+        destination: 'Madrid',
+        budget: 2000,
+        objective: 'Leisure',
+        isGroup: true,
+        members: ['owner_1', 'member_1', 'member_2'],
+        createdAt: DateTime.now(),
+      );
+
+      expect(trip.isAdmin('member_1'), isFalse);
+      expect(trip.isAdmin('member_2'), isFalse);
+    });
+
+    test('Should keep owner as admin even when members list is empty', () {
+      final trip = Trip(
+        id: '999',
+        ownerId: 'solo_owner',
+        destination: 'Lisboa',
+        budget: 800,
+        objective: 'Study',
+        isGroup: false,
+        members: const [],
+        createdAt: DateTime.now(),
+      );
+
+      expect(trip.isAdmin('solo_owner'), isTrue);
     });
   });
 }

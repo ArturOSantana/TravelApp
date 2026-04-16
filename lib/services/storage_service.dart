@@ -33,10 +33,10 @@ class StorageService {
 
       final String downloadUrl = await snapshot.ref.getDownloadURL();
 
-      print('✅ Foto enviada com sucesso: $downloadUrl');
+      print('Foto enviada com sucesso: $downloadUrl');
       return downloadUrl;
     } catch (e) {
-      print('❌ Erro ao enviar foto: $e');
+      print('Erro ao enviar foto: $e');
       rethrow;
     }
   }
@@ -74,9 +74,9 @@ class StorageService {
     try {
       final Reference ref = _storage.refFromURL(photoUrl);
       await ref.delete();
-      print('✅ Foto deletada com sucesso');
+      print(' Foto deletada com sucesso');
     } catch (e) {
-      print('❌ Erro ao deletar foto: $e');
+      print(' Erro ao deletar foto: $e');
       rethrow;
     }
   }
@@ -86,7 +86,7 @@ class StorageService {
       try {
         await deletePhoto(url);
       } catch (e) {
-        print('❌ Erro ao deletar foto: $e');
+        print(' Erro ao deletar foto: $e');
       }
     }
   }
@@ -145,12 +145,11 @@ class StorageService {
 
       return images.map((xFile) => File(xFile.path)).toList();
     } catch (e) {
-      print('❌ Erro ao selecionar imagens: $e');
+      print('Erro ao selecionar imagens: $e');
       return [];
     }
   }
 
-  /// Alias para pickMultipleImages (compatibilidade)
   static Future<List<File>> pickMultiplePhotos() async {
     return pickMultipleImages();
   }

@@ -47,12 +47,16 @@ void main() {
         tripId: 'trip_01',
         title: 'Jantar',
         value: 250.50,
+        originalValue: 250.50,
+        currency: 'BRL',
         category: 'food',
         payerId: 'user_01',
         date: DateTime.now(),
       );
 
       expect(expense.value, 250.50);
+      expect(expense.originalValue, 250.50);
+      expect(expense.currency, 'BRL');
       expect(expense.category, 'food');
     });
 
@@ -62,20 +66,49 @@ void main() {
         tripId: 'trip_group',
         title: 'Hotel',
         value: 900.0,
+        originalValue: 900.0,
+        currency: 'BRL',
         category: 'lodging',
         payerId: 'admin',
-        splits: {
-          'user_1': 300.0,
-          'user_2': 300.0,
-          'admin': 300.0,
-        },
+        splitType: SplitType.exact,
+        splits: {'user_1': 300.0, 'user_2': 300.0, 'admin': 300.0},
         date: DateTime.now(),
       );
 
-      double totalSplit = expense.splits.values.reduce((a, b) => a + b);
+      final totalSplit = expense.splits.values.fold<double>(
+        0.0,
+        (acc, item) => acc + item,
+      );
       expect(totalSplit, equals(expense.value));
       expect(expense.splits['user_1'], 300.0);
+      expect(expense.splitType, SplitType.exact);
     });
+
+    test(
+      'Deve serializar despesa mantendo tipo de divisão e participantes',
+      () {
+        final expense = Expense(
+          id: 'exp_map',
+          tripId: 'trip_map',
+          title: 'Passeio',
+          value: 120.0,
+          originalValue: 20.0,
+          currency: 'USD',
+          category: 'leisure',
+          payerId: 'user_01',
+          splitType: SplitType.percentage,
+          splits: {'user_01': 50.0, 'user_02': 50.0},
+          date: DateTime(2026, 1, 10),
+        );
+
+        final map = expense.toMap();
+
+        expect(map['tripId'], 'trip_map');
+        expect(map['currency'], 'USD');
+        expect(map['splitType'], 'percentage');
+        expect(map['splits'], {'user_01': 50.0, 'user_02': 50.0});
+      },
+    );
   });
 
   group('Roteirização e Governança', () {
@@ -88,8 +121,8 @@ void main() {
         location: 'Veneza',
         category: 'leisure',
         votes: {
-          'user_1': 1,  // Aprova
-          'user_2': 1,  // Aprova
+          'user_1': 1, // Aprova
+          'user_2': 1, // Aprova
           'user_3': -1, // Reprova
         },
       );
@@ -104,6 +137,8 @@ void main() {
       final entry = JournalEntry(
         id: 'j_01',
         tripId: 'trip_01',
+        userId: 'user_01',
+        userName: 'Artur',
         date: DateTime.now(),
         content: 'Experiência fantástica no museu.',
         moodScore: 4.5,

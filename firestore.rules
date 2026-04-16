@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função auxiliar para verificar autenticação
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Função para verificar se é o próprio usuário
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Função para verificar se o usuário participa da viagem
+    function isTripMember(tripId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/trips/$(tripId))
+        && request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.members;
+    }
+    
+    // 1. USUÁRIOS: Qualquer autenticado pode ler, mas só o dono pode escrever
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // 2. DIÁRIO/JOURNAL: Leitura pública para álbum web, escrita só autenticados
+    match /journal/{entryId} {
+      allow read: if true;  // Público para álbum web
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // 3. COMUNIDADE/SERVIÇOS: Público se isPublic, escrita só autenticados
+    match /services/{serviceId} {
+      allow read: if isAuthenticated() || (resource != null && resource.data.isPublic == true);
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // 4. VIAGENS: Apenas usuários autenticados
+    match /trips/{tripId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // 5. ATIVIDADES: Apenas usuários autenticados
+    match /activities/{activityId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // 6. DESPESAS: Apenas usuários autenticados
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // 7. SEGURANÇA/SAFETY: Apenas usuários autenticados
+    match /safety_checkins/{checkinId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // 8. ÁLBUNS DE FOTOS: Apenas usuários autenticados
+    match /photo_albums/{albumId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // 9. CHECKLISTS DE BAGAGEM: Apenas usuários autenticados
+    match /packing_checklists/{checklistId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 9.1 ITENS DO CHECKLIST DE BAGAGEM: coleção usada pela tela
+    match /packing_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // 9.1 ITENS DO CHECKLIST DE BAGAGEM: apenas membros da viagem
+    match /packing_items/{itemId} {
+      allow read: if isAuthenticated() && isTripMember(resource.data.tripId);
+      allow create: if isAuthenticated()
+        && request.resource.data.tripId is string
+        && isTripMember(request.resource.data.tripId);
+      allow update, delete: if isAuthenticated()
+        && isTripMember(resource.data.tripId);
+    }
+
+    // 10. AVALIAÇÕES DE DESTINOS: Apenas usuários autenticados
+    match /destination_ratings/{ratingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Regra padrão: negar acesso a tudo que não foi especificado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

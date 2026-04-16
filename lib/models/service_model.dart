@@ -1,5 +1,69 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class PostComment {
+  final String id;
+  final String userId;
+  final String userName;
+  final String text;
+  final DateTime createdAt;
+  final bool isHidden;
+  final String? hiddenBy;
+
+  const PostComment({
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.text,
+    required this.createdAt,
+    this.isHidden = false,
+    this.hiddenBy,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'userId': userId,
+      'userName': userName,
+      'text': text,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'isHidden': isHidden,
+      'hiddenBy': hiddenBy,
+    };
+  }
+
+  factory PostComment.fromMap(Map<String, dynamic> data) {
+    return PostComment(
+      id: (data['id'] ?? '').toString(),
+      userId: (data['userId'] ?? '').toString(),
+      userName: (data['userName'] ?? 'Viajante').toString(),
+      text: (data['text'] ?? '').toString(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isHidden: data['isHidden'] ?? false,
+      hiddenBy: data['hiddenBy']?.toString(),
+    );
+  }
+
+  PostComment copyWith({
+    String? id,
+    String? userId,
+    String? userName,
+    String? text,
+    DateTime? createdAt,
+    bool? isHidden,
+    String? hiddenBy,
+  }) {
+    return PostComment(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      text: text ?? this.text,
+      createdAt: createdAt ?? this.createdAt,
+      isHidden: isHidden ?? this.isHidden,
+      hiddenBy: hiddenBy ?? this.hiddenBy,
+    );
+  }
+}
+
 class ServiceModel {
   final String id;
   final String ownerId;
@@ -16,7 +80,10 @@ class ServiceModel {
   final bool isPublic;
   final String? userName;
   final List<String> likes;
-  final int savesCount;     
+  final int savesCount;
+  final List<PostComment> comments;
+  final bool commentsEnabled;
+  final DateTime? updatedAt;
 
   ServiceModel({
     required this.id,
@@ -35,6 +102,9 @@ class ServiceModel {
     this.userName,
     this.likes = const [],
     this.savesCount = 0,
+    this.comments = const [],
+    this.commentsEnabled = true,
+    this.updatedAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -54,6 +124,9 @@ class ServiceModel {
       'userName': userName,
       'likes': likes,
       'savesCount': savesCount,
+      'comments': comments.map((comment) => comment.toMap()).toList(),
+      'commentsEnabled': commentsEnabled,
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
   }
 
@@ -76,6 +149,55 @@ class ServiceModel {
       userName: data['userName'],
       likes: List<String>.from(data['likes'] ?? []),
       savesCount: data['savesCount'] ?? 0,
+      comments: ((data['comments'] ?? []) as List)
+          .map((item) => PostComment.fromMap(Map<String, dynamic>.from(item)))
+          .toList(),
+      commentsEnabled: data['commentsEnabled'] ?? true,
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  ServiceModel copyWith({
+    String? id,
+    String? ownerId,
+    String? name,
+    String? category,
+    String? location,
+    double? rating,
+    String? comment,
+    double? averageCost,
+    int? usageFrequency,
+    List<String>? tags,
+    List<String>? photos,
+    DateTime? lastUsed,
+    bool? isPublic,
+    String? userName,
+    List<String>? likes,
+    int? savesCount,
+    List<PostComment>? comments,
+    bool? commentsEnabled,
+    DateTime? updatedAt,
+  }) {
+    return ServiceModel(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      location: location ?? this.location,
+      rating: rating ?? this.rating,
+      comment: comment ?? this.comment,
+      averageCost: averageCost ?? this.averageCost,
+      usageFrequency: usageFrequency ?? this.usageFrequency,
+      tags: tags ?? this.tags,
+      photos: photos ?? this.photos,
+      lastUsed: lastUsed ?? this.lastUsed,
+      isPublic: isPublic ?? this.isPublic,
+      userName: userName ?? this.userName,
+      likes: likes ?? this.likes,
+      savesCount: savesCount ?? this.savesCount,
+      comments: comments ?? this.comments,
+      commentsEnabled: commentsEnabled ?? this.commentsEnabled,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
