@@ -85,6 +85,12 @@ class ServiceModel {
   final bool commentsEnabled;
   final DateTime? updatedAt;
 
+  // Novos Campos "Fator Local"
+  final String? dishRecommendation; // "Prato do Bairro"
+  final String? peakHoursAdvice;   // "Melhor horário/Dia para evitar"
+  final bool isLocalFavorite;      // Filtro "Sem Turistas"
+  final String? localEtiquette;    // Dicas de gorjeta/comportamento
+
   ServiceModel({
     required this.id,
     required this.ownerId,
@@ -105,6 +111,10 @@ class ServiceModel {
     this.comments = const [],
     this.commentsEnabled = true,
     this.updatedAt,
+    this.dishRecommendation,
+    this.peakHoursAdvice,
+    this.isLocalFavorite = false,
+    this.localEtiquette,
   });
 
   Map<String, dynamic> toMap() {
@@ -127,6 +137,10 @@ class ServiceModel {
       'comments': comments.map((comment) => comment.toMap()).toList(),
       'commentsEnabled': commentsEnabled,
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'dishRecommendation': dishRecommendation,
+      'peakHoursAdvice': peakHoursAdvice,
+      'isLocalFavorite': isLocalFavorite,
+      'localEtiquette': localEtiquette,
     };
   }
 
@@ -154,6 +168,10 @@ class ServiceModel {
           .toList(),
       commentsEnabled: data['commentsEnabled'] ?? true,
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      dishRecommendation: data['dishRecommendation'],
+      peakHoursAdvice: data['peakHoursAdvice'],
+      isLocalFavorite: data['isLocalFavorite'] ?? false,
+      localEtiquette: data['localEtiquette'],
     );
   }
 
@@ -177,6 +195,10 @@ class ServiceModel {
     List<PostComment>? comments,
     bool? commentsEnabled,
     DateTime? updatedAt,
+    String? dishRecommendation,
+    String? peakHoursAdvice,
+    bool? isLocalFavorite,
+    String? localEtiquette,
   }) {
     return ServiceModel(
       id: id ?? this.id,
@@ -198,6 +220,10 @@ class ServiceModel {
       comments: comments ?? this.comments,
       commentsEnabled: commentsEnabled ?? this.commentsEnabled,
       updatedAt: updatedAt ?? this.updatedAt,
+      dishRecommendation: dishRecommendation ?? this.dishRecommendation,
+      peakHoursAdvice: peakHoursAdvice ?? this.peakHoursAdvice,
+      isLocalFavorite: isLocalFavorite ?? this.isLocalFavorite,
+      localEtiquette: localEtiquette ?? this.localEtiquette,
     );
   }
 }

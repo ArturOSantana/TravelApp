@@ -9,10 +9,19 @@ class Activity {
   final String location;
   final String category;
   final Map<String, int> votes; // userId: vote (1 or -1)
-  final List<Map<String, dynamic>> opinions; // [{ 'userId': '', 'userName': '', 'text': '' }]
+  final List<Map<String, dynamic>>
+  opinions; // [{ 'userId': '', 'userName': '', 'text': '' }]
   final bool isApproved;
   final double? latitude;
   final double? longitude;
+  final double estimatedCost;
+  final int durationMinutes;
+  final String period;
+  final bool isOutdoor;
+  final int priority;
+  final List<String> tags;
+  final String source;
+  final double score;
 
   Activity({
     required this.id,
@@ -27,6 +36,14 @@ class Activity {
     this.isApproved = true,
     this.latitude,
     this.longitude,
+    this.estimatedCost = 0,
+    this.durationMinutes = 90,
+    this.period = 'flexivel',
+    this.isOutdoor = false,
+    this.priority = 0,
+    this.tags = const [],
+    this.source = 'manual',
+    this.score = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,6 +59,14 @@ class Activity {
       'isApproved': isApproved,
       'latitude': latitude,
       'longitude': longitude,
+      'estimatedCost': estimatedCost,
+      'durationMinutes': durationMinutes,
+      'period': period,
+      'isOutdoor': isOutdoor,
+      'priority': priority,
+      'tags': tags,
+      'source': source,
+      'score': score,
     };
   }
 
@@ -60,6 +85,14 @@ class Activity {
       isApproved: data['isApproved'] ?? true,
       latitude: data['latitude'],
       longitude: data['longitude'],
+      estimatedCost: (data['estimatedCost'] ?? 0).toDouble(),
+      durationMinutes: (data['durationMinutes'] ?? 90) as int,
+      period: (data['period'] ?? 'flexivel').toString(),
+      isOutdoor: data['isOutdoor'] ?? false,
+      priority: (data['priority'] ?? 0) as int,
+      tags: List<String>.from(data['tags'] ?? []),
+      source: (data['source'] ?? 'manual').toString(),
+      score: (data['score'] ?? 0).toDouble(),
     );
   }
 }
