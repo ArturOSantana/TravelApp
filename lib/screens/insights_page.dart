@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../models/expense.dart';
 import '../controllers/trip_controller.dart';
+import '../services/ai_service.dart';
 
 class InsightsPage extends StatefulWidget {
   const InsightsPage({super.key});
@@ -14,13 +15,15 @@ class _InsightsPageState extends State<InsightsPage> {
   final TripController _controller = TripController();
   Trip? _selectedTrip;
   bool _showGeneral = true;
+  String? _aiAnalysisText;
+  bool _isAnalyzing = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Insights & Análise", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Análise de Viagem", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -72,7 +75,10 @@ class _InsightsPageState extends State<InsightsPage> {
             label: const Text("Visão Geral"),
             selected: _showGeneral,
             onSelected: (selected) {
-              if (selected) setState(() => _showGeneral = true);
+              if (selected) setState(() {
+                _showGeneral = true;
+                _aiAnalysisText = null;
+              });
             },
             selectedColor: Colors.deepPurple,
             labelStyle: TextStyle(color: _showGeneral ? Colors.white : Colors.black),
@@ -83,13 +89,14 @@ class _InsightsPageState extends State<InsightsPage> {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                label: Text(trip.destination), // Usando destination em vez de title
+                label: Text(trip.destination),
                 selected: isSelected,
                 onSelected: (selected) {
                   if (selected) {
                     setState(() {
                       _showGeneral = false;
                       _selectedTrip = trip;
+                      _aiAnalysisText = null;
                     });
                   }
                 },
@@ -137,14 +144,14 @@ class _InsightsPageState extends State<InsightsPage> {
       stream: _controller.getExpenses(trip.id),
       builder: (context, snapshot) {
         final expenses = snapshot.data ?? [];
-        double spent = expenses.fold(0, (sum, e) => sum + e.value); // Usando value em vez de amount
+        double spent = expenses.fold(0, (sum, e) => sum + e.value);
         double percent = trip.budget > 0 ? (spent / trip.budget) : 0;
         bool isOverBudget = spent > trip.budget;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(trip.destination, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), // Usando destination
+            Text(trip.destination, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             
             _buildSectionTitle("Saúde Financeira"),
@@ -155,12 +162,69 @@ class _InsightsPageState extends State<InsightsPage> {
             _buildSectionTitle("Distribuição de Gastos"),
             _buildCategoryDistribution(expenses),
             
-            const SizedBox(height: 24),
-            _buildSectionTitle("Recomendações IA"),
-            _buildIndividualAIAdvice(trip, spent, isOverBudget),
+            const SizedBox(height: 32),
+            _buildAIAnalysisButton(trip, expenses),
+            if (_aiAnalysisText != null) ...[
+              const SizedBox(height: 15),
+              _buildAIResponseCard(),
+            ],
           ],
         );
       },
+    );
+  }
+
+  Widget _buildAIAnalysisButton(Trip trip, List<Expense> expenses) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _isAnalyzing ? null : () async {
+          setState(() => _isAnalyzing = true);
+          final result = await AIService.getTravelAnalysis(trip: trip, expenses: expenses);
+          setState(() {
+            _aiAnalysisText = result;
+            _isAnalyzing = false;
+          });
+        },
+        icon: _isAnalyzing 
+          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          : const Icon(Icons.auto_awesome),
+        label: const Text("ANALISAR COM IA", style: TextStyle(fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.deepPurple,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.all(15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAIResponseCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.deepPurple[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.deepPurple[100]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.psychology, color: Colors.deepPurple, size: 20),
+              SizedBox(width: 8),
+              Text("Análise do Gemini", style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _aiAnalysisText!,
+            style: const TextStyle(color: Colors.black87, fontSize: 14, height: 1.5, fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
     );
   }
 
@@ -188,11 +252,6 @@ class _InsightsPageState extends State<InsightsPage> {
             color: isOver ? Colors.red : Colors.green,
             minHeight: 10,
           ),
-          const SizedBox(height: 8),
-          Text(
-            isOver ? "Você ultrapassou o planejado em R\$ ${(spent - budget).toStringAsFixed(0)}" : "Você ainda tem R\$ ${(budget - spent).toStringAsFixed(0)} disponíveis",
-            style: TextStyle(fontSize: 12, color: isOver ? Colors.red : Colors.green[800]),
-          ),
         ],
       ),
     );
@@ -201,12 +260,11 @@ class _InsightsPageState extends State<InsightsPage> {
   Widget _buildCategoryDistribution(List<Expense> expenses) {
     Map<String, double> categories = {};
     for (var e in expenses) {
-      categories[e.category] = (categories[e.category] ?? 0) + e.value; // Usando value em vez de amount
+      categories[e.category] = (categories[e.category] ?? 0) + e.value;
     }
 
     if (categories.isEmpty) return const Text("Sem gastos registrados.");
-
-    double totalSpent = expenses.fold(0.0, (sum, e) => sum + e.value); // Usando value
+    double totalSpent = expenses.fold(0.0, (sum, e) => sum + e.value);
 
     return Column(
       children: categories.entries.map((entry) {
@@ -229,14 +287,6 @@ class _InsightsPageState extends State<InsightsPage> {
         );
       }).toList(),
     );
-  }
-
-  Widget _buildIndividualAIAdvice(Trip trip, double spent, bool isOver) {
-    String advice = isOver 
-      ? "Alerta: Seus gastos em ${trip.destination} estão acima da média. Considere reduzir despesas com alimentação nos próximos dias."
-      : "Parabéns! Você está gerindo bem seu orçamento em ${trip.destination}. Sobrou fôlego para uma atividade extra!";
-    
-    return _buildAIPredictionCard(advice);
   }
 
   Widget _buildSectionTitle(String title) {
@@ -324,7 +374,7 @@ class _InsightsPageState extends State<InsightsPage> {
             children: [
               Icon(Icons.auto_awesome, color: Colors.white, size: 20),
               SizedBox(width: 8),
-              Text("Análise Inteligente", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text("Análise Preditiva", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 12),

@@ -29,6 +29,7 @@ dependencies:
   connectivity_plus: ^6.1.2    # Detectar conexão
   smooth_page_indicator: ^1.2.0+3  # Indicador de onboarding
   cached_network_image: ^3.4.1  # Cache de imagens
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:
