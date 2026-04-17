@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
@@ -15,6 +16,9 @@ import 'services/cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa a formatação de datas para Português (Brasil)
+  await initializeDateFormatting('pt_BR', null);
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 

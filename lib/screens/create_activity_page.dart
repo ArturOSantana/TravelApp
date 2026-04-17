@@ -18,6 +18,18 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
+  String _selectedCategory = 'Geral';
+
+  final List<String> _categories = [
+    'Geral',
+    'Praia',
+    'Trilha',
+    'Cidade',
+    'Restaurante',
+    'Museu',
+    'Aventura',
+    'Compras'
+  ];
 
   void _saveActivity() async {
     if (titleController.text.isEmpty) return;
@@ -36,21 +48,36 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       title: titleController.text,
       time: combinedDateTime,
       location: locationController.text,
+      category: _selectedCategory.toLowerCase(),
     );
 
     try {
       // 1. Salva no banco
       await _controller.addActivity(activity);
 
-      // 2. Agenda o Alarme/Notificação com os parâmetros nomeados corretos
-      await NotificationService.scheduleNotification(
-        id: combinedDateTime.millisecondsSinceEpoch.remainder(100000),
-        title: "Lembrete: ${activity.title}",
-        body: "Sua atividade em ${activity.location} começa agora!",
-        scheduledDate: combinedDateTime,
-      );
+      // 2. Agenda o Alarme para 15 minutos ANTES da atividade
+      final scheduledTime = combinedDateTime.subtract(const Duration(minutes: 15));
+      
+      // Se a data agendada (15 min antes) já passou (ex: atividade agora ou em 5 min),
+      // não agendamos para evitar erro de sistema.
+      if (scheduledTime.isAfter(DateTime.now())) {
+        await NotificationService.scheduleNotification(
+          id: combinedDateTime.millisecondsSinceEpoch.remainder(100000),
+          title: "Sua atividade começa em breve! ✈️",
+          body: "Prepare as coisas, '${activity.title}' em ${activity.location} começa em 15 minutos.",
+          scheduledDate: scheduledTime,
+        );
+      }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Atividade salva! Você será avisado 15min antes."),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -89,6 +116,28 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
                 prefixIcon: Icon(Icons.location_on),
               ),
             ),
+            const SizedBox(height: 20),
+
+            DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              decoration: const InputDecoration(
+                labelText: "Categoria",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.category),
+              ),
+              items: _categories.map((String category) {
+                return DropdownMenuItem(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedCategory = newValue!;
+                });
+              },
+            ),
+
             const SizedBox(height: 20),
             
             Container(
