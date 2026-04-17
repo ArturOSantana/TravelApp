@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 'feature/*'
 
 jobs:
   deploy:
@@ -32,6 +31,6 @@ jobs:
       - name: Upload to Firebase App Distribution
         uses: w9jds/firebase-action@master
         with:
-          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "testers"
+          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS"
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
