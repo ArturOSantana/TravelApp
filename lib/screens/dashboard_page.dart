@@ -54,7 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
               await _authController.logout();
-              if (context.mounted) Navigator.pushReplacementNamed(context, '/');
+              // O StreamBuilder no main.dart cuidará da navegação
             },
           ),
         ],
@@ -65,7 +65,7 @@ class _DashboardPageState extends State<DashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Olá, ${_user?.name.split(' ')[0]}!",
+              "Olá, ${_user?.name.split(' ')[0] ?? 'Viajante'}!",
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
@@ -110,8 +110,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 _buildGridItem(
                   context,
-                  "Biblioteca",
-                  Icons.local_library_rounded,
+                  "Comunidade",
+                  Icons.people_alt_rounded,
                   Colors.indigo,
                   () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesLibraryPage())),
                 ),

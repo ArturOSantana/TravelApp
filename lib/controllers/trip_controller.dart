@@ -219,7 +219,7 @@ class TripController {
     return users;
   }
 
-  // --- SERVICES ---
+  // --- SERVICES / COMUNIDADE ---
   Stream<List<ServiceModel>> getPersonalServices() {
     String uid = _auth.currentUser?.uid ?? '';
     return _db
@@ -237,6 +237,19 @@ class TripController {
     return _db
         .collection('services')
         .where('isPublic', isEqualTo: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ServiceModel.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  Stream<List<ServiceModel>> getSavedServices() {
+    String uid = _auth.currentUser?.uid ?? '';
+    return _db
+        .collection('services')
+        .where('savedBy', arrayContains: uid)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
@@ -395,6 +408,25 @@ class TripController {
     await saveService(imported);
   }
 
+  Future<void> toggleSaveService(String serviceId, List<String> currentSavedBy) async {
+    String uid = _auth.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+
+    DocumentReference docRef = _db.collection('services').doc(serviceId);
+
+    if (currentSavedBy.contains(uid)) {
+      await docRef.update({
+        'savedBy': FieldValue.arrayRemove([uid]),
+        'savesCount': FieldValue.increment(-1),
+      });
+    } else {
+      await docRef.update({
+        'savedBy': FieldValue.arrayUnion([uid]),
+        'savesCount': FieldValue.increment(1),
+      });
+    }
+  }
+
   Future<void> toggleLikeService(
     String serviceId,
     List<String> currentLikes,
@@ -425,7 +457,6 @@ class TripController {
           final activities = snapshot.docs
               .map((doc) => Activity.fromFirestore(doc))
               .toList();
-          // Ordenar primeiro por tempo e depois por index (caso no mesmo horário)
           activities.sort((a, b) {
             int timeCompare = a.time.compareTo(b.time);
             if (timeCompare != 0) return timeCompare;
