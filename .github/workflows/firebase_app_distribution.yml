@@ -50,10 +50,8 @@ jobs:
         run: echo "Build automatizada. Versao ${{ steps.versioning.outputs.new_version }} - Testes validados" > release_notes.txt
 
       - name: Upload to Firebase App Distribution
-        uses: FirebaseExtended/action-firebase-distribution@v1
+        uses: w9jds/firebase-action@master
         with:
-          appId: "1:660606500922:android:7a5e698da565dc9a34f503"
-          token: ${{ secrets.FIREBASE_TOKEN }}
-          groups: "TCC_DS"
-          file: "build/app/outputs/flutter-apk/app-release.apk"
-          releaseNotesFile: "release_notes.txt"
+          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS" --release-notes-file release_notes.txt
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
