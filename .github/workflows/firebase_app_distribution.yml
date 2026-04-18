@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - master
+  workflow_dispatch: # Permite rodar manualmente se precisar
 
 jobs:
   deploy:
@@ -40,6 +42,7 @@ jobs:
           NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
           NEW_VERSION="$VERSION_NAME+$NEW_BUILD_NUMBER"
           sed -i "s/version: $VERSION/version: $NEW_VERSION/" pubspec.yaml
+          echo "New Version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build APK
@@ -48,6 +51,10 @@ jobs:
       - name: Upload to Firebase App Distribution
         uses: w9jds/firebase-action@master
         with:
-          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS" --release-notes "Build automatizada. Versão: ${{ steps.versioning.outputs.new_version }} - Testes validados ✅"
+          args: >-
+            appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk
+            --app 1:660606500922:android:7a5e698da565dc9a34f503
+            --groups "TCC_DS"
+            --release-notes "Build automatizada via GitHub Actions. Versão: ${{ steps.versioning.outputs.new_version }} - Testes OK ✅"
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
