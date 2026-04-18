@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
   workflow_dispatch:
 
 jobs:
@@ -47,6 +46,9 @@ jobs:
       - name: Build APK
         run: flutter build apk --release --build-name=${{ steps.versioning.outputs.new_version }} --build-number=${{ github.run_number }}
 
+      - name: Create Release Notes
+        run: echo "Build automatizada. Versao ${{ steps.versioning.outputs.new_version }} - Testes validados" > release_notes.txt
+
       - name: Upload to Firebase App Distribution
         uses: FirebaseExtended/action-firebase-distribution@v1
         with:
@@ -54,4 +56,4 @@ jobs:
           token: ${{ secrets.FIREBASE_TOKEN }}
           groups: "TCC_DS"
           file: "build/app/outputs/flutter-apk/app-release.apk"
-          releaseNotes: "Build automatizada. Versao: ${{ steps.versioning.outputs.new_version }} - Testes validados"
+          releaseNotesFile: "release_notes.txt"
