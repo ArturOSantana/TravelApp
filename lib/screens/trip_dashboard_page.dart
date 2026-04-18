@@ -118,7 +118,7 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                     _buildOptionCard(
                       context,
                       Icons.calendar_month,
-                      "Roteiro Inteligente",
+                      "Roteiro de Viagem",
                       "Organize atividades e vote em grupo",
                       () => Navigator.push(
                         context,

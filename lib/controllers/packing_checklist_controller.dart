@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/packing_checklist.dart';
 import '../services/packing_checklist_service.dart';
 
@@ -7,8 +8,7 @@ class PackingChecklistController {
 
   final PackingChecklistService _service;
 
-  static const List<String> categories = [
-    'Todos',
+  static const List<String> defaultCategories = [
     'Roupas',
     'Documentos',
     'Eletrônicos',
@@ -18,6 +18,24 @@ class PackingChecklistController {
     'Acessórios',
     'Outros',
   ];
+
+  Stream<List<String>> watchTripCategories(String tripId) {
+    return FirebaseFirestore.instance
+        .collection('activities')
+        .where('tripId', isEqualTo: tripId)
+        .snapshots()
+        .map((snapshot) {
+      final activityCategories = snapshot.docs
+          .map((doc) => _capitalize(doc.data()['category'] ?? 'Geral'))
+          .toSet();
+      
+      final allCategories = {...defaultCategories, ...activityCategories};
+      return ['Todos', ...allCategories.toList()..sort()];
+    });
+  }
+
+  String _capitalize(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
 
   Stream<PackingChecklistViewData> watchViewData({
     required String tripId,
@@ -91,7 +109,7 @@ class PackingChecklistController {
 
     if (selectedCategory != 'Todos') {
       filtered = filtered
-          .where((item) => item.category == selectedCategory)
+          .where((item) => item.category.toLowerCase() == selectedCategory.toLowerCase())
           .toList();
     }
 
@@ -206,4 +224,3 @@ class PackingChecklistController {
     return _service.deleteItem(itemId);
   }
 }
-

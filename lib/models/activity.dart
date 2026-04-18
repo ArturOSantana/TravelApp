@@ -13,6 +13,7 @@ class Activity {
   final bool isApproved;
   final double? latitude;
   final double? longitude;
+  final int index; // Novo: para ordenação manual
 
   Activity({
     required this.id,
@@ -27,6 +28,7 @@ class Activity {
     this.isApproved = true,
     this.latitude,
     this.longitude,
+    this.index = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,6 +44,7 @@ class Activity {
       'isApproved': isApproved,
       'latitude': latitude,
       'longitude': longitude,
+      'index': index,
     };
   }
 
@@ -60,6 +63,39 @@ class Activity {
       isApproved: data['isApproved'] ?? true,
       latitude: data['latitude'],
       longitude: data['longitude'],
+      index: data['index'] ?? 0,
+    );
+  }
+
+  Activity copyWith({
+    String? id,
+    String? tripId,
+    String? title,
+    String? description,
+    DateTime? time,
+    String? location,
+    String? category,
+    Map<String, int>? votes,
+    List<Map<String, dynamic>>? opinions,
+    bool? isApproved,
+    double? latitude,
+    double? longitude,
+    int? index,
+  }) {
+    return Activity(
+      id: id ?? this.id,
+      tripId: tripId ?? this.tripId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      time: time ?? this.time,
+      location: location ?? this.location,
+      category: category ?? this.category,
+      votes: votes ?? this.votes,
+      opinions: opinions ?? this.opinions,
+      isApproved: isApproved ?? this.isApproved,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      index: index ?? this.index,
     );
   }
 }

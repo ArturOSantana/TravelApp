@@ -425,13 +425,53 @@ class TripController {
           final activities = snapshot.docs
               .map((doc) => Activity.fromFirestore(doc))
               .toList();
-          activities.sort((a, b) => a.time.compareTo(b.time));
+          // Ordenar primeiro por tempo e depois por index (caso no mesmo horário)
+          activities.sort((a, b) {
+            int timeCompare = a.time.compareTo(b.time);
+            if (timeCompare != 0) return timeCompare;
+            return a.index.compareTo(b.index);
+          });
           return activities;
         });
   }
 
+  Stream<List<String>> watchTripCategories(String tripId) {
+    return _db
+        .collection('activities')
+        .where('tripId', isEqualTo: tripId)
+        .snapshots()
+        .map((snapshot) {
+      final activityCategories = snapshot.docs
+          .map((doc) => _capitalize(doc.data()['category'] ?? 'Geral'))
+          .toSet();
+      
+      return ['Todos', ...activityCategories.toList()..sort()];
+    });
+  }
+
+  String _capitalize(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
+
   Future<void> addActivity(Activity activity) async {
     await _db.collection('activities').add(activity.toMap());
+  }
+
+  Future<void> updateActivity(Activity activity) async {
+    if (activity.id.isEmpty) return;
+    await _db.collection('activities').doc(activity.id).update(activity.toMap());
+  }
+
+  Future<void> reorderActivities(List<Activity> activities) async {
+    final batch = _db.batch();
+    for (int i = 0; i < activities.length; i++) {
+      final ref = _db.collection('activities').doc(activities[i].id);
+      batch.update(ref, {'index': i});
+    }
+    await batch.commit();
+  }
+
+  Future<void> deleteActivity(String activityId) async {
+    await _db.collection('activities').doc(activityId).delete();
   }
 
   Future<void> voteActivity(String activityId, String userId, int vote) async {

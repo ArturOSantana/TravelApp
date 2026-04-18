@@ -19,8 +19,6 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
   bool _showOnlyPriority = false;
   String _searchQuery = '';
 
-  List<String> get _categories => PackingChecklistController.categories;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +36,7 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddItemDialog,
+        onPressed: () => _showAddItemDialog(context),
         icon: const Icon(Icons.add),
         label: const Text('Novo item'),
         backgroundColor: Colors.deepPurple,
@@ -197,32 +195,38 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
             },
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 34,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = _selectedCategory == category;
+          StreamBuilder<List<String>>(
+            stream: _controller.watchTripCategories(widget.tripId),
+            builder: (context, snapshot) {
+              final categories = snapshot.data ?? ['Todos'];
+              return SizedBox(
+                height: 34,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final isSelected = _selectedCategory == category;
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: ChoiceChip(
-                    visualDensity: VisualDensity.compact,
-                    label: Text(category, style: const TextStyle(fontSize: 12)),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      setState(() => _selectedCategory = category);
-                    },
-                    selectedColor: Colors.deepPurple,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                );
-              },
-            ),
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text(category, style: const TextStyle(fontSize: 12)),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          setState(() => _selectedCategory = category);
+                        },
+                        selectedColor: Colors.deepPurple,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -294,50 +298,60 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
     );
   }
 
-  void _showAddItemDialog() {
+  void _showAddItemDialog(BuildContext context) {
     final nameController = TextEditingController();
-    String selectedCategory = 'Roupas';
-
+    
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => AlertDialog(
-          title: const Text('Novo item'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nome do item'),
-                autofocus: true,
+      builder: (context) => StreamBuilder<List<String>>(
+        stream: _controller.watchTripCategories(widget.tripId),
+        builder: (context, snapshot) {
+          final categories = (snapshot.data ?? ['Outros'])
+              .where((c) => c != 'Todos')
+              .toList();
+          
+          String selectedCategory = categories.contains('Outros') ? 'Outros' : categories.first;
+
+          return StatefulBuilder(
+            builder: (context, setModalState) => AlertDialog(
+              title: const Text('Novo item'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Nome do item'),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedCategory,
+                    items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (val) => setModalState(() => selectedCategory = val!),
+                    decoration: const InputDecoration(labelText: 'Categoria'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedCategory,
-                items: _categories.where((c) => c != 'Todos').map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (val) => setModalState(() => selectedCategory = val!),
-                decoration: const InputDecoration(labelText: 'Categoria'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.isNotEmpty) {
-                  await _controller.addItem(
-                    tripId: widget.tripId,
-                    name: nameController.text,
-                    category: selectedCategory,
-                    quantity: 1,
-                  );
-                  if (mounted) Navigator.pop(context);
-                }
-              },
-              child: const Text('Adicionar'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.isNotEmpty) {
+                      await _controller.addItem(
+                        tripId: widget.tripId,
+                        name: nameController.text,
+                        category: selectedCategory,
+                        quantity: 1,
+                      );
+                      if (mounted) Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Adicionar'),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
