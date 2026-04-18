@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -21,16 +23,31 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Run Tests
+        run: flutter test test/profile_validation_test.dart
+
+      - name: Auto Increment Version
+        id: versioning
+        run: |
+          VERSION=$(grep 'version: ' pubspec.yaml | sed 's/version: //')
+          VERSION_NAME=$(echo $VERSION | cut -d+ -f1)
+          BUILD_NUMBER=$(echo $VERSION | cut -d+ -f2)
+          NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
+          NEW_VERSION="$VERSION_NAME+$NEW_BUILD_NUMBER"
+          sed -i "s/version: $VERSION/version: $NEW_VERSION/" pubspec.yaml
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-name=${{ steps.versioning.outputs.new_version }} --build-number=${{ github.run_number }}
 
       - name: Upload to Firebase App Distribution
         uses: w9jds/firebase-action@master
         with:
-          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS"
+          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS" --release-notes "Build automatizada. Versão: ${{ steps.versioning.outputs.new_version }} - Testes validados ✅"
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

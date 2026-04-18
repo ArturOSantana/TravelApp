@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 
@@ -30,17 +32,28 @@ class _CreateTripPageState extends State<CreateTripPage> {
   final List<String> _objectives = ['Descanso', 'Aventura', 'Trabalho', 'Cultural', 'Gastronômico'];
   final List<String> _currencies = ['BRL', 'USD', 'EUR', 'GBP', 'ARS'];
 
-  final List<String> _destinations = [
-    'São Paulo, SP', 'Rio de Janeiro, RJ', 'Brasília, DF', 'Salvador, BA', 'Fortaleza, CE', 
-    'Belo Horizonte, MG', 'Curitiba, PR', 'Manaus, AM', 'Recife, PE', 'Porto Alegre, RS', 
-    'Belém, PA', 'Goiânia, GO', 'Florianópolis, SC', 'Natal, RN', 'Gramado, RS', 'Maceió, AL', 
-    'Porto Seguro, BA', 'Búzios, RJ', 'Foz do Iguaçu, PR', 'Bonito, MS', 'Ubatuba, SP',
-    'Paris, França', 'Londres, Reino Unido', 'Nova York, EUA', 'Orlando, EUA', 'Miami, EUA',
-    'Lisboa, Portugal', 'Porto, Portugal', 'Roma, Itália', 'Veneza, Itália', 'Milão, Itália',
-    'Madrid, Espanha', 'Barcelona, Espanha', 'Buenos Aires, Argentina', 'Santiago, Chile',
-    'Montevidéu, Uruguai', 'Tóquio, Japão', 'Berlim, Alemanha', 'Amsterdã, Holanda',
-    'Cancún, México', 'Dubai, Emirados Árabes', 'Toronto, Canadá', 'Sydney, Austrália'
-  ];
+  Future<List<Map<String, dynamic>>> _searchDestinations(String query) async {
+    if (query.length < 3) return [];
+    
+    try {
+      final response = await http.get(
+        Uri.parse('https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&accept-language=pt-BR'),
+        headers: {'User-Agent': 'TravelPlannerApp/1.0'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((item) => {
+          'display_name': item['display_name'],
+          'lat': item['lat'],
+          'lon': item['lon'],
+        }).toList();
+      }
+    } catch (e) {
+      debugPrint("Erro na busca: $e");
+    }
+    return [];
+  }
 
   int get _tripDuration {
     if (_startDate == null || _endDate == null || _isNomad) return 0;
@@ -53,12 +66,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
         ? (_startDate ?? now) 
         : (_endDate ?? (_startDate ?? now).add(const Duration(days: 1)));
 
-    final DateTime firstDate = isStart ? now.subtract(const Duration(days: 30)) : (_startDate ?? now);
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: firstDate,
+      firstDate: isStart ? now.subtract(const Duration(days: 30)) : (_startDate ?? now),
       lastDate: DateTime(now.year + 10),
     );
 
@@ -133,53 +144,33 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         readOnly: true, 
                         onTap: () => searchController.openView(),
                         decoration: const InputDecoration(
-                          hintText: "Selecione o destino",
+                          hintText: "Busque qualquer cidade no mundo...",
                           prefixIcon: Icon(Icons.location_on, color: Colors.deepPurple),
                           border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.arrow_drop_down),
+                          suffixIcon: Icon(Icons.search),
                         ),
                         validator: (v) => v == null || v.isEmpty ? "Informe o destino" : null,
                       );
                     },
-                    suggestionsBuilder: (BuildContext context, SearchController searchController) {
-                      final String keyword = searchController.text.toLowerCase();
-                      final filtered = _destinations.where((d) => d.toLowerCase().contains(keyword)).toList();
+                    suggestionsBuilder: (BuildContext context, SearchController searchController) async {
+                      if (searchController.text.length < 3) return [];
+                      
+                      final results = await _searchDestinations(searchController.text);
 
-                      return filtered.map((dest) => ListTile(
-                        title: Text(dest),
+                      return results.map((dest) => ListTile(
+                        leading: const Icon(Icons.map_outlined, color: Colors.deepPurple),
+                        title: Text(dest['display_name'], maxLines: 2, overflow: TextOverflow.ellipsis),
                         onTap: () {
                           setState(() {
-                            destinationController.text = dest;
-                            searchController.text = dest;
+                            destinationController.text = dest['display_name'];
+                            searchController.text = dest['display_name'];
                           });
-                          searchController.closeView(dest);
+                          searchController.closeView(dest['display_name']);
                         },
                       )).toList();
                     },
                   ),
                   
-                  const SizedBox(height: 10),
-                  const Text("Sugestões rápidas:", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  const SizedBox(height: 5),
-                  SizedBox(
-                    height: 40,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: ['Rio', 'Paris', 'Lisboa', 'NY', 'Tóquio'].map((city) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ActionChip(
-                            label: Text(city),
-                            onPressed: () {
-                              final match = _destinations.firstWhere((d) => d.contains(city), orElse: () => city);
-                              setState(() => destinationController.text = match);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
                   const SizedBox(height: 30),
                   
                   Container(
@@ -205,6 +196,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: const Text("Modo Nômade"),
+                          subtitle: const Text("Sem data de volta definida", style: TextStyle(fontSize: 11)),
                           value: _isNomad,
                           onChanged: (v) => setState(() => _isNomad = v),
                         ),

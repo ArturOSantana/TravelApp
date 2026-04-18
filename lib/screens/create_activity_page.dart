@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/activity.dart';
 import '../controllers/trip_controller.dart';
 import '../services/notification_service.dart';
@@ -21,6 +24,8 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
+  double? _lat;
+  double? _lon;
 
   @override
   void initState() {
@@ -31,7 +36,30 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       categoryController.text = _capitalize(widget.activity!.category);
       _selectedDate = widget.activity!.time;
       _selectedTime = TimeOfDay.fromDateTime(widget.activity!.time);
+      _lat = widget.activity!.latitude;
+      _lon = widget.activity!.longitude;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _searchLocations(String query) async {
+    if (query.length < 3) return [];
+    try {
+      final response = await http.get(
+        Uri.parse('https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5&accept-language=pt-BR'),
+        headers: {'User-Agent': 'TravelPlannerApp/1.0'},
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((item) => {
+          'display_name': item['display_name'],
+          'lat': double.tryParse(item['lat']),
+          'lon': double.tryParse(item['lon']),
+        }).toList();
+      }
+    } catch (e) {
+      debugPrint("Erro na busca de locais: $e");
+    }
+    return [];
   }
 
   String _capitalize(String s) =>
@@ -41,7 +69,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     if (titleController.text.isEmpty) return;
     if (categoryController.text.trim().isEmpty) {
        ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Defina uma categoria para organizar sua mala!")),
+        const SnackBar(content: Text("Defina uma categoria!")),
       );
       return;
     }
@@ -65,8 +93,8 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       opinions: widget.activity?.opinions ?? [],
       isApproved: widget.activity?.isApproved ?? true,
       description: widget.activity?.description,
-      latitude: widget.activity?.latitude,
-      longitude: widget.activity?.longitude,
+      latitude: _lat,
+      longitude: _lon,
     );
 
     try {
@@ -76,9 +104,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
         await _controller.updateActivity(activity);
       }
 
-      // Agenda o Alarme para 15 minutos ANTES da atividade
       final scheduledTime = combinedDateTime.subtract(const Duration(minutes: 15));
-      
       if (scheduledTime.isAfter(DateTime.now())) {
         await NotificationService.scheduleNotification(
           id: combinedDateTime.millisecondsSinceEpoch.remainder(100000),
@@ -89,22 +115,10 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.activity == null 
-                ? "Atividade salva! Categoria '${_capitalize(activity.category)}' criada e vinculada ao checklist." 
-                : "Atividade atualizada!"),
-            backgroundColor: Colors.green,
-          ),
-        );
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar: $e"), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
     }
   }
 
@@ -117,13 +131,6 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
         title: Text(isEditing ? "Editar Atividade" : "Adicionar Atividade"),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
-        actions: [
-          if (isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _confirmDelete(),
-            )
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -139,45 +146,52 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
               ),
             ),
             const SizedBox(height: 20),
+            
+            SearchAnchor(
+              builder: (BuildContext context, SearchController searchController) {
+                return TextFormField(
+                  controller: locationController,
+                  readOnly: true,
+                  onTap: () => searchController.openView(),
+                  decoration: const InputDecoration(
+                    labelText: "Localização / Endereço",
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_on),
+                    suffixIcon: Icon(Icons.search),
+                  ),
+                );
+              },
+              suggestionsBuilder: (BuildContext context, SearchController searchController) async {
+                final results = await _searchLocations(searchController.text);
+                return results.map((loc) => ListTile(
+                  leading: const Icon(Icons.place, color: Colors.deepPurple),
+                  title: Text(loc['display_name'], maxLines: 2, overflow: TextOverflow.ellipsis),
+                  onTap: () {
+                    setState(() {
+                      locationController.text = loc['display_name'];
+                      _lat = loc['lat'];
+                      _lon = loc['lon'];
+                    });
+                    searchController.closeView(loc['display_name']);
+                  },
+                )).toList();
+              },
+            ),
+            
+            const SizedBox(height: 20),
             TextField(
-              controller: locationController,
-              decoration: const InputDecoration(
-                labelText: "Localização / Endereço",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on),
-              ),
-            ),
-            const SizedBox(height: 25),
-            
-            const Text(
-              "Criar Nova Categoria para Bagagem",
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
-            ),
-            const SizedBox(height: 10),
-            
-            TextFormField(
               controller: categoryController,
               decoration: const InputDecoration(
-                labelText: "Nome da Categoria",
-                hintText: "Ex: Mergulho, Noite Gala, Esqui...",
+                labelText: "Categoria",
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.category),
               ),
               textCapitalization: TextCapitalization.words,
             ),
-            const SizedBox(height: 8),
-            const Text(
-              "Dica: O nome que você digitar aqui aparecerá como uma nova seção no seu Checklist de Bagagem.",
-              style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
-            ),
 
             const SizedBox(height: 25),
-            
             Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
+              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 title: const Text("Data e Horário"),
                 subtitle: Text("${_selectedDate.day}/${_selectedDate.month} às ${_selectedTime.format(context)}"),
@@ -190,40 +204,21 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
                     lastDate: DateTime.now().add(const Duration(days: 3650)),
                   );
                   if (date != null) {
-                    if (context.mounted) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: _selectedTime,
-                      );
-                      if (time != null) {
-                        setState(() {
-                          _selectedDate = date;
-                          _selectedTime = time;
-                        });
-                      }
-                    }
+                    final time = await showTimePicker(context: context, initialTime: _selectedTime);
+                    if (time != null) setState(() { _selectedDate = date; _selectedTime = time; });
                   }
                 },
               ),
             ),
 
             const SizedBox(height: 30),
-
             SizedBox(
               width: double.infinity,
               height: 55,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple, 
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                 onPressed: _saveActivity,
-                icon: const Icon(Icons.check_circle),
-                label: Text(
-                  isEditing ? "ATUALIZAR NO ROTEIRO" : "SALVAR NO ROTEIRO", 
-                  style: const TextStyle(fontWeight: FontWeight.bold)
-                ),
+                child: const Text("SALVAR ATIVIDADE", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           ],
@@ -237,19 +232,12 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Excluir Atividade?"),
-        content: const Text("Esta ação não pode ser desfeita."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
-          TextButton(
-            onPressed: () async {
-              await _controller.deleteActivity(widget.activity!.id);
-              if (mounted) {
-                Navigator.pop(context); // fecha dialog
-                Navigator.pop(context); // volta para roteiro
-              }
-            },
-            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
-          ),
+          TextButton(onPressed: () async {
+            await _controller.deleteActivity(widget.activity!.id);
+            if (mounted) { Navigator.pop(context); Navigator.pop(context); }
+          }, child: const Text("Excluir", style: TextStyle(color: Colors.red))),
         ],
       ),
     );
