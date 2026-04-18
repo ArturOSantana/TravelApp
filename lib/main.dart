@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -66,12 +67,10 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      // Sistema de rotas compatível com Web
       home: const AppInitializer(),
       onGenerateRoute: (settings) {
         final Uri uri = Uri.parse(settings.name ?? '/');
 
-        // Trata /journal/ID
         if (uri.pathSegments.length == 2 &&
             uri.pathSegments.first == 'journal') {
           final String tripId = uri.pathSegments[1];
@@ -123,12 +122,31 @@ class AppInitializer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool onboardingCompleted = CacheService.isOnboardingCompleted();
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Se ainda está carregando o estado do Firebase
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    if (onboardingCompleted) {
-      return const LoginPage();
-    } else {
-      return const OnboardingPage();
-    }
+        final bool onboardingCompleted = CacheService.isOnboardingCompleted();
+
+        // 1. Se não terminou onboarding, manda pra lá
+        if (!onboardingCompleted) {
+          return const OnboardingPage();
+        }
+
+        // 2. Se tem usuário logado, manda pra Home
+        if (snapshot.hasData && snapshot.data != null) {
+          return const DashboardPage();
+        }
+
+        // 3. Caso contrário, LoginPage
+        return const LoginPage();
+      },
+    );
   }
 }

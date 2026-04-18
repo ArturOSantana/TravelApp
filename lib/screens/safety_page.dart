@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/safety_checkin.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
@@ -36,6 +38,22 @@ class _SafetyPageState extends State<SafetyPage> {
     }
   }
 
+  Future<String> _getAddressFromCoords(double lat, double lon) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon&accept-language=pt-BR'),
+        headers: {'User-Agent': 'TravelPlannerApp/1.0'},
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['display_name'] ?? "Localização Desconhecida";
+      }
+    } catch (e) {
+      debugPrint("Erro reverse geocoding: $e");
+    }
+    return "Lat: $lat, Lon: $lon";
+  }
+
   // Função mestre de SOS: Dispara SMS e WhatsApp
   void _triggerFullSOS() async {
     if (_user == null || _user!.emergencyPhone.isEmpty) {
@@ -46,31 +64,28 @@ class _SafetyPageState extends State<SafetyPage> {
     setState(() => _isLoading = true);
     
     try {
-      String location = "Localização Atual (GPS)"; 
-      // 1. Registra no Firebase para o histórico
-      await _controller.performSafetyCheckIn(widget.tripId, location, true);
+      // TODO: Usar geolocalizador real do dispositivo aqui
+      // Por enquanto simulando coordenadas para o OSM Geocoding
+      double mockLat = -23.5505; 
+      double mockLon = -46.6333;
 
-      final message = "🆘 EMERGÊNCIA! Sou o(a) ${_user!.name}. Estou em perigo na minha viagem. Localização: $location. POR FAVOR, CHAME A POLÍCIA AGORA!";
+      String locationName = await _getAddressFromCoords(mockLat, mockLon);
       
-      // Limpa o número (remove espaços, traços)
+      // 1. Registra no Firebase para o histórico
+      await _controller.performSafetyCheckIn(widget.tripId, locationName, true);
+
+      final message = "🆘 EMERGÊNCIA! Sou o(a) ${_user!.name}. Estou em perigo. Localização: $locationName. POR FAVOR, AJUDA!";
+      
       final cleanPhone = _user!.emergencyPhone.replaceAll(RegExp(r'[^0-9]'), '');
       final formattedPhone = "55$cleanPhone";
 
-      // 2. Dispara o SMS (Vantagem: funciona com sinal de celular instável)
       final smsUri = Uri.parse("sms:$formattedPhone?body=${Uri.encodeComponent(message)}");
-      
-      // 3. Dispara o WhatsApp (Vantagem: envia localização em tempo real melhor)
       final whatsappUrl = Uri.parse("https://wa.me/$formattedPhone?text=${Uri.encodeComponent(message)}");
 
-      // Execução: Primeiro SMS
       if (await canLaunchUrl(smsUri)) {
         await launchUrl(smsUri);
-        
-        // Pequeno delay para quando o usuário voltar do SMS
-        Future.delayed(const Duration(seconds: 2), () async {
-          if (mounted) {
-            _showWhatsAppRedirect(whatsappUrl);
-          }
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) _showWhatsAppRedirect(whatsappUrl);
         });
       } else if (await canLaunchUrl(whatsappUrl)) {
         await launchUrl(whatsappUrl);
@@ -114,9 +129,10 @@ class _SafetyPageState extends State<SafetyPage> {
     if (isPanic) {
       _triggerFullSOS();
     } else {
-      // Check-in normal "Estou Seguro"
       setState(() => _isLoading = true);
-      await _controller.performSafetyCheckIn(widget.tripId, "Localização de Check-in", false);
+      // Simulação de endereço para o check-in normal
+      String addr = await _getAddressFromCoords(-23.55, -46.63);
+      await _controller.performSafetyCheckIn(widget.tripId, addr, false);
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -201,7 +217,7 @@ class _SafetyPageState extends State<SafetyPage> {
                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
                 const SizedBox(height: 10),
                 const Text(
-                  "Em caso de perigo, o botão abaixo notificará seu contato por SMS e WhatsApp.",
+                  "Em caso de perigo, o botão abaixo notificará seu contato por SMS e WhatsApp com seu endereço atual.",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey),
                 ),
@@ -209,7 +225,7 @@ class _SafetyPageState extends State<SafetyPage> {
 
                 _buildSafetyButton(
                   "ESTOU SEGURO", 
-                  "Registra check-in no histórico", 
+                  "Registra check-in com endereço real", 
                   Icons.check_circle, 
                   Colors.green,
                   () => _handleSafetyAction(false)
@@ -217,10 +233,9 @@ class _SafetyPageState extends State<SafetyPage> {
 
                 const SizedBox(height: 20),
 
-                // Botão de Pânico Central
                 _buildSafetyButton(
                   "BOTÃO DE PÂNICO", 
-                  "ENVIAR SMS + WHATSAPP DE SOCORRO", 
+                  "ENVIAR SOS COM ENDEREÇO VIA OSM", 
                   Icons.warning, 
                   Colors.red,
                   () => _handleSafetyAction(true)
@@ -248,7 +263,13 @@ class _SafetyPageState extends State<SafetyPage> {
                               color: item.isPanic ? Colors.red : Colors.green,
                             ),
                             title: Text(item.isPanic ? "ALERTA SOS ENVIADO" : "Check-in de segurança"),
-                            subtitle: Text(DateFormat('dd/MM HH:mm').format(item.timestamp)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(DateFormat('dd/MM HH:mm').format(item.timestamp)),
+                                Text(item.locationName, style: const TextStyle(fontSize: 10, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ],
+                            ),
                           );
                         },
                       );

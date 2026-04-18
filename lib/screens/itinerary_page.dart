@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/activity.dart';
 import '../models/packing_checklist.dart';
 import '../controllers/trip_controller.dart';
@@ -263,13 +264,21 @@ class _ActivitiesListState extends State<_ActivitiesList> {
       itemCount: _localActivities.length,
       itemBuilder: (context, index) {
         final activity = _localActivities[index];
-        return _ActivityCard(
+        final nextActivity = (index + 1 < _localActivities.length) ? _localActivities[index+1] : null;
+
+        return Column(
           key: ValueKey(activity.id),
-          activity: activity,
-          uid: widget.uid,
-          tripId: widget.tripId,
-          controller: widget.controller,
-          index: index,
+          children: [
+            _ActivityCard(
+              activity: activity,
+              uid: widget.uid,
+              tripId: widget.tripId,
+              controller: widget.controller,
+              index: index,
+            ),
+            if (nextActivity != null) 
+              _buildRouteInfo(activity, nextActivity),
+          ],
         );
       },
       onReorder: (oldIndex, newIndex) {
@@ -289,6 +298,49 @@ class _ActivitiesListState extends State<_ActivitiesList> {
         );
       },
     );
+  }
+
+  Widget _buildRouteInfo(Activity start, Activity end) {
+    if (start.latitude == null || start.longitude == null || end.latitude == null || end.longitude == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        onTap: () => _openMapRoute(start, end),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.directions_car, size: 14, color: Colors.blue),
+              const SizedBox(width: 8),
+              const Text(
+                "Ver rota e tempo entre locais",
+                style: TextStyle(color: Colors.blue, fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.open_in_new, size: 10, color: Colors.blue),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openMapRoute(Activity start, Activity end) async {
+    final url = Uri.parse(
+      "https://www.google.com/maps/dir/?api=1&origin=${start.latitude},${start.longitude}&destination=${end.latitude},${end.longitude}&travelmode=driving"
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 }
 
