@@ -61,7 +61,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
         .ref()
         .child('service_photos')
         .child(uid)
-        .child('${DateTime.now().millisecondsSinceEpoch}_\$fileName');
+        .child('${DateTime.now().millisecondsSinceEpoch}_$fileName');
 
     UploadTask uploadTask = ref.putFile(file);
     TaskSnapshot snapshot = await uploadTask;
@@ -78,20 +78,16 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
         final user = FirebaseAuth.instance.currentUser;
 
         // 1. Fazer upload das imagens locais e obter URLs
-        List<String> allPhotos = List.from(
-          photos,
-        ); // Começa com as URLs inseridas manualmente
+        List<String> allPhotos = List.from(photos); 
         for (File img in _localImages) {
           String url = await _uploadFile(img);
           allPhotos.add(url);
         }
 
-        final rawDisplayName = user?.displayName?.trim() ?? '';
-
         final newService = ServiceModel(
           id: '',
           ownerId: user?.uid ?? '',
-          userName: rawDisplayName.isNotEmpty ? rawDisplayName : null,
+          userName: null, // O controller resolverá o nome corretamente
           name: name,
           category: category,
           location: location,
@@ -104,6 +100,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
         );
 
         await _controller.saveService(newService);
+        
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -114,10 +111,11 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
           );
         }
       } catch (e) {
+        debugPrint("Erro detalhado ao publicar: $e");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Erro ao publicar: \$e"),
+              content: Text("Erro ao publicar: $e"),
               backgroundColor: Colors.red,
             ),
           );

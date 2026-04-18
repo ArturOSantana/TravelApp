@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - master
-  workflow_dispatch: # Permite rodar manualmente se precisar
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -31,7 +31,7 @@ jobs:
         run: flutter pub get
 
       - name: Run Tests
-        run: flutter test test/profile_validation_test.dart
+        run: flutter test
 
       - name: Auto Increment Version
         id: versioning
@@ -42,19 +42,16 @@ jobs:
           NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
           NEW_VERSION="$VERSION_NAME+$NEW_BUILD_NUMBER"
           sed -i "s/version: $VERSION/version: $NEW_VERSION/" pubspec.yaml
-          echo "New Version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build APK
         run: flutter build apk --release --build-name=${{ steps.versioning.outputs.new_version }} --build-number=${{ github.run_number }}
 
       - name: Upload to Firebase App Distribution
-        uses: w9jds/firebase-action@master
+        uses: FirebaseExtended/action-firebase-distribution@v1
         with:
-          args: >-
-            appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk
-            --app 1:660606500922:android:7a5e698da565dc9a34f503
-            --groups "TCC_DS"
-            --release-notes "Build automatizada via GitHub Actions. Versão: ${{ steps.versioning.outputs.new_version }} - Testes OK ✅"
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          appId: "1:660606500922:android:7a5e698da565dc9a34f503"
+          token: ${{ secrets.FIREBASE_TOKEN }}
+          groups: "TCC_DS"
+          file: "build/app/outputs/flutter-apk/app-release.apk"
+          releaseNotes: "Build automatizada. Versao: ${{ steps.versioning.outputs.new_version }} - Testes validados"

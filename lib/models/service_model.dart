@@ -80,6 +80,7 @@ class ServiceModel {
   final bool isPublic;
   final String? userName;
   final List<String> likes;
+  final List<String> savedBy; // Nova lista para IDs de usuários que salvaram o post
   final int savesCount;
   final List<PostComment> comments;
   final bool commentsEnabled;
@@ -101,6 +102,7 @@ class ServiceModel {
     this.isPublic = false,
     this.userName,
     this.likes = const [],
+    this.savedBy = const [],
     this.savesCount = 0,
     this.comments = const [],
     this.commentsEnabled = true,
@@ -123,6 +125,7 @@ class ServiceModel {
       'isPublic': isPublic,
       'userName': userName,
       'likes': likes,
+      'savedBy': savedBy,
       'savesCount': savesCount,
       'comments': comments.map((comment) => comment.toMap()).toList(),
       'commentsEnabled': commentsEnabled,
@@ -148,6 +151,7 @@ class ServiceModel {
       isPublic: data['isPublic'] ?? false,
       userName: data['userName'],
       likes: List<String>.from(data['likes'] ?? []),
+      savedBy: List<String>.from(data['savedBy'] ?? []),
       savesCount: data['savesCount'] ?? 0,
       comments: ((data['comments'] ?? []) as List)
           .map((item) => PostComment.fromMap(Map<String, dynamic>.from(item)))
@@ -173,6 +177,7 @@ class ServiceModel {
     bool? isPublic,
     String? userName,
     List<String>? likes,
+    List<String>? savedBy,
     int? savesCount,
     List<PostComment>? comments,
     bool? commentsEnabled,
@@ -194,6 +199,7 @@ class ServiceModel {
       isPublic: isPublic ?? this.isPublic,
       userName: userName ?? this.userName,
       likes: likes ?? this.likes,
+      savedBy: savedBy ?? this.savedBy,
       savesCount: savesCount ?? this.savesCount,
       comments: comments ?? this.comments,
       commentsEnabled: commentsEnabled ?? this.commentsEnabled,
