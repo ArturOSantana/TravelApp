@@ -7,6 +7,7 @@ import '../models/activity.dart';
 import '../models/packing_checklist.dart';
 import '../controllers/trip_controller.dart';
 import 'create_activity_page.dart';
+import '../services/localization.dart';
 
 class ItineraryPage extends StatefulWidget {
   final String tripId;
