@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class CurrencyService {
+  
   // Usando AwesomeAPI (Gratuita e sem chave para testes)
   static const String _baseUrl = 'https://economia.awesomeapi.com.br/json/last/';
 

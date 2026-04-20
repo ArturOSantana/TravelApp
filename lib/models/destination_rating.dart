@@ -216,6 +216,7 @@ class RatingTags {
     'Cultural',
     'Gastronômico',
     'Natureza',
+    'Artistico',
     'Urbano',
     'Histórico',
     'Moderno',
@@ -235,7 +236,7 @@ class RatingTags {
       case 'aventura':
         return ['Aventura', 'Natureza', 'Família'];
       case 'relaxamento':
-        return ['Relaxante', 'Romântico', 'Luxuoso'];
+        return ['Relaxante', 'Romântico', 'Luxuoso','Artistico'];
       default:
         return ['Família', 'Romântico', 'Fotogênico'];
     }
