@@ -51,8 +51,15 @@ class _DashboardPageState extends State<DashboardPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Notificações", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                Semantics(
+                  header: true,
+                  child: const Text("Notificações", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close), 
+                  onPressed: () => Navigator.pop(context),
+                  tooltip: "Fechar notificações",
+                ),
               ],
             ),
             const Divider(),
@@ -68,26 +75,30 @@ class _DashboardPageState extends State<DashboardPage> {
                     itemCount: notifications.length,
                     itemBuilder: (context, index) {
                       final notif = notifications[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: notif.type == NotificationType.like ? Colors.red[50] : Colors.blue[50],
-                          child: Icon(
-                            notif.type == NotificationType.like ? Icons.favorite : Icons.comment,
-                            color: notif.type == NotificationType.like ? Colors.red : Colors.blue,
-                            size: 18,
+                      return Semantics(
+                        button: true,
+                        label: "Notificação de ${notif.senderName}",
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: notif.type == NotificationType.like ? Colors.red[50] : Colors.blue[50],
+                            child: Icon(
+                              notif.type == NotificationType.like ? Icons.favorite : Icons.comment,
+                              color: notif.type == NotificationType.like ? Colors.red : Colors.blue,
+                              size: 18,
+                            ),
                           ),
+                          title: Text(
+                            "${notif.senderName} ${notif.type == NotificationType.like ? 'curtiu seu post' : 'comentou no seu post'}",
+                            style: TextStyle(fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            "${notif.postName}\n${DateFormat('dd/MM HH:mm').format(notif.createdAt)}",
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          onTap: () {
+                            _tripController.markNotificationAsRead(notif.id);
+                          },
                         ),
-                        title: Text(
-                          "${notif.senderName} ${notif.type == NotificationType.like ? 'curtiu seu post' : 'comentou no seu post'}",
-                          style: TextStyle(fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          "${notif.postName}\n${DateFormat('dd/MM HH:mm').format(notif.createdAt)}",
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        onTap: () {
-                          _tripController.markNotificationAsRead(notif.id);
-                        },
                       );
                     },
                   );
@@ -109,8 +120,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Travel Planner"),
+        title: Semantics(
+          header: true,
+          child: const Text("Travel Planner"),
+        ),
         actions: [
+          // Ícone do SINO (W3C: Nome descritivo e contador acessível)
           StreamBuilder<List<AppNotification>>(
             stream: _tripController.getNotifications(),
             builder: (context, snapshot) {
@@ -125,6 +140,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   IconButton(
                     icon: const Icon(Icons.notifications_none_rounded),
                     onPressed: () => _showNotifications(context),
+                    tooltip: unreadCount > 0 ? "Você tem $unreadCount novas notificações" : "Sem novas notificações",
                   ),
                   if (unreadCount > 0)
                     Positioned(
@@ -147,6 +163,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
+            tooltip: "Meu Perfil",
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ProfilePage()),
@@ -154,6 +171,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
+            tooltip: "Sair da conta",
             onPressed: () async => await _authController.logout(),
           ),
         ],
@@ -163,9 +181,12 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Olá, ${_user?.name.split(' ')[0] ?? 'Viajante'}!",
-              style: TextStyle(fontSize: isSmallScreen ? 20 : 24, fontWeight: FontWeight.bold),
+            Semantics(
+              header: true,
+              child: Text(
+                "Olá, ${_user?.name.split(' ')[0] ?? 'Viajante'}!",
+                style: TextStyle(fontSize: isSmallScreen ? 20 : 24, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 20),
             
@@ -175,6 +196,7 @@ class _DashboardPageState extends State<DashboardPage> {
               "Gerencie seus roteiros",
               Icons.explore_rounded,
               Colors.deepPurple,
+              "Clique para ver suas viagens planejadas e ativas",
               () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TripsPage())),
             ),
             
@@ -188,6 +210,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     "Voos",
                     Icons.flight_takeoff_rounded,
                     Colors.blue[800]!,
+                    "Buscar passagens aéreas",
                     () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FlightSearchPage())),
                   ),
                 ),
@@ -198,6 +221,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     "Hotéis",
                     Icons.hotel_rounded,
                     Colors.indigo[900]!,
+                    "Buscar reservas de hospedagem",
                     () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HotelSearchPage())),
                   ),
                 ),
@@ -205,7 +229,10 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             
             const SizedBox(height: 25),
-            Text("Ferramentas", style: TextStyle(fontSize: isSmallScreen ? 16 : 18, fontWeight: FontWeight.bold)),
+            Semantics(
+              header: true,
+              child: Text("Ferramentas", style: TextStyle(fontSize: isSmallScreen ? 16 : 18, fontWeight: FontWeight.bold)),
+            ),
             const SizedBox(height: 15),
             
             GridView.count(
@@ -221,6 +248,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   "Insights",
                   Icons.analytics_rounded,
                   Colors.deepOrange,
+                  "Ver estatísticas financeiras",
                   () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InsightsPage())),
                 ),
                 _buildGridItem(
@@ -228,6 +256,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   "Comunidade",
                   Icons.people_alt_rounded,
                   Colors.indigo,
+                  "Ver recomendações de outros usuários",
                   () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesLibraryPage())),
                 ),
               ],
@@ -238,71 +267,83 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildMainCard(BuildContext context, String title, String sub, IconData icon, Color color, VoidCallback onTap) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 4,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Row(
+  Widget _buildMainCard(BuildContext context, String title, String sub, IconData icon, Color color, String semanticLabel, VoidCallback onTap) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 4,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: Row(
+              children: [
+                Icon(icon, size: 32, color: color),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(sub, style: const TextStyle(color: Colors.black54, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmallMainCard(BuildContext context, String title, IconData icon, Color color, String semanticLabel, VoidCallback onTap) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 3,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Icon(icon, size: 28, color: color),
+                const SizedBox(height: 10),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridItem(BuildContext context, String title, IconData icon, Color color, String semanticLabel, VoidCallback onTap) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 2,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 32, color: color),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text(sub, style: const TextStyle(color: Colors.grey, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+              const SizedBox(height: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSmallMainCard(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 3,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(icon, size: 28, color: color),
-              const SizedBox(height: 10),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridItem(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
-          ],
         ),
       ),
     );
