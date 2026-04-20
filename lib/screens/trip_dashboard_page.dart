@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../models/trip.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
-import '../controllers/auth_controller.dart';
 import '../services/weather_service.dart';
 import 'itinerary_page.dart';
 import 'expenses_page.dart';
+import 'packing_checklist_page.dart';
 import 'journal_page.dart';
 import 'safety_page.dart';
 import 'group_members_page.dart';
-import 'packing_checklist_page.dart';
-import 'photo_gallery_page.dart';
 
 class TripDashboardPage extends StatefulWidget {
   final Trip trip;
@@ -23,513 +20,218 @@ class TripDashboardPage extends StatefulWidget {
 }
 
 class _TripDashboardPageState extends State<TripDashboardPage> {
-  final _authController = AuthController();
-  Map<String, dynamic>? _weather;
+  final TripController _controller = TripController();
+  List<UserModel> _members = [];
+  bool _isLoadingMembers = true;
+  Map<String, dynamic>? _weatherData;
   bool _isLoadingWeather = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchWeather();
+    _loadMembers();
+    _loadWeather();
   }
 
-  Future<void> _fetchWeather() async {
-    final city = widget.trip.destination.split(',')[0].trim();
-    final data = await WeatherService.getWeather(city);
-    if (mounted) {
-      setState(() {
-        _weather = data;
-        _isLoadingWeather = false;
-      });
+  Future<void> _loadMembers() async {
+    try {
+      final members = await _controller.getTripMembers(widget.trip.members);
+      if (mounted) {
+        setState(() {
+          _members = members;
+          _isLoadingMembers = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingMembers = false);
+    }
+  }
+
+  Future<void> _loadWeather() async {
+    try {
+      final city = widget.trip.destination.split(',')[0].trim();
+      final weather = await WeatherService.getWeather(city);
+      if (mounted) {
+        setState(() {
+          _weatherData = weather;
+          _isLoadingWeather = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingWeather = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = TripController();
-    final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final bool isActive = widget.trip.status == 'active';
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('trips')
-          .doc(widget.trip.id)
-          .snapshots(),
-      builder: (context, tripSnapshot) {
-        if (!tripSnapshot.hasData || !tripSnapshot.data!.exists) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final liveTrip = Trip.fromFirestore(tripSnapshot.data!);
-        final bool isAdm = liveTrip.isAdmin(currentUid);
-        final bool canFinish = liveTrip.status == 'active';
-
-        return StreamBuilder<UserModel?>(
-          stream: _authController.userStream,
-          builder: (context, userSnapshot) {
-            final user = userSnapshot.data;
-            final bool isPremium = user?.isPremium ?? false;
-
-            return Scaffold(
-              appBar: AppBar(
-                title: Text(liveTrip.destination),
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.group, color: Colors.white),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GroupMembersPage(trip: liveTrip),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FD),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 200,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Semantics(
+                header: true,
+                child: Text(
+                  widget.trip.destination,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Semantics(
+                    label: "Imagem de fundo da viagem para ${widget.trip.destination}",
+                    child: Container(color: Colors.deepPurple[800]),
+                  ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, Colors.black54],
                       ),
                     ),
-                    tooltip: "Ver Membros",
                   ),
-                  if (isAdm && liveTrip.status != 'completed')
-                    _buildFinishButton(canFinish, controller),
                 ],
               ),
-              body: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isPremium)
-                      _isLoadingWeather
-                          ? _buildWeatherSkeleton()
-                          : (_weather != null
-                                ? _buildWeatherCard()
-                                : const SizedBox.shrink())
-                    else
-                      _buildPremiumAdCard(),
-                    const SizedBox(height: 15),
-                    _buildTripInfoCard(liveTrip),
-                    const SizedBox(height: 30),
-                    const Text(
-                      "Gerenciamento",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildOptionCard(
-                      context,
-                      Icons.calendar_month,
-                      "Roteiro de Viagem",
-                      "Organize atividades e vote em grupo",
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ItineraryPage(tripId: liveTrip.id),
-                        ),
-                      ),
-                    ),
-                    _buildOptionCard(
-                      context,
-                      Icons.account_balance_wallet,
-                      "Controle Financeiro",
-                      isPremium
-                          ? "Gastos, divisão e câmbio real"
-                          : "Acesso limitado (Seja Premium)",
-                      () {
-                        if (isPremium) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ExpensesPage(tripId: liveTrip.id),
-                            ),
-                          );
-                        } else {
-                          _showPremiumModal();
-                        }
-                      },
-                      isLocked: !isPremium,
-                    ),
-                    _buildOptionCard(
-                      context,
-                      Icons.auto_stories,
-                      "Álbum de Viagem",
-                      "Registre memórias e sentimentos",
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              JournalPage(tripId: liveTrip.id),
-                        ),
-                      ),
-                    ),
-                    _buildOptionCard(
-                      context,
-                      Icons.photo_library,
-                      "Galeria de Fotos",
-                      "Organize fotos por pastas e compartilhe",
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PhotoGalleryPage(
-                              tripId: liveTrip.id,
-                              tripName: liveTrip.destination,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildOptionCard(
-                      context,
-                      Icons.luggage,
-                      "Checklist de Bagagem",
-                      "Organize o que levar na viagem",
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                PackingChecklistPage(tripId: liveTrip.id),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildOptionCard(
-                      context,
-                      Icons.gpp_good,
-                      "Segurança e SOS",
-                      isPremium
-                          ? "Compartilhamento de localização real"
-                          : "SOS Básico (Seja Premium)",
-                      () {
-                        if (isPremium) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  SafetyPage(tripId: liveTrip.id),
-                            ),
-                          );
-                        } else {
-                          _showPremiumModal();
-                        }
-                      },
-                      isLocked: !isPremium,
-                    ),
-                  ],
+            ),
+            actions: [
+              Semantics(
+                label: "Gerenciar membros do grupo",
+                child: IconButton(
+                  icon: const Icon(Icons.group_outlined),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => GroupMembersPage(trip: widget.trip)),
+                  ),
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+            ],
+          ),
 
-  Widget _buildFinishButton(bool canFinish, TripController controller) {
-    return TextButton.icon(
-      onPressed: canFinish
-          ? () => _showFinishDialog(context, controller)
-          : () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    "A viagem precisa estar 'Em andamento' para ser concluída.",
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildWeatherCard(),
+                  const SizedBox(height: 15),
+                  _buildStatusCard(isActive),
+                  const SizedBox(height: 25),
+                  
+                  Semantics(
+                    header: true,
+                    child: const Text("Explorar Viagem", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            },
-      icon: Icon(
-        Icons.check_circle,
-        color: canFinish ? Colors.white : Colors.white54,
-      ),
-      label: Text(
-        "Concluir",
-        style: TextStyle(color: canFinish ? Colors.white : Colors.white54),
+                  const SizedBox(height: 15),
+
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                    childAspectRatio: 1.3,
+                    children: [
+                      _buildMenuCard(context, "Roteiro", Icons.map_outlined, Colors.blue, "Ver cronograma de atividades", () => Navigator.push(context, MaterialPageRoute(builder: (context) => ItineraryPage(tripId: widget.trip.id)))),
+                      _buildMenuCard(context, "Gastos", Icons.payments_outlined, Colors.green, "Gerenciar orçamento e despesas", () => Navigator.push(context, MaterialPageRoute(builder: (context) => ExpensesPage(tripId: widget.trip.id)))),
+                      _buildMenuCard(context, "Checklist", Icons.checklist_rtl, Colors.orange, "Lista de bagagem e preparativos", () => Navigator.push(context, MaterialPageRoute(builder: (context) => PackingChecklistPage(tripId: widget.trip.id)))),
+                      // ALTERADO DE "Diário" PARA "Registros"
+                      _buildMenuCard(context, "Registros", Icons.auto_stories_outlined, Colors.pink, "Ver fotos e memórias registradas", () => Navigator.push(context, MaterialPageRoute(builder: (context) => JournalPage(tripId: widget.trip.id)))),
+                    ],
+                  ),
+
+                  const SizedBox(height: 30),
+                  
+                  Semantics(
+                    header: true,
+                    child: const Text("Segurança", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 15),
+                  
+                  _buildMenuCard(
+                    context, 
+                    "Check-in de Segurança", 
+                    Icons.security_outlined, 
+                    Colors.redAccent, 
+                    "Avisar contatos de emergência sobre sua localização",
+                    () => Navigator.push(context, MaterialPageRoute(builder: (context) => SafetyPage(tripId: widget.trip.id))),
+                    isFullWidth: true
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildWeatherCard() {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Colors.blue, Colors.lightBlueAccent],
-        ),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "CLIMA PREMIUM",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                "${_weather!['temp']}°C",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                _weather!['desc'],
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
-            ],
-          ),
-          Text(_weather!['icon'], style: const TextStyle(fontSize: 50)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeatherSkeleton() {
-    return Container(
-      height: 80,
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-    );
-  }
-
-  Widget _buildPremiumAdCard() {
-    return InkWell(
-      onTap: _showPremiumModal,
+    if (_isLoadingWeather) return Container(height: 80, alignment: Alignment.center, child: const CircularProgressIndicator(strokeWidth: 2));
+    if (_weatherData == null) return const SizedBox.shrink();
+    return Semantics(
+      label: "Clima atual em ${widget.trip.destination}: ${_weatherData!['temp']} graus, ${_weatherData!['desc']}",
       child: Container(
-        padding: const EdgeInsets.all(15),
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: Colors.amber[100],
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.amber[300]!),
-        ),
-        child: const Row(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.blue[100]!)),
+        child: Row(
           children: [
-            Icon(Icons.star, color: Colors.amber),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                "Previsão do Tempo e Câmbio estão bloqueados. Seja Premium!",
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.amber),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTripInfoCard(Trip trip) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.deepPurple.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: trip.status == 'completed'
-                ? Colors.grey
-                : Colors.deepPurple,
-            child: Icon(
-              trip.status == 'completed' ? Icons.archive : Icons.flight_takeoff,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
+            Text(_weatherData!['icon'], style: const TextStyle(fontSize: 32)),
+            const SizedBox(width: 15),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  trip.destination,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "Status: ${trip.status == 'active' ? 'Em andamento' : (trip.status == 'completed' ? 'Concluída' : 'Planejada')}",
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text("${_weatherData!['temp']}°C", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue)),
+                Text(_weatherData!['desc'].toString().toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue[800])),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPremiumModal() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(25),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.stars, size: 60, color: Colors.amber),
-            const SizedBox(height: 15),
-            const Text(
-              "Travel App Premium",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Acesse câmbio em tempo real, clima detalhado e segurança avançada.",
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.black,
-                ),
-                onPressed: () async {
-                  final navigator = Navigator.of(context);
-                  final messenger = ScaffoldMessenger.of(context);
-                  final user = await _authController.getUserData();
-
-                  if (user == null) {
-                    return;
-                  }
-
-                  await _authController.updateUserProfile(
-                    user.copyWith(isPremium: true),
-                  );
-
-                  if (!mounted) {
-                    return;
-                  }
-
-                  navigator.pop();
-                  messenger.showSnackBar(
-                    const SnackBar(content: Text("Agora você é PREMIUM! ⭐")),
-                  );
-                },
-                child: const Text(
-                  "ASSINAR AGORA",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
+            const Spacer(),
+            TextButton.icon(onPressed: _loadWeather, icon: const Icon(Icons.refresh, size: 16), label: const Text("Atualizar", style: TextStyle(fontSize: 12))),
           ],
         ),
       ),
     );
   }
 
-  void _showFinishDialog(BuildContext context, TripController controller) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Concluir Viagem?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
-          ),
-          TextButton(
-            onPressed: () async {
-              final dialogNavigator = Navigator.of(context);
-              final pageNavigator = Navigator.of(this.context);
-              final messenger = ScaffoldMessenger.of(this.context);
-
-              try {
-                await controller.updateTripStatus(widget.trip.id, 'completed');
-                if (!mounted) {
-                  return;
-                }
-                dialogNavigator.pop();
-                pageNavigator.pop();
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Viagem concluída com sucesso.'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } catch (e) {
-                if (!mounted) {
-                  return;
-                }
-                dialogNavigator.pop();
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Erro ao concluir viagem: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text("Concluir"),
-          ),
+  Widget _buildStatusCard(bool isActive) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[200]!)),
+      child: Row(
+        children: [
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: (isActive ? Colors.green : Colors.orange).withOpacity(0.1), shape: BoxShape.circle), child: Icon(isActive ? Icons.play_arrow : Icons.calendar_month, color: isActive ? Colors.green : Colors.orange)),
+          const SizedBox(width: 15),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(isActive ? "Viagem em Andamento" : "Viagem Planejada", style: const TextStyle(fontWeight: FontWeight.bold)), Text(widget.trip.startDate != null ? "Início: ${DateFormat('dd/MM/yyyy').format(widget.trip.startDate!)}" : "Data a definir", style: const TextStyle(color: Colors.black54, fontSize: 12))])),
         ],
       ),
     );
   }
 
-  Widget _buildOptionCard(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-    VoidCallback onTap, {
-    bool isLocked = false,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(15),
-        leading: CircleAvatar(
-          backgroundColor: isLocked
-              ? Colors.grey[200]
-              : Colors.deepPurple.withValues(alpha: 0.1),
-          child: Icon(icon, color: isLocked ? Colors.grey : Colors.deepPurple),
+  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, String semanticLabel, VoidCallback onTap, {bool isFullWidth = false}) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        color: Colors.white,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: isFullWidth ? double.infinity : null,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[100]!)),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: isFullWidth ? CrossAxisAlignment.start : CrossAxisAlignment.center, children: [Icon(icon, color: color, size: 28), const SizedBox(height: 10), Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))]),
+          ),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
-        trailing: isLocked
-            ? const Icon(Icons.lock, size: 16, color: Colors.grey)
-            : const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
       ),
     );
   }
