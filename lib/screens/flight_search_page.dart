@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,6 +34,18 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
     {'id': 'first', 'label': 'Primeira Classe'},
   ];
 
+  // Sugestões de destinos populares para preenchimento rápido
+  final List<Map<String, String>> _suggestions = [
+    {'name': 'Orlando', 'code': 'MCO'},
+    {'name': 'Paris', 'code': 'CDG'},
+    {'name': 'Tokyo', 'code': 'HND'},
+    {'name': 'Nova York', 'code': 'JFK'},
+    {'name': 'Londres', 'code': 'LHR'},
+    {'name': 'Roma', 'code': 'FCO'},
+    {'name': 'Buenos Aires', 'code': 'EZE'},
+    {'name': 'Rio de Janeiro', 'code': 'GIG'},
+  ];
+
   void _searchFlights() {
     if (_destController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Informe o destino")));
@@ -44,30 +57,33 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
       _results = [];
     });
 
-    // Simulando uma busca real de API
+    // Simulando integração com Skyscanner API
     Future.delayed(const Duration(seconds: 2), () {
       setState(() {
         _results = [
           {
-            'company': 'LATAM',
+            'company': 'LATAM via Skyscanner',
             'logo': Icons.flight_takeoff,
             'price': _selectedClass == 'first' ? 8500.0 : 450.0,
             'duration': '1h 15m',
             'time': '08:30 - 09:45',
+            'url': _generateSkyscannerUrl(),
           },
           {
-            'company': 'GOL',
+            'company': 'GOL via Skyscanner',
             'logo': Icons.flight_takeoff,
             'price': _selectedClass == 'first' ? 7200.0 : 380.0,
             'duration': '1h 10m',
             'time': '10:15 - 11:25',
+            'url': _generateSkyscannerUrl(),
           },
           {
-            'company': 'Azul',
+            'company': 'Azul via Skyscanner',
             'logo': Icons.flight_takeoff,
             'price': _selectedClass == 'first' ? 9100.0 : 520.0,
             'duration': '1h 20m',
             'time': '14:00 - 15:20',
+            'url': _generateSkyscannerUrl(),
           },
         ];
         _isSearching = false;
@@ -75,23 +91,26 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
     });
   }
 
-  Future<void> _openSkyscanner() async {
+  String _generateSkyscannerUrl() {
     final dateStr = DateFormat('yyMMdd').format(_selectedDate);
-    final url = "https://www.skyscanner.com.br/transporte/voos/${_originController.text}/${_destController.text}/$dateStr/?adults=$_passengers&cabinclass=$_selectedClass";
+    return "https://www.skyscanner.com.br/transporte/voos/${_originController.text}/${_destController.text}/$dateStr/?adults=$_passengers&cabinclass=$_selectedClass";
+  }
+
+  Future<void> _openSkyscanner(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      // Aberto com sucesso
     }
   }
 
   void _bookFlight(Map<String, dynamic> flight) async {
-    final trip = await _selectTrip();
+    final trip = await _selectValidTrip();
     if (trip == null) return;
 
     final expense = Expense(
       id: '',
       tripId: trip.id,
-      title: "Vôo: ${flight['company']} (${_originController.text} -> ${_destController.text})",
+      title: "Passagem: ${flight['company']} (${_originController.text} -> ${_destController.text})",
       value: flight['price'],
       category: 'Transporte',
       payerId: _currentUid,
@@ -99,15 +118,21 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
     );
 
     await _controller.addExpense(expense);
+    
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Passagem comprada e vinculada à sua viagem!"),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("R\$ ${flight['price']} atribuído à viagem para ${trip.destination}!"),
         backgroundColor: Colors.green,
+        action: SnackBarAction(
+          label: "VER SITE",
+          textColor: Colors.white,
+          onPressed: () => _openSkyscanner(flight['url']),
+        ),
       ));
     }
   }
 
-  Future<Trip?> _selectTrip() async {
+  Future<Trip?> _selectValidTrip() async {
     return await showDialog<Trip>(
       context: context,
       builder: (context) => AlertDialog(
@@ -118,18 +143,36 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
           child: StreamBuilder<List<Trip>>(
             stream: _controller.getTrips(),
             builder: (context, snapshot) {
-              final trips = snapshot.data ?? [];
-              if (trips.isEmpty) return const Text("Crie uma viagem primeiro.");
+              final allTrips = snapshot.data ?? [];
+              final validTrips = allTrips.where((t) => t.status == 'active' || t.status == 'planned').toList();
+
+              if (validTrips.isEmpty) {
+                return const Center(
+                  child: Text("Crie uma viagem ativa ou planejada primeiro.", textAlign: TextAlign.center),
+                );
+              }
+
               return ListView.builder(
-                itemCount: trips.length,
-                itemBuilder: (context, i) => ListTile(
-                  title: Text(trips[i].destination),
-                  onTap: () => Navigator.pop(context, trips[i]),
-                ),
+                itemCount: validTrips.length,
+                itemBuilder: (context, i) {
+                  final t = validTrips[i];
+                  return ListTile(
+                    leading: Icon(
+                      t.status == 'active' ? Icons.play_circle : Icons.calendar_today,
+                      color: t.status == 'active' ? Colors.green : Colors.orange,
+                    ),
+                    title: Text(t.destination),
+                    subtitle: Text(t.status == 'active' ? "Viagem Ativa" : "Planejada"),
+                    onTap: () => Navigator.pop(context, t),
+                  );
+                },
               );
             },
           ),
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
+        ],
       ),
     );
   }
@@ -162,15 +205,17 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
       padding: const EdgeInsets.all(20),
       color: Colors.blue[800],
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _originController,
+                  textCapitalization: TextCapitalization.characters,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
-                    labelText: "Origem",
+                    labelText: "Origem (IATA)",
                     labelStyle: TextStyle(color: Colors.white70),
                     prefixIcon: Icon(Icons.flight_takeoff, color: Colors.white70),
                     enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
@@ -181,9 +226,10 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
               Expanded(
                 child: TextField(
                   controller: _destController,
+                  textCapitalization: TextCapitalization.characters,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
-                    labelText: "Destino",
+                    labelText: "Destino (IATA)",
                     labelStyle: TextStyle(color: Colors.white70),
                     prefixIcon: Icon(Icons.flight_land, color: Colors.white70),
                     enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
@@ -191,6 +237,35 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          // Lista de sugestões de destinos
+          const Text("Sugestões:", style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 30,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _suggestions.length,
+              itemBuilder: (context, index) {
+                final suggestion = _suggestions[index];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    padding: EdgeInsets.zero,
+                    label: Text(suggestion['name']!, style: const TextStyle(fontSize: 11)),
+                    backgroundColor: Colors.blue[900],
+                    labelStyle: const TextStyle(color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        _destController.text = suggestion['code']!;
+                      });
+                      FocusScope.of(context).unfocus(); // Fecha o teclado
+                    },
+                  ),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 15),
           Row(
@@ -237,7 +312,7 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
             child: ElevatedButton(
               onPressed: _searchFlights,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-              child: const Text("PESQUISAR VÔOS", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text("BUSCAR NO SKYSCANNER", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -278,12 +353,19 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                 const Divider(height: 30),
                 Row(
                   children: [
-                    TextButton(onPressed: _openSkyscanner, child: const Text("Ver no Skyscanner")),
-                    const Spacer(),
-                    ElevatedButton(
-                      onPressed: () => _bookFlight(f),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[800], foregroundColor: Colors.white),
-                      child: const Text("RESERVAR"),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _openSkyscanner(f['url']),
+                        child: const Text("VER SITE"),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _bookFlight(f),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[800], foregroundColor: Colors.white),
+                        child: const Text("ATRIBUIR VALOR"),
+                      ),
                     ),
                   ],
                 )
@@ -300,9 +382,9 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search, size: 80, color: Colors.grey[300]),
+          Icon(Icons.airplane_ticket_outlined, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          const Text("Para onde vamos voar?", style: TextStyle(color: Colors.grey, fontSize: 18)),
+          const Text("Busque os melhores preços via Skyscanner", style: TextStyle(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

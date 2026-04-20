@@ -1,10 +1,9 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../controllers/auth_controller.dart';
 import '../models/user_model.dart';
+import '../services/storage_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -27,12 +26,10 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoading = true;
   bool _isSaving = false;
   File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    // Inicializa os controllers para evitar erros de late initialization
     _nameController = TextEditingController();
     _phoneController = TextEditingController();
     _bioController = TextEditingController();
@@ -53,28 +50,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUserData() async {
     try {
-      final user = await _authController.getUserData().timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => throw Exception("Tempo limite esgotado ao carregar dados"),
-      );
-
-      if (mounted) {
-        if (user != null) {
-          setState(() {
-            _user = user;
-            _nameController.text = user.name;
-            _phoneController.text = user.phone;
-            _bioController.text = user.bio;
-            _emergencyNameController.text = user.emergencyContact;
-            _emergencyPhoneController.text = user.emergencyPhone;
-            _isLoading = false;
-          });
-        } else {
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Usuário não encontrado.")),
-          );
-        }
+      final user = await _authController.getUserData();
+      if (mounted && user != null) {
+        setState(() {
+          _user = user;
+          _nameController.text = user.name;
+          _phoneController.text = user.phone;
+          _bioController.text = user.bio;
+          _emergencyNameController.text = user.emergencyContact;
+          _emergencyPhoneController.text = user.emergencyPhone;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -83,6 +69,13 @@ class _ProfilePageState extends State<ProfilePage> {
           SnackBar(content: Text("Erro ao carregar perfil: $e"), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final file = await StorageService.pickImageFromGallery();
+    if (file != null) {
+      setState(() => _imageFile = file);
     }
   }
 
@@ -103,48 +96,32 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = File(pickedFile.path);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao selecionar imagem: $e")),
-        );
-      }
-    }
-  }
-
-  Future<String?> _uploadImage(String uid) async {
-    if (_imageFile == null) return _user?.photoUrl;
-
-    try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('user_photos')
-          .child('$uid.jpg');
-      
-      await storageRef.putFile(_imageFile!);
-      return await storageRef.getDownloadURL();
-    } catch (e) {
-      debugPrint("Erro ao fazer upload da imagem: $e");
-      return _user?.photoUrl;
-    }
-  }
-
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
+      final myPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+      final emergencyPhone = _emergencyPhoneController.text.replaceAll(RegExp(r'\D'), '');
+
+      if (myPhone == emergencyPhone) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("O telefone de emergência não pode ser igual ao seu!"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
       setState(() => _isSaving = true);
 
       try {
         String? photoUrl = _user?.photoUrl;
-        if (_imageFile != null && !kIsWeb) {
-          photoUrl = await _uploadImage(_user!.uid);
+        
+        if (_imageFile != null) {
+          photoUrl = await StorageService.uploadPhoto(
+            photo: _imageFile!,
+            tripId: 'profiles',
+            folder: _user!.uid,
+          );
         }
 
         final updatedUser = _user!.copyWith(
@@ -185,18 +162,14 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _validateFullName(String? value) {
     if (value == null || value.isEmpty) return "Campo obrigatório";
     final parts = value.trim().split(' ');
-    if (parts.length < 2 || parts.any((p) => p.isEmpty)) {
-      return "Informe seu nome completo";
-    }
+    if (parts.length < 2) return "Informe seu nome completo";
     return null;
   }
 
   String? _validatePhone(String? value) {
     if (value == null || value.isEmpty) return "Campo obrigatório";
     final phone = value.replaceAll(RegExp(r'\D'), '');
-    if (phone.length != 11) {
-      return "Use o padrão 11999999999 (11 dígitos)";
-    }
+    if (phone.length != 11) return "Use o padrão 11999999999";
     return null;
   }
 
@@ -214,27 +187,14 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text("Meu Perfil"),
         actions: [
           if (_isSaving)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.deepPurple),
-                ),
-              ),
-            )
+            const Center(child: Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))))
           else
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveProfile,
-            ),
+            IconButton(icon: const Icon(Icons.save), onPressed: _saveProfile),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadUserData,
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
           child: Form(
             key: _formKey,
@@ -248,8 +208,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundImage: _imageFile != null
                           ? FileImage(_imageFile!)
                           : (_user?.photoUrl != null && _user!.photoUrl!.isNotEmpty
-                              ? NetworkImage(_user!.photoUrl!) as ImageProvider
-                              : null),
+                              ? NetworkImage(_user!.photoUrl!)
+                              : null) as ImageProvider?,
                       child: (_imageFile == null && (_user?.photoUrl == null || _user!.photoUrl!.isEmpty))
                           ? const Icon(Icons.person, size: 60, color: Colors.grey)
                           : null,
@@ -269,10 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  _user?.email ?? '',
-                  style: const TextStyle(color: Colors.grey),
-                ),
+                Text(_user?.email ?? '', style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 20),
                 
                 Container(
@@ -294,36 +251,21 @@ class _ProfilePageState extends State<ProfilePage> {
                 
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: "Nome Completo",
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: "Nome Completo", prefixIcon: Icon(Icons.person), border: OutlineInputBorder()),
                   validator: _validateFullName,
                 ),
                 const SizedBox(height: 15),
-                
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: "Telefone",
-                    hintText: "11999999999",
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: "Telefone", hintText: "11999999999", prefixIcon: Icon(Icons.phone), border: OutlineInputBorder()),
                   validator: _validatePhone,
                 ),
                 const SizedBox(height: 15),
-                
                 TextFormField(
                   controller: _bioController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: "Sobre mim / Bio",
-                    prefixIcon: Icon(Icons.info_outline),
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: "Sobre mim / Bio", prefixIcon: Icon(Icons.info_outline), border: OutlineInputBorder()),
                 ),
                 
                 const SizedBox(height: 30),
@@ -332,35 +274,26 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     Icon(Icons.emergency, color: Colors.red),
                     SizedBox(width: 10),
-                    Text(
-                      "Contato de Emergência",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                    Text("Contato de Emergência", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 15),
-                
                 TextFormField(
                   controller: _emergencyNameController,
-                  decoration: const InputDecoration(
-                    labelText: "Nome do Contato",
-                    prefixIcon: Icon(Icons.contact_phone),
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: "Nome do Contato", prefixIcon: Icon(Icons.contact_phone), border: OutlineInputBorder()),
                   validator: (v) => v == null || v.isEmpty ? "Campo obrigatório" : null,
                 ),
                 const SizedBox(height: 15),
-                
                 TextFormField(
                   controller: _emergencyPhoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: "Telefone de Emergência",
-                    hintText: "11999999999",
-                    prefixIcon: Icon(Icons.phone_android),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validatePhone,
+                  decoration: const InputDecoration(labelText: "Telefone de Emergência", hintText: "11999999999", prefixIcon: Icon(Icons.phone_android), border: OutlineInputBorder()),
+                  validator: (v) {
+                    final res = _validatePhone(v);
+                    if (res != null) return res;
+                    if (v == _phoneController.text) return "Não pode ser igual ao seu número";
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 40),
                 
@@ -369,8 +302,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 50,
                   child: OutlinedButton.icon(
                     onPressed: () async {
+                      // 1. Faz o logout no Firebase
                       await _authController.logout();
-                      // O StreamBuilder no main.dart cuidará da navegação
+                      
+                      // 2. Limpa toda a pilha de navegação e volta para a tela inicial (Login)
+                      if (mounted) {
+                        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                      }
                     },
                     icon: const Icon(Icons.logout),
                     label: const Text("Sair da Conta"),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../models/service_model.dart';
 import '../controllers/trip_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
@@ -14,6 +18,18 @@ class _CommunityPageState extends State<CommunityPage> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final TripController _controller = TripController();
+  final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+  @override
+  void initState() {
+    super.initState();
+    _markAsRead();
+  }
+
+  Future<void> _markAsRead() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_viewed_post', DateTime.now().millisecondsSinceEpoch);
+  }
 
   @override
   void dispose() {
@@ -24,48 +40,27 @@ class _CommunityPageState extends State<CommunityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: const Color(0xFFF8F9FD),
       appBar: AppBar(
-        title: const Text(
-          "Feed da Comunidade",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Explorar Comunidade", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(68),
+          preferredSize: const Size.fromHeight(60),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: "Buscar posts, locais ou categorias...",
-                prefixIcon: const Icon(Icons.search_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
+                hintText: "Para onde você quer ir?",
+                prefixIcon: const Icon(Icons.search, color: Colors.indigo),
                 filled: true,
                 fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_outlined),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                contentPadding: EdgeInsets.zero,
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase().trim();
-                });
-              },
+              onChanged: (v) => setState(() => _searchQuery = v),
             ),
           ),
         ),
@@ -77,215 +72,93 @@ class _CommunityPageState extends State<CommunityPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final allPosts = snapshot.data ?? [];
-          final posts =
-              allPosts.where((post) {
-                final name = post.name.toLowerCase();
-                final loc = post.location.toLowerCase();
-                final cat = post.category.toLowerCase();
-                final text = post.comment.toLowerCase();
-
-                return name.contains(_searchQuery) ||
-                    loc.contains(_searchQuery) ||
-                    cat.contains(_searchQuery) ||
-                    text.contains(_searchQuery);
-              }).toList()..sort((a, b) {
-                final bDate = b.updatedAt ?? b.lastUsed;
-                final aDate = a.updatedAt ?? a.lastUsed;
-                return bDate.compareTo(aDate);
-              });
+          final posts = (snapshot.data ?? []).where((post) {
+            final q = _searchQuery.toLowerCase();
+            return post.name.toLowerCase().contains(q) ||
+                post.location.toLowerCase().contains(q) ||
+                post.category.toLowerCase().contains(q);
+          }).toList();
 
           if (posts.isEmpty) {
-            return _buildEmptyState();
+            return Center(child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
+                const Text("Nenhum post encontrado", style: TextStyle(color: Colors.grey)),
+              ],
+            ));
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return _buildPostCard(context, post);
-            },
+            itemBuilder: (context, index) => _buildPostCard(context, posts[index]),
           );
         },
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _searchQuery.isEmpty
-                  ? Icons.forum_outlined
-                  : Icons.search_off_outlined,
-              size: 80,
-              color: Colors.grey[350],
-            ),
-            const SizedBox(height: 18),
-            Text(
-              _searchQuery.isEmpty
-                  ? "Nenhum post publicado ainda."
-                  : "Nenhum post encontrado.",
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchQuery.isEmpty
-                  ? "Assim que a comunidade começar a publicar, os posts aparecerão aqui."
-                  : "Tente buscar por outro termo.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildPostCard(BuildContext context, ServiceModel post) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 18),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      clipBehavior: Clip.antiAlias,
+    final bool isLiked = post.likes.contains(_currentUid);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
+      ),
       child: InkWell(
         onTap: () => _showDetails(context, post),
+        borderRadius: BorderRadius.circular(25),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (post.photos.isNotEmpty)
-              Image.network(
-                post.photos.first,
-                height: 210,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              )
-            else
-              Container(
-                height: 170,
-                width: double.infinity,
-                color: Colors.grey[100],
-                child: const Icon(
-                  Icons.image_outlined,
-                  size: 60,
-                  color: Colors.grey,
-                ),
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                    child: Image.network(post.photos.first, height: 220, width: double.infinity, fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: 15,
+                    right: 15,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+                      child: Text(post.category, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(post.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 5),
                   Row(
                     children: [
-                      Expanded(
-                        child: Text(
-                          post.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.indigo.withOpacity(0.10),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Text(
-                          post.category,
-                          style: const TextStyle(
-                            color: Colors.indigo,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: Colors.redAccent,
-                      ),
+                      const Icon(Icons.location_on, size: 14, color: Colors.redAccent),
                       const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          post.location,
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
+                      Text(post.location, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    post.comment,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 15),
+                  Text(post.comment, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey[800], height: 1.4)),
+                  const SizedBox(height: 20),
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 14,
-                        backgroundColor: Colors.grey[100],
-                        child: const Icon(
-                          Icons.person_outline,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
+                      CircleAvatar(radius: 12, backgroundColor: Colors.indigo[50], child: const Icon(Icons.person, size: 14, color: Colors.indigo)),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          (post.userName ?? '').trim().isNotEmpty
-                              ? post.userName!.trim()
-                              : 'Viajante',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                      const Icon(
-                        Icons.favorite_border,
-                        size: 18,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 4),
-                      Text('${post.likes.length}'),
-                      const SizedBox(width: 14),
-                      const Icon(
-                        Icons.mode_comment_outlined,
-                        size: 18,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 4),
-                      Text('${post.comments.length}'),
+                      Text(post.userName ?? 'Viajante', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                      const Spacer(),
+                      _iconStat(Icons.favorite, isLiked ? Colors.red : Colors.grey[300]!, post.likes.length.toString()),
+                      const SizedBox(width: 15),
+                      _iconStat(Icons.mode_comment, Colors.grey[300]!, post.comments.length.toString()),
                     ],
                   ),
                 ],
@@ -297,239 +170,207 @@ class _CommunityPageState extends State<CommunityPage> {
     );
   }
 
-  void _showDetails(BuildContext context, ServiceModel post) {
+  Widget _iconStat(IconData icon, Color color, String count) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 4),
+        Text(count, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  void _showDetails(BuildContext context, ServiceModel initialPost) {
+    final TextEditingController commentController = TextEditingController();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.88,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 50,
-              height: 5,
-              margin: const EdgeInsets.symmetric(vertical: 15),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) => StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('services').doc(initialPost.id).snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+          final post = ServiceModel.fromFirestore(snapshot.data!);
+          final bool isLiked = post.likes.contains(_currentUid);
+
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.92,
+            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(35))),
+            child: Column(
+              children: [
+                Stack(
                   children: [
-                    Text(
-                      post.name,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "${post.category} • ${post.location}",
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.grey[100],
-                          child: const Icon(
-                            Icons.person_outline,
-                            color: Colors.indigo,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Publicado por',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            Text(
-                              (post.userName ?? '').trim().isNotEmpty
-                                  ? post.userName!.trim()
-                                  : 'Viajante',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    if (post.photos.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        height: 240,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: post.photos.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 14),
-                          itemBuilder: (context, index) => ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.network(
-                              post.photos[index],
-                              width: 290,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 28),
-                    const Text(
-                      "Conteúdo do post",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      post.comment,
-                      style: const TextStyle(fontSize: 16, height: 1.6),
-                    ),
-                    const SizedBox(height: 26),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        _buildInfoChip(
-                          Icons.favorite_border,
-                          '${post.likes.length} curtidas',
-                        ),
-                        _buildInfoChip(
-                          Icons.mode_comment_outlined,
-                          '${post.comments.length} comentários',
-                        ),
-                        _buildInfoChip(
-                          Icons.payments_outlined,
-                          'R\$ ${post.averageCost.toStringAsFixed(2)}',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    const Text(
-                      "Comentários da comunidade",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (post.comments.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Text(
-                          'Ainda não há comentários visíveis neste post.',
-                        ),
+                    if (post.photos.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(35)),
+                        child: Image.network(post.photos.first, height: 250, width: double.infinity, fit: BoxFit.cover),
                       )
                     else
-                      ...post.comments.map(
-                        (comment) => Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: comment.isHidden
-                              ? Text(
-                                  'Comentário ocultado pelo autor do post.',
-                                  style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                )
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      comment.userName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(comment.text),
-                                  ],
-                                ),
-                        ),
-                      ),
-                    const SizedBox(height: 26),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton.icon(
-                        onPressed: () => Share.share(
-                          "Confira este post da comunidade no Travel App:\n\n"
-                          "${post.name}\n"
-                          "${post.category} • ${post.location}\n\n"
-                          "${post.comment}",
-                        ),
-                        icon: const Icon(Icons.share_outlined),
-                        label: const Text(
-                          "COMPARTILHAR POST",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
+                      Container(height: 100, decoration: BoxDecoration(color: Colors.indigo[900], borderRadius: const BorderRadius.vertical(top: Radius.circular(35)))),
+                    Positioned(
+                      top: 20,
+                      left: 20,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: IconButton(icon: const Icon(Icons.close, color: Colors.black), onPressed: () => Navigator.pop(context)),
                       ),
                     ),
                   ],
                 ),
-              ),
+
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(25),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(child: Text(post.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold))),
+                          IconButton(
+                            icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border, color: isLiked ? Colors.red : Colors.grey, size: 30),
+                            onPressed: () => _controller.toggleLikeService(post.id, post.likes),
+                          ),
+                        ],
+                      ),
+                      Text(post.location, style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 20),
+
+                      Wrap(
+                        spacing: 10,
+                        children: [
+                          _detailChip(Icons.star, Colors.amber, "${post.rating} / 5.0"),
+                          _detailChip(Icons.payments, Colors.green, "R\$ ${post.averageCost.toStringAsFixed(2)}"),
+                        ],
+                      ),
+
+                      const SizedBox(height: 25),
+                      const Text("Dicas e Relato", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      Text(post.comment, style: TextStyle(fontSize: 16, color: Colors.grey[800], height: 1.6)),
+
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 30),
+                        child: Divider(),
+                      ),
+
+                      Text("Comentários (${post.comments.length})", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 20),
+
+                      if (post.comments.isEmpty)
+                        Center(child: Text("Seja o primeiro a comentar!", style: TextStyle(color: Colors.grey[400])))
+                      else
+                        ...post.comments.reversed.map((c) => _buildCommentBalloon(c)),
+
+                      const SizedBox(height: 100), 
+                    ],
+                  ),
+                ),
+
+                Container(
+                  padding: EdgeInsets.fromLTRB(20, 10, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: commentController,
+                          decoration: InputDecoration(
+                            hintText: "Diga algo legal...",
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      FloatingActionButton.small(
+                        backgroundColor: Colors.indigo,
+                        elevation: 0,
+                        onPressed: () async {
+                          if (commentController.text.trim().isNotEmpty) {
+                            final text = commentController.text.trim();
+                            commentController.clear();
+                            await _controller.addServiceComment(post.id, post.comments, text);
+                          }
+                        },
+                        child: const Icon(Icons.send, color: Colors.white, size: 18),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label) {
+  Widget _detailChip(IconData icon, Color color, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: Colors.indigo.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(30),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: Colors.indigo),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(label),
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentBalloon(PostComment c) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16, 
+            backgroundColor: Colors.indigo[50], 
+            child: Text(c.userName.isNotEmpty ? c.userName[0].toUpperCase() : 'V', 
+            style: const TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.bold))
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100], 
+                    borderRadius: const BorderRadius.only(topRight: Radius.circular(20), bottomRight: Radius.circular(20), bottomLeft: Radius.circular(20))
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(c.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const SizedBox(height: 5),
+                      Text(c.text, style: const TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 5),
+                  child: Text(
+                    DateFormat('dd/MM HH:mm').format(c.createdAt),
+                    style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
-
-// Made with Bob

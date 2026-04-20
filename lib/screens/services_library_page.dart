@@ -36,7 +36,7 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // Alterado para 3 abas
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -66,9 +66,9 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
                 unselectedLabelColor: Colors.white70,
                 isScrollable: true,
                 tabs: const [
+                  Tab(text: "Feed", icon: Icon(Icons.groups_outlined)),
                   Tab(text: "Meus posts", icon: Icon(Icons.person_outline)),
                   Tab(text: "Salvos", icon: Icon(Icons.bookmark_border)),
-                  Tab(text: "Feed", icon: Icon(Icons.groups_outlined)),
                 ],
               ),
               _buildFilterBar(),
@@ -79,9 +79,9 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
       body: TabBarView(
         controller: _tabController,
         children: [
+          _buildPostsList(type: 'community'),
           _buildPostsList(type: 'personal'),
           _buildPostsList(type: 'saved'),
-          _buildPostsList(type: 'community'),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -108,19 +108,8 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: "Buscar...",
+              hintText: "Buscar por local ou categoria...",
               prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchQuery = '';
-                        });
-                      },
-                      icon: const Icon(Icons.clear),
-                    )
-                  : null,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -155,12 +144,14 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
 
   Widget _buildPostsList({required String type}) {
     Stream<List<ServiceModel>> stream;
-    if (type == 'community') {
-      stream = _controller.getCommunityServices();
-    } else if (type == 'saved') {
+    
+    // Agora usando as funções corretas do TripController
+    if (type == 'saved') {
       stream = _controller.getSavedServices();
-    } else {
+    } else if (type == 'personal') {
       stream = _controller.getPersonalServices();
+    } else {
+      stream = _controller.getCommunityServices();
     }
 
     return StreamBuilder<List<ServiceModel>>(
@@ -174,19 +165,13 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
           final query = _searchQuery;
           final matchesSearch = post.name.toLowerCase().contains(query) ||
               post.location.toLowerCase().contains(query) ||
-              post.category.toLowerCase().contains(query) ||
-              post.comment.toLowerCase().contains(query);
+              post.category.toLowerCase().contains(query);
 
           final matchesCategory = _selectedCategory == 'Todas' ||
               post.category.toLowerCase() == _selectedCategory.toLowerCase();
 
           return matchesSearch && matchesCategory;
-        }).toList()
-          ..sort((a, b) {
-            final bDate = b.updatedAt ?? b.lastUsed;
-            final aDate = a.updatedAt ?? a.lastUsed;
-            return bDate.compareTo(aDate);
-          });
+        }).toList();
 
         if (posts.isEmpty) {
           return _buildEmptyState(type);
@@ -202,32 +187,14 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
   }
 
   Widget _buildEmptyState(String type) {
-    String title = 'Nenhum post encontrado.';
-    String sub = 'Compartilhe dicas com a comunidade.';
-    IconData icon = Icons.post_add_outlined;
-
-    if (type == 'saved') {
-      title = 'Você não tem posts salvos.';
-      sub = 'Salve recomendações interessantes para vê-las aqui.';
-      icon = Icons.bookmark_border;
-    } else if (type == 'community') {
-      title = 'Feed vazio.';
-      icon = Icons.groups_outlined;
-    }
-
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 72, color: Colors.grey[350]),
-            const SizedBox(height: 16),
-            Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 18, color: Colors.grey[700], fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Text(sub, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
-          ],
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.post_add_outlined, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          const Text("Nenhum post encontrado.", style: TextStyle(fontSize: 16, color: Colors.grey)),
+        ],
       ),
     );
   }
@@ -239,10 +206,8 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
         onTap: () => _showPostDetails(post),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -250,66 +215,53 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.indigo[50],
-                    child: const Icon(Icons.person, color: Colors.indigo),
-                  ),
+                  const CircleAvatar(child: Icon(Icons.person)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          (post.userName ?? 'Viajante').trim().isNotEmpty ? post.userName!.trim() : 'Viajante',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        const SizedBox(height: 2),
-                        Text('${post.category} • ${post.location}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        Text(post.userName ?? 'Viajante', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('${post.category} • ${post.location}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                       ],
                     ),
                   ),
-                  if (isOwner) _buildOwnerMenu(post),
+                  if (isOwner) 
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _confirmDeletePost(post),
+                    ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(post.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               const SizedBox(height: 8),
-              Text(post.comment, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(height: 1.5)),
+              Text(post.comment, maxLines: 3, overflow: TextOverflow.ellipsis),
               if (post.photos.isNotEmpty) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.network(post.photos.first, height: 180, width: double.infinity, fit: BoxFit.cover),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(post.photos.first, height: 150, width: double.infinity, fit: BoxFit.cover),
                 ),
               ],
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildActionButton(
-                    icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: isLiked ? Colors.red : Colors.grey[700],
-                    label: '${post.likes.length}',
-                    onTap: () => _controller.toggleLikeService(post.id, post.likes),
+                  IconButton(
+                    icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border, color: isLiked ? Colors.red : Colors.grey),
+                    onPressed: () => _controller.toggleLikeService(post.id, post.likes),
                   ),
-                  const SizedBox(width: 18),
-                  _buildActionButton(
-                    icon: Icons.mode_comment_outlined,
-                    label: '${post.comments.length}',
-                    onTap: () => _showPostDetails(post),
-                  ),
-                  const SizedBox(width: 18),
-                  _buildActionButton(
-                    icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
-                    color: isSaved ? Colors.amber[700] : Colors.grey[700],
-                    label: '${post.savesCount}',
-                    onTap: () => _controller.toggleSaveService(post.id, post.savedBy),
+                  Text('${post.likes.length}'),
+                  const SizedBox(width: 16),
+                  IconButton(
+                    icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_border, color: isSaved ? Colors.amber : Colors.grey),
+                    onPressed: () => _controller.toggleSaveService(post.id, post.savedBy),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.share, color: Colors.indigo),
-                    onPressed: () => _sharePost(post),
+                    icon: const Icon(Icons.share),
+                    onPressed: () => Share.share("Confira: ${post.name}\n${post.comment}"),
                   ),
                 ],
               ),
@@ -320,198 +272,72 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
     );
   }
 
-  Widget _buildActionButton({required IconData icon, Color? color, required String label, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(icon, color: color ?? Colors.grey[700], size: 20),
-          const SizedBox(width: 4),
-          Text(label),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOwnerMenu(ServiceModel post) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert),
-      onSelected: (value) {
-        if (value == 'edit') {
-          _showEditPostDialog(post);
-        } else if (value == 'delete') {
-          _confirmDeletePost(post);
-        }
-      },
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: 'edit',
-          child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.edit_outlined), title: Text('Editar')),
-        ),
-        PopupMenuItem(
-          value: 'delete',
-          child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.delete_outline, color: Colors.red), title: Text('Apagar')),
-        ),
-      ],
-    );
-  }
-
   void _showPostDetails(ServiceModel post) {
     final commentController = TextEditingController();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (dialogContext, setModalState) {
-            return Container(
-              height: MediaQuery.of(sheetContext).size.height * 0.9,
-              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    Container(width: 52, height: 5, margin: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(12))),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(backgroundColor: Colors.indigo[50], child: const Icon(Icons.person, color: Colors.indigo)),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text((post.userName ?? 'Viajante').trim().isNotEmpty ? post.userName!.trim() : 'Viajante', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                      Text('${post.category} • ${post.location}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 18),
-                            Text(post.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 14),
-                            if (post.photos.isNotEmpty)
-                              SizedBox(
-                                height: 220,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: post.photos.length,
-                                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                                  itemBuilder: (context, index) => ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(post.photos[index], width: 280, fit: BoxFit.cover)),
-                                ),
-                              ),
-                            const SizedBox(height: 18),
-                            Text(post.comment, style: const TextStyle(fontSize: 16, height: 1.6)),
-                            const SizedBox(height: 18),
-                            const Text('Comentários', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 12),
-                            ...post.comments.map((comment) => _buildCommentTile(post: post, comment: comment, isOwner: post.ownerId == _currentUid)),
-                            const SizedBox(height: 18),
-                            TextField(
-                              controller: commentController,
-                              decoration: InputDecoration(
-                                hintText: 'Escreva um comentário...',
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                                suffixIcon: IconButton(
-                                  icon: const Icon(Icons.send, color: Colors.indigo),
-                                  onPressed: () async {
-                                    await _controller.addServiceComment(post.id, post.comments, commentController.text);
-                                    commentController.clear();
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                children: [
+                  Text(post.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Text(post.comment),
+                  const Divider(height: 30),
+                  const Text("Comentários", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ...post.comments.map((c) => ListTile(
+                    title: Text(c.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    subtitle: Text(c.text),
+                  )),
+                ],
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildCommentTile({required ServiceModel post, required PostComment comment, required bool isOwner}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(14)),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(radius: 18, backgroundColor: Colors.white, child: const Icon(Icons.person_outline, size: 18)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            Row(
               children: [
-                Text(comment.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(comment.text),
+                Expanded(
+                  child: TextField(
+                    controller: commentController,
+                    decoration: const InputDecoration(hintText: "Escreva um comentário..."),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: () async {
+                    if (commentController.text.isNotEmpty) {
+                      await _controller.addServiceComment(post.id, post.comments, commentController.text);
+                      commentController.clear();
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
+                ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Future<void> _confirmDeletePost(ServiceModel post) async {
-    final confirmed = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Apagar post'),
-        content: const Text('Tem certeza que deseja apagar este post?'),
+        title: const Text("Excluir Post"),
+        content: const Text("Tem certeza que deseja apagar este post?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.red), onPressed: () => Navigator.pop(context, true), child: const Text('Apagar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Excluir", style: TextStyle(color: Colors.red))),
         ],
       ),
     );
-    if (confirmed == true) {
+
+    if (confirm == true) {
       await _controller.deleteService(post.id, post.ownerId);
     }
-  }
-
-  Future<void> _showEditPostDialog(ServiceModel post) async {
-    final titleController = TextEditingController(text: post.name);
-    final commentController = TextEditingController(text: post.comment);
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar post'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
-            TextField(controller: commentController, maxLines: 3, decoration: const InputDecoration(labelText: 'Comentário')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              await _controller.updateService(post.copyWith(name: titleController.text, comment: commentController.text));
-              Navigator.pop(context);
-            },
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _sharePost(ServiceModel post) {
-    SharePlus.instance.share(ShareParams(text: "Confira este post no Travel App: ${post.name}\n${post.comment}"));
   }
 }

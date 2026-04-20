@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 
@@ -32,32 +30,92 @@ class _CreateTripPageState extends State<CreateTripPage> {
   final List<String> _objectives = ['Descanso', 'Aventura', 'Trabalho', 'Cultural', 'Gastronômico'];
   final List<String> _currencies = ['BRL', 'USD', 'EUR', 'GBP', 'ARS'];
 
-  Future<List<Map<String, dynamic>>> _searchDestinations(String query) async {
-    if (query.length < 3) return [];
-    
-    try {
-      final response = await http.get(
-        Uri.parse('https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&accept-language=pt-BR'),
-        headers: {'User-Agent': 'TravelPlannerApp/1.0'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => {
-          'display_name': item['display_name'],
-          'lat': item['lat'],
-          'lon': item['lon'],
-        }).toList();
-      }
-    } catch (e) {
-      debugPrint("Erro na busca: $e");
-    }
-    return [];
-  }
+  final List<String> _popularDestinations = [
+    'Orlando, EUA',
+    'Paris, França',
+    'Tokyo, Japão',
+    'Roma, Itália',
+    'Rio de Janeiro, Brasil',
+    'Londres, Inglaterra',
+    'Nova York, EUA',
+    'Cancún, México',
+  ];
 
   int get _tripDuration {
     if (_startDate == null || _endDate == null || _isNomad) return 0;
     return _endDate!.difference(_startDate!).inDays + 1;
+  }
+
+  void _showConfirmationDialog() {
+    if (!formKey.currentState!.validate()) return;
+    
+    if (!_isNomad && (_startDate == null || _endDate == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Defina as datas da viagem.")));
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_outlined, color: Colors.green),
+            SizedBox(width: 10),
+            Text("Confirmar Viagem"),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Tudo pronto para sua nova aventura? Confira os detalhes:", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            const SizedBox(height: 20),
+            _buildSummaryRow(Icons.location_on, "Destino", destinationController.text),
+            _buildSummaryRow(Icons.calendar_month, "Período", _isNomad ? "Modo Nômade" : "${DateFormat('dd/MM').format(_startDate!)} até ${DateFormat('dd/MM').format(_endDate!)}"),
+            _buildSummaryRow(Icons.payments, "Orçamento", "$_baseCurrency ${budgetController.text}"),
+            _buildSummaryRow(Icons.flag, "Estilo", _selectedObjective),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Editar", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              _createTrip();
+            },
+            child: const Text("Confirmar e Criar"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.deepPurple),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickDate(BuildContext context, bool isStart) async {
@@ -85,14 +143,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
     }
   }
 
-  void createTrip() async {
+  void _createTrip() async {
     final String uid = _auth.currentUser?.uid ?? '';
     if (uid.isEmpty) return;
-
-    if (!_isNomad && (_startDate == null || _endDate == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Defina as datas.")));
-      return;
-    }
 
     setState(() => _isLoading = true);
 
@@ -100,7 +153,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
       final newTrip = Trip(
         id: '', 
         ownerId: uid,
-        destination: destinationController.text,
+        destination: destinationController.text.trim(),
         budget: double.tryParse(budgetController.text) ?? 0.0,
         baseCurrency: _baseCurrency,
         objective: _selectedObjective,
@@ -110,6 +163,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
         createdAt: DateTime.now(),
         startDate: _startDate,
         endDate: _isNomad ? null : _endDate,
+        photoUrl: null,
       );
 
       await controller.addTrip(newTrip);
@@ -137,40 +191,41 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   const Text("Para onde você vai?", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
                   
-                  SearchAnchor(
-                    builder: (BuildContext context, SearchController searchController) {
-                      return TextFormField(
-                        controller: destinationController,
-                        readOnly: true, 
-                        onTap: () => searchController.openView(),
-                        decoration: const InputDecoration(
-                          hintText: "Busque qualquer cidade no mundo...",
-                          prefixIcon: Icon(Icons.location_on, color: Colors.deepPurple),
-                          border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.search),
-                        ),
-                        validator: (v) => v == null || v.isEmpty ? "Informe o destino" : null,
-                      );
-                    },
-                    suggestionsBuilder: (BuildContext context, SearchController searchController) async {
-                      if (searchController.text.length < 3) return [];
-                      
-                      final results = await _searchDestinations(searchController.text);
-
-                      return results.map((dest) => ListTile(
-                        leading: const Icon(Icons.map_outlined, color: Colors.deepPurple),
-                        title: Text(dest['display_name'], maxLines: 2, overflow: TextOverflow.ellipsis),
-                        onTap: () {
-                          setState(() {
-                            destinationController.text = dest['display_name'];
-                            searchController.text = dest['display_name'];
-                          });
-                          searchController.closeView(dest['display_name']);
-                        },
-                      )).toList();
-                    },
+                  TextFormField(
+                    controller: destinationController,
+                    decoration: const InputDecoration(
+                      hintText: "Digite o destino ou escolha abaixo",
+                      prefixIcon: Icon(Icons.location_on, color: Colors.deepPurple),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) => v == null || v.isEmpty ? "Informe o destino" : null,
                   ),
+
+                  const SizedBox(height: 12),
+                  const Text("Sugestões populares:", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 8),
                   
+                  SizedBox(
+                    height: 40,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _popularDestinations.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            label: Text(_popularDestinations[index]),
+                            onPressed: () {
+                              setState(() {
+                                destinationController.text = _popularDestinations[index];
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
                   const SizedBox(height: 30),
                   
                   Container(
@@ -247,9 +302,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     height: 55,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      onPressed: () {
-                        if (formKey.currentState!.validate()) createTrip();
-                      },
+                      onPressed: _showConfirmationDialog, // Chama o diálogo de confirmação
                       child: const Text("CRIAR VIAGEM", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),

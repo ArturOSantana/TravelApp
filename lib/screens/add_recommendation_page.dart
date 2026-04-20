@@ -38,6 +38,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
     'Transporte',
     'Passeio',
     'Serviço',
+    'Outros', // Adicionado para consistência com o feed
   ];
 
   Future<void> _pickImage(ImageSource source) async {
@@ -78,7 +79,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
         final user = FirebaseAuth.instance.currentUser;
 
         // 1. Fazer upload das imagens locais e obter URLs
-        List<String> allPhotos = List.from(photos); 
+        List<String> allPhotos = List.from(photos);
         for (File img in _localImages) {
           String url = await _uploadFile(img);
           allPhotos.add(url);

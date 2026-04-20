@@ -7,13 +7,14 @@ class Trip {
   final DateTime? startDate;
   final DateTime? endDate;
   final double budget;
-  final String baseCurrency; // Novo: Moeda base da viagem (ex: BRL, USD, EUR)
+  final String baseCurrency;
   final String objective;
   final bool isGroup;
   final List<String> members;
   final bool isNomad;
   final DateTime createdAt;
-  final String status; // 'active', 'planned', 'completed'
+  final String status;
+  final String? photoUrl; // Novo campo para foto de capa
 
   Trip({
     required this.id,
@@ -29,14 +30,12 @@ class Trip {
     this.isNomad = false,
     required this.createdAt,
     this.status = 'planned',
+    this.photoUrl,
   });
 
   bool isAdmin(String uid) {
     if (uid.isEmpty) return false;
-    if (ownerId.isNotEmpty) {
-      return uid == ownerId;
-    }
-    return members.isNotEmpty && members.first == uid;
+    return uid == ownerId || (members.isNotEmpty && members.first == uid);
   }
 
   Map<String, dynamic> toMap() {
@@ -53,6 +52,7 @@ class Trip {
       'isNomad': isNomad,
       'createdAt': createdAt,
       'status': status,
+      'photoUrl': photoUrl,
     };
   }
 
@@ -72,6 +72,7 @@ class Trip {
       isNomad: data['isNomad'] ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       status: data['status'] ?? 'planned',
+      photoUrl: data['photoUrl'],
     );
   }
 }
