@@ -2,61 +2,64 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('Testes de Acessibilidade (W3C/WCAG) - Estrutura de UI', () {
+  group('Testes de Acessibilidade (W3C/WCAG) - Estrutura Semântica', () {
     
-    testWidgets('Deve validar a semântica de um cabeçalho e ícone acessível', (WidgetTester tester) async {
-      // Criamos uma versão simplificada da UI para testar os padrões W3C sem depender do Firebase
+    testWidgets('Deve validar a semântica de cabeçalho e labels de formulário', (WidgetTester tester) async {
+      // Removido o 'const' para permitir a construção do TextFormField
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: Column(
-            children: [
-              Semantics(
-                label: "Logo do aplicativo",
-                child: const Icon(Icons.travel_explore),
-              ),
-              Semantics(
-                header: true,
-                child: const Text("Bem-vindo"),
-              ),
-              Semantics(
-                button: true,
-                label: "Entrar",
-                child: ElevatedButton(onPressed: () {}, child: const Text("Login")),
-              ),
-            ],
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Semantics(
+                  header: true,
+                  child: const Text("Título da Página"),
+                ),
+                TextFormField( // 'const' removido aqui
+                  decoration: const InputDecoration(
+                    labelText: "E-mail",
+                    hintText: "Digite seu e-mail",
+                  ),
+                ),
+                Semantics(
+                  button: true,
+                  label: "Enviar dados",
+                  child: ElevatedButton(
+                    onPressed: () {}, 
+                    child: const Text("Cadastrar")
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ));
 
-      // 1. Verifica se o Header (W3C Requisito) existe
-      expect(find.bySemanticsLabel('Bem-vindo'), findsOneWidget);
+      expect(find.bySemanticsLabel('Título da Página'), findsOneWidget);
 
-      // 2. Verifica se a imagem/ícone tem descrição (WCAG Alt-Text)
-      expect(find.bySemanticsLabel('Logo do aplicativo'), findsOneWidget);
+      expect(find.bySemanticsLabel('Enviar dados'), findsOneWidget);
 
-      // 3. Verifica se o botão tem papel semântico
-      expect(find.bySemanticsLabel('Entrar'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, 'E-mail'), findsOneWidget);
     });
 
-    testWidgets('Verifica se campos de texto possuem Labels acessíveis', (WidgetTester tester) async {
-      await tester.pumpWidget(const MaterialApp(
+    testWidgets('Deve validar área mínima de toque (WCAG Tap Target)', (WidgetTester tester) async {
+      await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: Column(
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'E-mail'),
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Senha'),
-              ),
-            ],
+          body: Center(
+            child: TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () {},
+              child: const Text("Link"),
+            ),
           ),
         ),
       ));
 
-      // O W3C exige que campos de entrada sejam identificáveis
-      expect(find.widgetWithText(TextField, 'E-mail'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Senha'), findsOneWidget);
+      final buttonFinder = find.byType(TextButton);
+      final RenderBox buttonBox = tester.renderObject(buttonFinder);
+
+      expect(buttonBox.size.width, greaterThanOrEqualTo(48.0));
+      expect(buttonBox.size.height, greaterThanOrEqualTo(48.0));
     });
   });
 }
