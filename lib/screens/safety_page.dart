@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Importante para o MethodChannel
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
-import 'package:telephony/telephony.dart';
 import '../models/safety_checkin.dart';
 import '../models/user_model.dart';
 import '../models/trip.dart';
@@ -24,7 +24,9 @@ class SafetyPage extends StatefulWidget {
 class _SafetyPageState extends State<SafetyPage> {
   final TripController _controller = TripController();
   final AuthController _authController = AuthController();
-  final Telephony telephony = Telephony.instance;
+  
+  // Nosso canal de comunicação com o Android nativo
+  static const platform = MethodChannel('com.example.travel_app/sms');
   
   bool _isLoading = false;
   UserModel? _user;
@@ -93,7 +95,6 @@ class _SafetyPageState extends State<SafetyPage> {
 
     setState(() => _isLoading = true);
     try {
-//melhorei a precisão para dar tempo ao GPS de estabilizar
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
       );
@@ -124,8 +125,8 @@ class _SafetyPageState extends State<SafetyPage> {
 
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best, // Melhor precisão no rastro
-        distanceFilter: 5 // Detecta mudanças a cada 5 metros
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 5
       )
     ).listen((Position position) {
       if (_safeDestination != null && _timerActive) {
@@ -134,7 +135,7 @@ class _SafetyPageState extends State<SafetyPage> {
           _safeDestination!.latitude, _safeDestination!.longitude
         );
 
-        if (distance < 50) { // Reduzi para 50m para ser mais exato na chegada
+        if (distance < 50) {
           _handleArrival();
         } 
         
@@ -182,25 +183,41 @@ class _SafetyPageState extends State<SafetyPage> {
     });
   }
 
+  // --- LÓGICA DE ENVIO DE SMS REAL VIA MÉTODO NATIVO ---
+  Future<void> _sendRealSMS(String phone, String message) async {
+    try {
+      final String result = await platform.invokeMethod('sendSms', {
+        "phone": phone,
+        "message": message,
+      });
+      debugPrint("SMS STATUS: $result");
+    } on PlatformException catch (e) {
+      debugPrint("FALHA AO ENVIAR SMS NATIVO: '${e.message}'. Tentando WhatsApp...");
+      final whatsappUrl = Uri.parse("whatsapp://send?phone=55$phone&text=${Uri.encodeComponent(message)}");
+      if (await canLaunchUrl(whatsappUrl)) await launchUrl(whatsappUrl);
+    }
+  }
+
   Future<void> _triggerFullSOS() async {
     if (_user == null) return;
 
     try {
-      // Melhoria de precisão: tenta pegar a localização atual com mais tempo
+      debugPrint("[SEGURANÇA] Iniciando captura de localização precisa...");
       Position? pos;
       try {
         pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.best,
-          timeLimit: const Duration(seconds: 12), // Aumentado para dar tempo ao GPS de estabilizar
+          timeLimit: const Duration(seconds: 12),
         );
       } catch (e) {
-        // Fallback para última localização conhecida se o GPS falhar no tempo
         pos = await Geolocator.getLastKnownPosition();
       }
 
       String loc = pos != null 
           ? await _getAddressFromCoords(pos.latitude, pos.longitude)
           : "Localização não obtida (verifique o sinal)";
+      
+      debugPrint("[SEGURANÇA] Localização obtida: $loc");
 
       bool inGroup = (_trip?.members.length ?? 0) > 1;
       final message = "SOS TRAVEL APP: ${_user!.name} precisa de ajuda urgente. Localizacao: $loc";
@@ -208,26 +225,14 @@ class _SafetyPageState extends State<SafetyPage> {
 
       // 1. FIREBASE (GRUPO)
       if (inGroup) {
+        debugPrint("[SEGURANÇA] Enviando alerta para o grupo via Firebase...");
         await _controller.performSafetyCheckIn(widget.tripId, loc, true);
       }
 
-      // 2. SMS REAL (SILENCIOSO/AUTOMÁTICO)
+      // 2. SMS REAL (NOSSO MÉTODO NOVO)
       if (cleanPhone.isNotEmpty) {
-        try {
-          bool? canSend = await telephony.isSmsCapable;
-          if (canSend == true) {
-            await telephony.sendSms(
-              to: "55$cleanPhone",
-              message: message,
-            );
-          } else {
-            throw "Aparelho incapaz de enviar SMS";
-          }
-        } catch (smsError) {
-          debugPrint("Erro SMS Real: $smsError. Usando Fallback WhatsApp.");
-          final whatsappUrl = Uri.parse("whatsapp://send?phone=55$cleanPhone&text=${Uri.encodeComponent(message)}");
-          if (await canLaunchUrl(whatsappUrl)) await launchUrl(whatsappUrl);
-        }
+        debugPrint("[SEGURANÇA] Enviando SMS Real para $cleanPhone...");
+        await _sendRealSMS(cleanPhone, message);
       }
 
       if (mounted) {
@@ -363,6 +368,7 @@ class _SafetyPageState extends State<SafetyPage> {
             ),
           ),
           IconButton(
+            key: const Key('edit_contact_btn'),
             icon: const Icon(Icons.edit_outlined, size: 20, color: Colors.blueAccent),
             onPressed: _showSetupContactDialog,
           )
@@ -402,6 +408,7 @@ class _SafetyPageState extends State<SafetyPage> {
               ),
               if (_safeDestinationName == null)
                 TextButton.icon(
+                  key: const Key('set_destination_btn'),
                   onPressed: _setDestination,
                   icon: const Icon(Icons.add_location_alt_outlined, size: 16),
                   label: const Text("Marcar", style: TextStyle(fontSize: 13)),
@@ -439,13 +446,13 @@ class _SafetyPageState extends State<SafetyPage> {
           const SizedBox(height: 16),
           Row(
             children: [
-              _timeChip(15, "15m"),
+              _timeChip(15, "15m", const Key('time_15m')),
               const SizedBox(width: 8),
-              _timeChip(30, "30m"),
+              _timeChip(30, "30m", const Key('time_30m')),
               const SizedBox(width: 8),
-              _timeChip(60, "1h"),
+              _timeChip(60, "1h", const Key('time_60m')),
               const SizedBox(width: 8),
-              _timeChip(120, "2h"),
+              _timeChip(120, "2h", const Key('time_120m')),
             ],
           ),
         ],
@@ -503,6 +510,7 @@ class _SafetyPageState extends State<SafetyPage> {
       color: Colors.red.shade50,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
+        key: const Key('panic_btn'),
         onTap: _triggerFullSOS,
         borderRadius: BorderRadius.circular(20),
         child: Container(
@@ -577,9 +585,10 @@ class _SafetyPageState extends State<SafetyPage> {
     );
   }
 
-  Widget _timeChip(int min, String label) {
+  Widget _timeChip(int min, String label, Key key) {
     return Expanded(
       child: ActionChip(
+        key: key,
         label: Center(child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold))),
         onPressed: () => _startSafetyTimer(min),
         backgroundColor: Colors.white,

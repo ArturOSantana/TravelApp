@@ -29,7 +29,6 @@ dependencies:
   smooth_page_indicator: ^2.0.1  # Indicador de onboarding
   cached_network_image: ^3.4.1  # Cache de imagens
   geolocator: ^13.0.2
-  telephony: ^0.2.0 # Envio de SMS real
 
 dev_dependencies:
   flutter_test:
