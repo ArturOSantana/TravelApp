@@ -1,16 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum NotificationType { like, comment }
+enum NotificationType { like, comment, safety_alert }
 
 class AppNotification {
   final String id;
   final String receiverId;
   final String senderId;
   final String senderName;
-  final String postId;
-  final String postName;
+  final String postId; // Pode ser tripId no caso de segurança
+  final String postName; // Pode ser o nome da viagem ou localização
   final NotificationType type;
-  final String? commentText;
+  final String? commentText; // Pode ser a mensagem de alerta
   final DateTime createdAt;
   final bool isRead;
 

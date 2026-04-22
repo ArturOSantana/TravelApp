@@ -57,7 +57,7 @@ class TripController {
 
     if (type == NotificationType.like) {
       await PushNotificationService.notifyNewLike(postName, user.displayName ?? 'Alguém');
-    } else {
+    } else if (type == NotificationType.comment) {
       await PushNotificationService.notifyNewComment(postName, user.displayName ?? 'Alguém');
     }
   }
@@ -72,6 +72,11 @@ class TripController {
       trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return trips;
     });
+  }
+
+  Future<Trip> getTripById(String tripId) async {
+    final doc = await _db.collection('trips').doc(tripId).get();
+    return Trip.fromFirestore(doc);
   }
 
   Future<void> addTrip(Trip trip) async => await _db.collection('trips').add(trip.toMap());
@@ -175,7 +180,6 @@ class TripController {
       createdAt: DateTime.now()
     );
 
-    // CORREÇÃO: Adicionando à lista e disparando atualização do updatedAt
     await _db.collection('services').doc(serviceId).update({
       'comments': FieldValue.arrayUnion([comment.toMap()]), 
       'updatedAt': Timestamp.fromDate(DateTime.now())
@@ -254,8 +258,40 @@ class TripController {
   Future<void> addJournalEntry(JournalEntry entry) async => await _db.collection('journal').add(entry.toMap());
   
   Stream<List<SafetyCheckIn>> getSafetyHistory(String tripId) => _db.collection('safety').where('tripId', isEqualTo: tripId).snapshots().map((snap) => snap.docs.map((doc) => SafetyCheckIn.fromFirestore(doc)).toList());
+  
   Future<void> performSafetyCheckIn(String tripId, String location, bool isPanic) async {
-    final checkIn = SafetyCheckIn(id: '', tripId: tripId, userId: _auth.currentUser?.uid ?? '', timestamp: DateTime.now(), locationName: location, isPanic: isPanic);
+    final user = _auth.currentUser;
+    final checkIn = SafetyCheckIn(
+      id: '', 
+      tripId: tripId, 
+      userId: user?.uid ?? '', 
+      timestamp: DateTime.now(), 
+      locationName: location, 
+      isPanic: isPanic
+    );
+    
     await _db.collection('safety').add(checkIn.toMap());
+
+    if (isPanic) {
+      // Notificar todos os membros da viagem
+      final tripDoc = await _db.collection('trips').doc(tripId).get();
+      final trip = Trip.fromFirestore(tripDoc);
+      
+      for (final memberId in trip.members) {
+        if (memberId == user?.uid) continue;
+        
+        await _db.collection('notifications').add(AppNotification(
+          id: '',
+          receiverId: memberId,
+          senderId: user?.uid ?? '',
+          senderName: user?.displayName ?? 'Um viajante',
+          postId: tripId,
+          postName: trip.destination,
+          type: NotificationType.safety_alert,
+          commentText: "🆘 ALERTA SOS: Estou em $location e preciso de ajuda!",
+          createdAt: DateTime.now(),
+        ).toMap());
+      }
+    }
   }
 }

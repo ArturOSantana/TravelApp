@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/activity.dart';
@@ -65,6 +65,24 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
 
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
+  }
+
+  Future<void> _pickTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (picked != null) setState(() => _selectedTime = picked);
+  }
+
   void _saveActivity() async {
     if (titleController.text.isEmpty) return;
     if (categoryController.text.trim().isEmpty) {
@@ -114,9 +132,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
         );
       }
 
-      if (mounted) {
-        Navigator.pop(context);
-      }
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
     }
@@ -124,99 +140,108 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isEditing = widget.activity != null;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? "Editar Atividade" : "Adicionar Atividade"),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
+        title: Text(widget.activity != null ? "Editar Atividade" : "Nova Atividade"),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: "O que você vai fazer?",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.title),
+            Semantics(
+              label: "Campo para o título da atividade",
+              child: TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: "O que você vai fazer?",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.title),
+                ),
               ),
             ),
             const SizedBox(height: 20),
             
-            SearchAnchor(
-              builder: (BuildContext context, SearchController searchController) {
-                return TextFormField(
-                  controller: locationController,
-                  readOnly: true,
-                  onTap: () => searchController.openView(),
-                  decoration: const InputDecoration(
-                    labelText: "Localização / Endereço",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on),
-                    suffixIcon: Icon(Icons.search),
-                  ),
-                );
-              },
-              suggestionsBuilder: (BuildContext context, SearchController searchController) async {
-                final results = await _searchLocations(searchController.text);
-                return results.map((loc) => ListTile(
-                  leading: const Icon(Icons.place, color: Colors.deepPurple),
-                  title: Text(loc['display_name'], maxLines: 2, overflow: TextOverflow.ellipsis),
-                  onTap: () {
-                    setState(() {
-                      locationController.text = loc['display_name'];
-                      _lat = loc['lat'];
-                      _lon = loc['lon'];
-                    });
-                    searchController.closeView(loc['display_name']);
-                  },
-                )).toList();
-              },
+            Semantics(
+              label: "Campo para buscar localização da atividade",
+              child: SearchAnchor(
+                builder: (BuildContext context, SearchController searchController) {
+                  return TextFormField(
+                    controller: locationController,
+                    readOnly: true,
+                    onTap: () => searchController.openView(),
+                    decoration: const InputDecoration(
+                      labelText: "Onde? (Localização)",
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.location_on),
+                      suffixIcon: Icon(Icons.search),
+                    ),
+                  );
+                },
+                suggestionsBuilder: (BuildContext context, SearchController searchController) async {
+                  final results = await _searchLocations(searchController.text);
+                  return results.map((loc) => ListTile(
+                    leading: const Icon(Icons.place, color: Colors.deepPurple),
+                    title: Text(loc['display_name'], maxLines: 2, overflow: TextOverflow.ellipsis),
+                    onTap: () {
+                      setState(() {
+                        locationController.text = loc['display_name'];
+                        _lat = loc['lat'];
+                        _lon = loc['lon'];
+                      });
+                      searchController.closeView(loc['display_name']);
+                    },
+                  )).toList();
+                },
+              ),
             ),
             
             const SizedBox(height: 20),
             TextField(
               controller: categoryController,
               decoration: const InputDecoration(
-                labelText: "Categoria",
+                labelText: "Categoria (Ex: Jantar, Passeio)",
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.category),
               ),
               textCapitalization: TextCapitalization.words,
             ),
 
-            const SizedBox(height: 25),
-            Container(
-              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                title: const Text("Data e Horário"),
-                subtitle: Text("${_selectedDate.day}/${_selectedDate.month} às ${_selectedTime.format(context)}"),
-                leading: const Icon(Icons.calendar_today, color: Colors.deepPurple),
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate,
-                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                    lastDate: DateTime.now().add(const Duration(days: 3650)),
-                  );
-                  if (date != null) {
-                    final time = await showTimePicker(context: context, initialTime: _selectedTime);
-                    if (time != null) setState(() { _selectedDate = date; _selectedTime = time; });
-                  }
-                },
-              ),
+            const SizedBox(height: 30),
+            const Text("Quando?", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildPickerCard(
+                    label: "Data",
+                    value: DateFormat('dd/MM/yyyy').format(_selectedDate),
+                    icon: Icons.calendar_today,
+                    onTap: _pickDate,
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: _buildPickerCard(
+                    label: "Hora",
+                    value: _selectedTime.format(context),
+                    icon: Icons.access_time,
+                    onTap: _pickTime,
+                  ),
+                ),
+              ],
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 onPressed: _saveActivity,
                 child: const Text("SALVAR ATIVIDADE", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
@@ -227,18 +252,28 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     );
   }
 
-  void _confirmDelete() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Excluir Atividade?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
-          TextButton(onPressed: () async {
-            await _controller.deleteActivity(widget.activity!.id);
-            if (mounted) { Navigator.pop(context); Navigator.pop(context); }
-          }, child: const Text("Excluir", style: TextStyle(color: Colors.red))),
-        ],
+  Widget _buildPickerCard({required String label, required String value, required IconData icon, required VoidCallback onTap}) {
+    return Semantics(
+      button: true,
+      label: "Selecionar $label. Valor atual: $value",
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: Colors.deepPurple, size: 20),
+              const SizedBox(height: 8),
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+        ),
       ),
     );
   }

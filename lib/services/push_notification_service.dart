@@ -19,6 +19,15 @@ class PushNotificationService {
     importance: Importance.max,
   );
 
+  static const AndroidNotificationChannel _sosChannel = AndroidNotificationChannel(
+    'sos_alerts',
+    'Alertas de Segurança (SOS)',
+    description: 'Canal crítico para alertas de emergência.',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+  );
+
   static Future<void> initialize() async {
     if (kIsWeb) return;
 
@@ -26,13 +35,16 @@ class PushNotificationService {
       alert: true,
       badge: true,
       sound: true,
+      criticalAlert: true,
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      await _localNotifications
+      final androidPlugin = _localNotifications
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(_channel);
+              AndroidFlutterLocalNotificationsPlugin>();
+      
+      await androidPlugin?.createNotificationChannel(_channel);
+      await androidPlugin?.createNotificationChannel(_sosChannel);
 
       await _configureLocalNotifications();
       await _saveDeviceToken();
@@ -46,6 +58,7 @@ class PushNotificationService {
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
+      requestCriticalPermission: true,
     );
 
     const initSettings = InitializationSettings(
@@ -108,19 +121,30 @@ class PushNotificationService {
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print(' Usuário clicou na notificação');
+      print('Usuário clicou na notificação');
     });
   }
 
-  static Future<void> _sendInstantNotification({required String title, required String body}) async {
+  static Future<void> _sendInstantNotification({
+    required String title, 
+    required String body, 
+    bool isCritical = false
+  }) async {
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'system_alerts', 
-        'Alertas do Sistema', 
+        isCritical ? _sosChannel.id : 'system_alerts', 
+        isCritical ? _sosChannel.name : 'Alertas do Sistema', 
         importance: Importance.max, 
-        priority: Priority.high
+        priority: Priority.high,
+        fullScreenIntent: isCritical,
+        category: isCritical ? AndroidNotificationCategory.alarm : null,
       ),
-      iOS: const DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        interruptionLevel: isCritical ? InterruptionLevel.critical : InterruptionLevel.active,
+      ),
     );
     
     await _localNotifications.show(
@@ -131,16 +155,24 @@ class PushNotificationService {
     );
   }
 
+  static Future<void> notifySafetyAlert(String userName, String location) async {
+    await _sendInstantNotification(
+      title: '🆘 ALERTA DE EMERGÊNCIA!',
+      body: '$userName precisa de ajuda em $location',
+      isCritical: true,
+    );
+  }
+
   static Future<void> notifyNewComment(String postName, String userName) async {
     await _sendInstantNotification(
-      title: ' Novo Comentário',
+      title: 'Novo Comentário',
       body: '$userName comentou no seu post "$postName"',
     );
   }
 
   static Future<void> notifyNewLike(String postName, String userName) async {
     await _sendInstantNotification(
-      title: ' Nova Curtida',
+      title: 'Nova Curtida',
       body: '$userName curtiu sua recomendação "$postName"',
     );
   }
