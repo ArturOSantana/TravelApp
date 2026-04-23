@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../controllers/auth_controller.dart';
 import '../models/user_model.dart';
 import '../services/storage_service.dart';
+import '../services/localization.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -22,6 +23,8 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _emergencyNameController;
   late TextEditingController _emergencyPhoneController;
 
+  String _selectedLanguage = AppLocalizations.PORTUGUESE;
+
   UserModel? _user;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -35,6 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _bioController = TextEditingController();
     _emergencyNameController = TextEditingController();
     _emergencyPhoneController = TextEditingController();
+    _selectedLanguage = appLocalizations.locale;
     _loadUserData();
   }
 
@@ -244,6 +248,53 @@ class _ProfilePageState extends State<ProfilePage> {
                     value: _user?.isPremium ?? false,
                     activeColor: Colors.amber[800],
                     onChanged: _togglePremium,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+              //essa parte é a de seleção de idioma, usando um DropdownButton para mostrar as opções disponíveis. Quando o usuário seleciona um idioma, a função onChanged é chamada, que atualiza o estado do widget e chama o método changeLanguage do AppLocalizations para alterar a linguagem do aplicativo.
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  
+                  child: ListTile(
+                    title: const Text("Idioma", style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text("Selecione o idioma do aplicativo"),
+                    trailing: DropdownButton<String>(
+                      value: _selectedLanguage,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() => _selectedLanguage = newValue);
+                          appLocalizations.changeLanguage(newValue);
+                        }
+                      },
+
+
+                      items: AppLocalizations.languageFlags.keys.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Row(
+                            children: [
+                              Text(AppLocalizations.languageFlags[value]!),
+                              const SizedBox(width: 8),
+                              Text(appLocalizations.translate
+                              (    value == AppLocalizations.PORTUGUESE ? 'portuguese' : 
+                                   value == AppLocalizations.ENGLISH ? 'english' : 
+                                   value == AppLocalizations.ITALIAN ? 'italian' : 
+                                   value == AppLocalizations.SPANISH ? 'spanish' : 
+                                   value == AppLocalizations.FRENCH ? 'french' : 
+                                   value == AppLocalizations.RUSSIAN ? 'russian' : 
+                                   "")),
+                                   //por algum motivo o russo e diferente se ele n funcionar é só colocar o nome normal mesmo, tipo "Russian".
+                                   //REVISAR ESSA PARTE DEPOIS.
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
 
