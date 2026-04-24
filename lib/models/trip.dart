@@ -14,7 +14,10 @@ class Trip {
   final bool isNomad;
   final DateTime createdAt;
   final String status;
-  final String? photoUrl; // Novo campo para foto de capa
+  final String? photoUrl;
+  final double? latitude;
+  final double? longitude;
+  final String? placeId;
 
   Trip({
     required this.id,
@@ -31,6 +34,9 @@ class Trip {
     required this.createdAt,
     this.status = 'planned',
     this.photoUrl,
+    this.latitude,
+    this.longitude,
+    this.placeId,
   });
 
   bool isAdmin(String uid) {
@@ -53,6 +59,9 @@ class Trip {
       'createdAt': createdAt,
       'status': status,
       'photoUrl': photoUrl,
+      'latitude': latitude,
+      'longitude': longitude,
+      'placeId': placeId,
     };
   }
 
@@ -73,6 +82,9 @@ class Trip {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       status: data['status'] ?? 'planned',
       photoUrl: data['photoUrl'],
+      latitude: data['latitude']?.toDouble(),
+      longitude: data['longitude']?.toDouble(),
+      placeId: data['placeId'],
     );
   }
 }

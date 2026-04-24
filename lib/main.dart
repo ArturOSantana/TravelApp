@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
@@ -17,6 +18,13 @@ import 'services/cache_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Carrega as variáveis de ambiente (.env)
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Aviso: Arquivo .env não encontrado ou erro ao carregar.");
+  }
 
   // Inicializa a formatação de datas para Português (Brasil)
   await initializeDateFormatting('pt_BR', null);

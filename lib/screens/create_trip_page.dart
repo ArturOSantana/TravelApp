@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
+import '../services/google_maps_service.dart';
 
 class CreateTripPage extends StatefulWidget {
   const CreateTripPage({super.key});
@@ -14,6 +15,7 @@ class CreateTripPage extends StatefulWidget {
 class _CreateTripPageState extends State<CreateTripPage> {
   final TripController controller = TripController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleMapsService _mapsService = GoogleMapsService();
 
   final TextEditingController destinationController = TextEditingController();
   final TextEditingController budgetController = TextEditingController();
@@ -27,6 +29,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
   DateTime? _startDate;
   DateTime? _endDate;
 
+  // Novos campos do Google Places
+  String? _selectedPlaceId;
+  double? _lat;
+  double? _lng;
+  String? _photoUrl;
+
   final List<String> _objectives = ['Descanso', 'Aventura', 'Trabalho', 'Cultural', 'Gastronômico'];
   final List<String> _currencies = ['BRL', 'USD', 'EUR', 'GBP', 'ARS'];
 
@@ -34,11 +42,6 @@ class _CreateTripPageState extends State<CreateTripPage> {
     'Orlando, EUA', 'Paris, França', 'Tokyo, Japão', 'Roma, Itália',
     'Rio de Janeiro, Brasil', 'Londres, Inglaterra', 'Nova York, EUA', 'Cancún, México',
   ];
-
-  int get _tripDuration {
-    if (_startDate == null || _endDate == null || _isNomad) return 0;
-    return _endDate!.difference(_startDate!).inDays + 1;
-  }
 
   void _showConfirmationDialog() {
     if (!formKey.currentState!.validate()) return;
@@ -52,47 +55,50 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
     showDialog(
       context: context,
-      builder: (context) => Semantics(
-        focused: true,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.verified_outlined, color: Colors.green),
-              SizedBox(width: 10),
-              Text("Confirmar Viagem"),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Deseja criar a viagem com estes detalhes?", style: TextStyle(color: Colors.black54)),
-              const SizedBox(height: 20),
-              _buildSummaryRow(Icons.location_on, "Destino", destinationController.text),
-              _buildSummaryRow(Icons.calendar_month, "Período", _isNomad ? "Nômade" : "${DateFormat('dd/MM').format(_startDate!)} - ${DateFormat('dd/MM').format(_endDate!)}"),
-              _buildSummaryRow(Icons.payments, "Orçamento", "$_baseCurrency ${budgetController.text}"),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Editar", style: TextStyle(color: Colors.grey)),
-            ),
-            Semantics(
-              button: true,
-              label: "Confirmar todos os dados e criar viagem no sistema",
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
-                onPressed: () {
-                  Navigator.pop(context);
-                  _createTrip();
-                },
-                child: const Text("Confirmar e Criar"),
-              ),
-            ),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_outlined, color: Colors.green),
+            SizedBox(width: 10),
+            Text("Confirmar Viagem"),
           ],
         ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_photoUrl != null)
+              Container(
+                height: 120,
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 15),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(image: NetworkImage(_photoUrl!), fit: BoxFit.cover),
+                ),
+              ),
+            const Text("Deseja criar a viagem com estes detalhes?", style: TextStyle(color: Colors.black54)),
+            const SizedBox(height: 20),
+            _buildSummaryRow(Icons.location_on, "Destino", destinationController.text),
+            _buildSummaryRow(Icons.calendar_month, "Período", _isNomad ? "Nômade" : "${DateFormat('dd/MM').format(_startDate!)} - ${DateFormat('dd/MM').format(_endDate!)}"),
+            _buildSummaryRow(Icons.payments, "Orçamento", "$_baseCurrency ${budgetController.text}"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Editar", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+              _createTrip();
+            },
+            child: const Text("Confirmar e Criar"),
+          ),
+        ],
       ),
     );
   }
@@ -116,11 +122,21 @@ class _CreateTripPageState extends State<CreateTripPage> {
     setState(() => _isLoading = true);
     try {
       final newTrip = Trip(
-        id: '', ownerId: uid, destination: destinationController.text.trim(),
+        id: '', 
+        ownerId: uid, 
+        destination: destinationController.text.trim(),
         budget: double.tryParse(budgetController.text) ?? 0.0,
-        baseCurrency: _baseCurrency, objective: _selectedObjective,
-        isNomad: _isNomad, members: [uid], createdAt: DateTime.now(),
-        startDate: _startDate, endDate: _isNomad ? null : _endDate,
+        baseCurrency: _baseCurrency, 
+        objective: _selectedObjective,
+        isNomad: _isNomad, 
+        members: [uid], 
+        createdAt: DateTime.now(),
+        startDate: _startDate, 
+        endDate: _isNomad ? null : _endDate,
+        latitude: _lat,
+        longitude: _lng,
+        placeId: _selectedPlaceId,
+        photoUrl: _photoUrl,
       );
       await controller.addTrip(newTrip);
       if (mounted) Navigator.pop(context);
@@ -131,11 +147,37 @@ class _CreateTripPageState extends State<CreateTripPage> {
     }
   }
 
+  Future<void> _onPlaceSelected(Object prediction) async {
+    final Map<String, dynamic> place = prediction as Map<String, dynamic>;
+    final placeId = place['place_id'];
+    final description = place['description'];
+    
+    setState(() {
+      destinationController.text = description;
+      _selectedPlaceId = placeId;
+      _isLoading = true;
+    });
+
+    final details = await _mapsService.getPlaceDetails(placeId);
+    if (details != null) {
+      setState(() {
+        _lat = details['geometry']['location']['lat'];
+        _lng = details['geometry']['location']['lng'];
+        
+        final photos = details['photos'] as List?;
+        if (photos != null && photos.isNotEmpty) {
+          _photoUrl = _mapsService.getPhotoUrl(photos[0]['photo_reference']);
+        }
+      });
+    }
+    setState(() => _isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Semantics(header: true, child: const Text("Planejar Viagem")),
+        title: const Text("Planejar Viagem"),
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
@@ -146,12 +188,34 @@ class _CreateTripPageState extends State<CreateTripPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Semantics(label: "Campo: Para onde você vai?", child: const Text("Destino", style: TextStyle(fontWeight: FontWeight.bold))),
+                  const Text("Destino", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  TextFormField(
-                    controller: destinationController,
-                    decoration: const InputDecoration(hintText: "Digite a cidade", prefixIcon: Icon(Icons.location_on), border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? "Informe o destino" : null,
+                  Autocomplete<Object>(
+                    displayStringForOption: (option) {
+                      final Map<String, dynamic> map = option as Map<String, dynamic>;
+                      return map['description'] ?? '';
+                    },
+                    optionsBuilder: (TextEditingValue textEditingValue) async {
+                      if (textEditingValue.text.isEmpty) return const Iterable<Object>.empty();
+                      final results = await _mapsService.getAutocomplete(textEditingValue.text);
+                      return results.cast<Object>();
+                    },
+                    onSelected: _onPlaceSelected,
+                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                      if (destinationController.text.isNotEmpty && controller.text.isEmpty) {
+                        controller.text = destinationController.text;
+                      }
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(
+                          hintText: "Para onde você vai?",
+                          prefixIcon: Icon(Icons.location_on),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (v) => v!.isEmpty ? "Informe o destino" : null,
+                      );
+                    },
                   ),
                   const SizedBox(height: 15),
                   const Text("Sugestões populares:", style: TextStyle(fontSize: 12, color: Colors.grey)),
@@ -163,54 +227,69 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       itemCount: _popularDestinations.length,
                       itemBuilder: (context, index) => Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: Semantics(
-                          button: true,
-                          label: "Sugestão: ${_popularDestinations[index]}",
-                          child: ActionChip(
-                            label: Text(_popularDestinations[index]),
-                            onPressed: () => setState(() => destinationController.text = _popularDestinations[index]),
-                          ),
+                        child: ActionChip(
+                          label: Text(_popularDestinations[index]),
+                          onPressed: () {
+                            setState(() {
+                              destinationController.text = _popularDestinations[index];
+                              _selectedPlaceId = null;
+                              _photoUrl = null;
+                            });
+                          },
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 30),
-                  Semantics(
-                    label: "Seletor de datas da viagem",
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(15)),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              _buildDateTile("Ida", _startDate, () => _pickDate(true)),
-                              const Icon(Icons.arrow_forward, color: Colors.grey, size: 16),
-                              _buildDateTile("Volta", _endDate, () => _pickDate(false), enabled: !_isNomad),
-                            ],
-                          ),
-                          SwitchListTile(
-                            title: const Text("Modo Nômade"),
-                            subtitle: const Text("Sem data de volta"),
-                            value: _isNomad,
-                            onChanged: (v) => setState(() => _isNomad = v),
-                          ),
-                        ],
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(15)),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            _buildDateTile("Ida", _startDate, () => _pickDate(true)),
+                            const Icon(Icons.arrow_forward, color: Colors.grey, size: 16),
+                            _buildDateTile("Volta", _endDate, () => _pickDate(false), enabled: !_isNomad),
+                          ],
+                        ),
+                        SwitchListTile(
+                          title: const Text("Modo Nômade"),
+                          subtitle: const Text("Sem data de volta"),
+                          value: _isNomad,
+                          onChanged: (v) => setState(() => _isNomad = v),
+                        ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Orçamento Estimado", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      DropdownButton<String>(
+                        value: _baseCurrency,
+                        items: _currencies.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                        onChanged: (v) => setState(() => _baseCurrency = v!),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: TextFormField(
+                          controller: budgetController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(hintText: "0.00", border: OutlineInputBorder()),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
                     height: 56,
-                    child: Semantics(
-                      button: true,
-                      label: "Botão para revisar e criar viagem",
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
-                        onPressed: _showConfirmationDialog,
-                        child: const Text("CRIAR VIAGEM", style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white),
+                      onPressed: _showConfirmationDialog,
+                      child: const Text("CRIAR VIAGEM", style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -222,19 +301,15 @@ class _CreateTripPageState extends State<CreateTripPage> {
 
   Widget _buildDateTile(String label, DateTime? date, VoidCallback onTap, {bool enabled = true}) {
     return Expanded(
-      child: Semantics(
-        button: true,
-        label: "Selecionar data de $label. Atual: ${date != null ? DateFormat('dd/MM').format(date) : 'Não definida'}",
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          child: Opacity(
-            opacity: enabled ? 1 : 0.3,
-            child: Column(
-              children: [
-                Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                Text(date == null ? "Selecionar" : DateFormat('dd/MM/yyyy').format(date), style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        child: Opacity(
+          opacity: enabled ? 1 : 0.3,
+          child: Column(
+            children: [
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(date == null ? "Selecionar" : DateFormat('dd/MM/yyyy').format(date), style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
           ),
         ),
       ),
