@@ -56,6 +56,11 @@ service cloud.firestore {
       allow read, update, delete: if isAuthenticated() && isTripMember(resource.data.tripId);
     }
     
+    match /packing_items/{itemId} {
+      allow create: if isAuthenticated() && isTripMember(request.resource.data.tripId);
+      allow read, update, delete: if isAuthenticated() && isTripMember(resource.data.tripId);
+    }
+    
     match /notifications/{notificationId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();

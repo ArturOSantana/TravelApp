@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../controllers/packing_checklist_controller.dart';
 import '../models/packing_checklist.dart';
+import '../data/packing_templates.dart';
+import 'select_packing_template_page.dart';
 
 class PackingChecklistPage extends StatefulWidget {
   final String tripId;
@@ -28,6 +30,11 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.library_add_outlined),
+            tooltip: 'Usar template',
+            onPressed: _openTemplateSelector,
+          ),
           IconButton(
             icon: const Icon(Icons.done_all_outlined),
             tooltip: 'Marcar tudo como pronto',
@@ -58,7 +65,8 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
             }
 
             if (snapshot.hasError) {
-              return Center(child: Text('Erro ao carregar checklist: ${snapshot.error}'));
+              return Center(
+                  child: Text('Erro ao carregar checklist: ${snapshot.error}'));
             }
 
             final viewData = snapshot.data ?? PackingChecklistViewData.empty();
@@ -212,7 +220,8 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
                       padding: const EdgeInsets.only(right: 6),
                       child: ChoiceChip(
                         visualDensity: VisualDensity.compact,
-                        label: Text(category, style: const TextStyle(fontSize: 12)),
+                        label: Text(category,
+                            style: const TextStyle(fontSize: 12)),
                         selected: isSelected,
                         onSelected: (_) {
                           setState(() => _selectedCategory = category);
@@ -240,9 +249,11 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-      children: viewData.groupedItems.entries.map(
-        (entry) => _buildCategorySection(entry.key, entry.value),
-      ).toList(),
+      children: viewData.groupedItems.entries
+          .map(
+            (entry) => _buildCategorySection(entry.key, entry.value),
+          )
+          .toList(),
     );
   }
 
@@ -255,8 +266,10 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        title: Text(category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        leading: Icon(_categoryIcon(category), color: Colors.deepPurple, size: 20),
+        title: Text(category,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        leading:
+            Icon(_categoryIcon(category), color: Colors.deepPurple, size: 20),
         children: items.map((item) => _buildItemCard(item)).toList(),
       ),
     );
@@ -290,7 +303,8 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
         children: [
           Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[350]),
           const SizedBox(height: 18),
-          const Text('Seu checklist está vazio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Seu checklist está vazio',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text('Adicione itens para começar a organizar.'),
         ],
@@ -300,17 +314,17 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
 
   void _showAddItemDialog(BuildContext context) {
     final nameController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => StreamBuilder<List<String>>(
         stream: _controller.watchTripCategories(widget.tripId),
         builder: (context, snapshot) {
-          final categories = (snapshot.data ?? ['Outros'])
-              .where((c) => c != 'Todos')
-              .toList();
-          
-          String selectedCategory = categories.contains('Outros') ? 'Outros' : categories.first;
+          final categories =
+              (snapshot.data ?? ['Outros']).where((c) => c != 'Todos').toList();
+
+          String selectedCategory =
+              categories.contains('Outros') ? 'Outros' : categories.first;
 
           return StatefulBuilder(
             builder: (context, setModalState) => AlertDialog(
@@ -320,20 +334,26 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Nome do item'),
+                    decoration:
+                        const InputDecoration(labelText: 'Nome do item'),
                     autofocus: true,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: selectedCategory,
-                    items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                    onChanged: (val) => setModalState(() => selectedCategory = val!),
+                    items: categories
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (val) =>
+                        setModalState(() => selectedCategory = val!),
                     decoration: const InputDecoration(labelText: 'Categoria'),
                   ),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancelar')),
                 ElevatedButton(
                   onPressed: () async {
                     if (nameController.text.isNotEmpty) {
@@ -358,15 +378,104 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
 
   IconData _categoryIcon(String category) {
     switch (category) {
-      case 'Roupas': return Icons.checkroom_outlined;
-      case 'Documentos': return Icons.description_outlined;
-      case 'Eletrônicos': return Icons.devices_outlined;
-      case 'Higiene': return Icons.health_and_safety_outlined;
-      default: return Icons.inventory_2_outlined;
+      case 'Roupas':
+        return Icons.checkroom_outlined;
+      case 'Documentos':
+        return Icons.description_outlined;
+      case 'Eletrônicos':
+        return Icons.devices_outlined;
+      case 'Higiene':
+        return Icons.health_and_safety_outlined;
+      default:
+        return Icons.inventory_2_outlined;
     }
   }
 
-  Future<void> _toggleItem(String itemId, bool isChecked) async => await _controller.toggleItem(itemId: itemId, isChecked: isChecked);
-  Future<void> _markAllAsChecked() async => await _controller.markAllAsChecked(widget.tripId);
-  Future<void> _deleteItem(String itemId) async => await _controller.deleteItem(itemId);
+  Future<void> _toggleItem(String itemId, bool isChecked) async =>
+      await _controller.toggleItem(itemId: itemId, isChecked: isChecked);
+  Future<void> _markAllAsChecked() async =>
+      await _controller.markAllAsChecked(widget.tripId);
+  Future<void> _deleteItem(String itemId) async =>
+      await _controller.deleteItem(itemId);
+
+  Future<void> _openTemplateSelector() async {
+    final template = await Navigator.push<PackingTemplate>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelectPackingTemplatePage(tripId: widget.tripId),
+      ),
+    );
+
+    if (template != null && mounted) {
+      _applyTemplate(template);
+    }
+  }
+
+  Future<void> _applyTemplate(PackingTemplate template) async {
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Adicionando itens do template...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Converter itens do template para o formato esperado
+      final items = template.items.map((item) => item.toMap()).toList();
+
+      // Adicionar itens usando o controller
+      final addedCount = await _controller.addTemplateItems(
+        tripId: widget.tripId,
+        items: items,
+      );
+
+      if (mounted) {
+        Navigator.pop(context); // Fechar loading
+
+        // Mostrar resultado
+        final message = addedCount > 0
+            ? '$addedCount ${addedCount == 1 ? 'item adicionado' : 'itens adicionados'} com sucesso!'
+            : 'Todos os itens do template já existem no checklist.';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: addedCount > 0 ? Colors.green : Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Fechar loading
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao adicionar itens: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 }
