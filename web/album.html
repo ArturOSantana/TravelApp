@@ -19,99 +19,78 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 40px;
-            animation: fadeIn 1s ease-in;
+            margin-bottom: 30px;
         }
 
         .header h1 {
-            font-size: 3em;
+            font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
 
         .header p {
-            font-size: 1.2em;
+            font-size: 1.1rem;
             opacity: 0.9;
         }
 
-        .loading {
-            text-align: center;
-            color: white;
-            font-size: 1.5em;
-            margin-top: 100px;
-        }
-
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            animation: fadeIn 1s ease-in;
-        }
-
-        .entry-card {
+        .card {
             background: white;
-            border-radius: 16px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            animation: slideUp 0.5s ease-out;
+            margin-bottom: 30px;
+            animation: fadeIn 0.5s ease-in;
         }
 
-        .entry-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .entry-image {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-            cursor: pointer;
-        }
-
-        .entry-content {
+        .card-header {
             padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
         }
 
-        .entry-date {
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 10px;
+            gap: 12px;
         }
 
-        .entry-location {
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #667eea;
-            font-weight: 600;
-            margin-bottom: 15px;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
         }
 
-        .entry-text {
+        .user-details h3 {
+            font-size: 1.1rem;
             color: #333;
-            line-height: 1.6;
-            margin-bottom: 15px;
+        }
+
+        .user-details p {
+            font-size: 0.9rem;
+            color: #666;
         }
 
         .mood-tag {
@@ -120,32 +99,128 @@
             gap: 6px;
             padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.85em;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2px;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .gallery img:hover {
+            transform: scale(1.05);
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .location {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .content-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .reactions {
+            display: flex;
+            gap: 10px;
+            padding: 16px 20px;
+            border-top: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .reaction-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .reaction-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .reaction-btn.active {
+            border-color: currentColor;
+            background: currentColor;
+            color: white;
+        }
+
+        .reaction-btn .icon {
+            font-size: 1.2rem;
+        }
+
+        .reaction-btn .count {
             font-weight: 600;
         }
 
-        .mood-excellent { background: #d4edda; color: #155724; }
-        .mood-good { background: #d1ecf1; color: #0c5460; }
-        .mood-ok { background: #fff3cd; color: #856404; }
-        .mood-tired { background: #f8d7da; color: #721c24; }
+        .timestamp {
+            padding: 16px 20px;
+            font-size: 0.85rem;
+            color: #999;
+        }
 
-        .empty-state {
+        .loading {
             text-align: center;
+            padding: 60px 20px;
             color: white;
-            padding: 100px 20px;
         }
 
-        .empty-state-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            opacity: 0.5;
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
 
-        .empty-state h2 {
-            font-size: 2em;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            color: #e74c3c;
+        }
+
+        .error h2 {
             margin-bottom: 10px;
         }
 
+        /* Modal para visualização de imagem */
         .modal {
             display: none;
             position: fixed;
@@ -155,20 +230,18 @@
             height: 100%;
             background: rgba(0,0,0,0.9);
             z-index: 1000;
-            justify-content: center;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
         }
 
         .modal.active {
             display: flex;
         }
 
-        .modal-content {
+        .modal img {
             max-width: 90%;
             max-height: 90%;
             object-fit: contain;
-            border-radius: 8px;
         }
 
         .modal-close {
@@ -176,7 +249,7 @@
             top: 20px;
             right: 20px;
             color: white;
-            font-size: 40px;
+            font-size: 2rem;
             cursor: pointer;
             background: rgba(0,0,0,0.5);
             width: 50px;
@@ -185,100 +258,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.3s;
-        }
-
-        .modal-close:hover {
-            background: rgba(0,0,0,0.8);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
             .header h1 {
-                font-size: 1.8em;
-            }
-
-            .header p {
-                font-size: 1em;
-            }
-            
-            .gallery {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .entry-card {
-                border-radius: 12px;
-            }
-
-            .entry-image {
-                height: 200px;
-            }
-
-            .entry-content {
-                padding: 15px;
-            }
-
-            .modal-content {
-                max-width: 95%;
-                max-height: 80%;
-            }
-
-            .modal-close {
-                top: 10px;
-                right: 10px;
-                width: 40px;
-                height: 40px;
-                font-size: 30px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 1.5em;
+                font-size: 1.8rem;
             }
 
             .gallery {
-                gap: 10px;
+                grid-template-columns: 1fr;
             }
 
-            .entry-image {
-                height: 180px;
-            }
-        }
-
-        /* Melhorias para touch */
-        @media (hover: none) and (pointer: coarse) {
-            .entry-card:active {
-                transform: scale(0.98);
-            }
-
-            .modal-close:active {
-                background: rgba(0,0,0,0.8);
+            .reactions {
+                flex-wrap: wrap;
             }
         }
     </style>
@@ -287,33 +279,29 @@
     <div class="container">
         <div class="header">
             <h1>📸 Álbum de Viagem</h1>
-            <p id="trip-destination">Carregando...</p>
+            <p>Compartilhado com você</p>
         </div>
 
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Carregando memórias...</p>
-        </div>
-
-        <div id="gallery" class="gallery" style="display: none;"></div>
-
-        <div id="empty-state" class="empty-state" style="display: none;">
-            <div class="empty-state-icon">📷</div>
-            <h2>Nenhuma memória ainda</h2>
-            <p>As fotos da viagem aparecerão aqui em tempo real</p>
+        <div id="content">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Carregando registro...</p>
+            </div>
         </div>
     </div>
 
-    <div id="modal" class="modal">
-        <span class="modal-close" onclick="closeModal()">&times;</span>
-        <img id="modal-image" class="modal-content" src="" alt="Foto ampliada">
+    <!-- Modal para visualização de imagem -->
+    <div class="modal" id="imageModal">
+        <div class="modal-close" onclick="closeModal()">×</div>
+        <img id="modalImage" src="" alt="Imagem ampliada">
     </div>
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-        // Configuração do Firebase (mesma do app)
+    <script>
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDytPi-Xzk1l-pZMN4sVJf8fDnY5JuwouA",
             authDomain: "travel-app-tcc.firebaseapp.com",
@@ -323,120 +311,178 @@
             appId: "1:660606500922:web:904a0286a86224b034f503"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        // Obter ID da viagem da URL
+        // Obter token da URL
         const urlParams = new URLSearchParams(window.location.search);
-        const tripId = urlParams.get('tripId') || window.location.pathname.split('/').pop();
+        const shareToken = urlParams.get('token');
 
-        if (!tripId) {
-            document.getElementById('loading').innerHTML = '<p>❌ ID da viagem não encontrado</p>';
+        if (!shareToken) {
+            showError('Token de compartilhamento não encontrado na URL.');
         } else {
-            loadAlbum(tripId);
+            loadJournalEntry(shareToken);
         }
 
-        function loadAlbum(tripId) {
-            const q = query(
-                collection(db, 'journal'),
-                where('tripId', '==', tripId),
-                orderBy('date', 'desc')
-            );
-
-            onSnapshot(q, (snapshot) => {
-                document.getElementById('loading').style.display = 'none';
+        async function loadJournalEntry(token) {
+            try {
+                // Buscar registro público pelo token
+                const tripsSnapshot = await db.collection('trips').get();
                 
-                if (snapshot.empty) {
-                    document.getElementById('empty-state').style.display = 'block';
-                    return;
+                let entry = null;
+                for (const tripDoc of tripsSnapshot.docs) {
+                    const journalSnapshot = await db
+                        .collection('trips')
+                        .doc(tripDoc.id)
+                        .collection('journal')
+                        .where('shareToken', '==', token)
+                        .where('isPublic', '==', true)
+                        .limit(1)
+                        .get();
+
+                    if (!journalSnapshot.empty) {
+                        entry = journalSnapshot.docs[0].data();
+                        entry.id = journalSnapshot.docs[0].id;
+                        entry.tripId = tripDoc.id;
+                        break;
+                    }
                 }
 
-                document.getElementById('gallery').style.display = 'grid';
-                const gallery = document.getElementById('gallery');
-                gallery.innerHTML = '';
-
-                snapshot.forEach((doc) => {
-                    const entry = doc.data();
-                    const card = createEntryCard(entry);
-                    gallery.appendChild(card);
-                });
-            }, (error) => {
-                console.error('Erro ao carregar álbum:', error);
-                document.getElementById('loading').innerHTML = '<p>❌ Erro ao carregar álbum</p>';
-            });
+                if (entry) {
+                    renderJournalEntry(entry);
+                    setupRealtimeUpdates(entry.tripId, entry.id);
+                } else {
+                    showError('Registro não encontrado ou não está mais público.');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar registro:', error);
+                showError('Erro ao carregar o registro. Tente novamente mais tarde.');
+            }
         }
 
-        function createEntryCard(entry) {
-            const card = document.createElement('div');
-            card.className = 'entry-card';
+        function renderJournalEntry(entry) {
+            const moodIcons = {
+                'veryHappy': { icon: '😄', label: 'Muito Feliz', color: '#27ae60' },
+                'happy': { icon: '😊', label: 'Feliz', color: '#2ecc71' },
+                'neutral': { icon: '😐', label: 'Neutro', color: '#f39c12' },
+                'sad': { icon: '😔', label: 'Triste', color: '#e67e22' },
+                'verySad': { icon: '😢', label: 'Muito Triste', color: '#e74c3c' }
+            };
 
-            const date = entry.date?.toDate ? entry.date.toDate() : new Date(entry.date);
-            const formattedDate = date.toLocaleDateString('pt-BR', { 
-                day: '2-digit', 
-                month: 'long', 
-                year: 'numeric' 
-            });
+            const mood = moodIcons[entry.mood] || moodIcons.neutral;
+            const date = new Date(entry.date.seconds * 1000);
 
-            const moodClass = getMoodClass(entry.moodScore || 3);
-            const moodLabel = getMoodLabel(entry.moodScore || 3);
-            const moodEmoji = getMoodEmoji(entry.moodScore || 3);
-
-            // Usar primeira foto se houver
-            const photoUrl = entry.photos && entry.photos.length > 0 ? entry.photos[0] : '';
-
-            card.innerHTML = `
-                ${photoUrl ? `<img src="${photoUrl}" alt="Foto" class="entry-image" onclick="openModal('${photoUrl}')">` : ''}
-                <div class="entry-content">
-                    <div class="entry-date">
-                        📅 ${formattedDate}
-                    </div>
-                    ${entry.locationName ? `
-                        <div class="entry-location">
-                            📍 ${entry.locationName}
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="user-info">
+                            <div class="avatar">${entry.userName.charAt(0).toUpperCase()}</div>
+                            <div class="user-details">
+                                <h3>${entry.userName}</h3>
+                                <p>${entry.locationName || 'Localização não informada'}</p>
+                            </div>
+                            <div class="mood-tag" style="background: ${mood.color}20; color: ${mood.color};">
+                                <span>${mood.icon}</span>
+                                <span>${mood.label}</span>
+                            </div>
                         </div>
-                    ` : ''}
-                    <p class="entry-text">${entry.content || ''}</p>
-                    <span class="mood-tag ${moodClass}">
-                        ${moodEmoji} ${moodLabel}
-                    </span>
+                    </div>
+            `;
+
+            if (entry.photos && entry.photos.length > 0) {
+                html += '<div class="gallery">';
+                entry.photos.forEach(photo => {
+                    html += `<img src="${photo}" alt="Foto da viagem" onclick="openModal('${photo}')">`;
+                });
+                html += '</div>';
+            }
+
+            html += `
+                    <div class="card-content">
+                        <div class="location">
+                            <span>📍</span>
+                            <span>${entry.locationName || 'Localização não informada'}</span>
+                        </div>
+                        <div class="content-text">${entry.content}</div>
+                    </div>
+                    
+                    <div class="reactions" id="reactions">
+                        ${renderReactions(entry.reactions || {})}
+                    </div>
+                    
+                    <div class="timestamp">
+                        ${date.toLocaleDateString('pt-BR', { 
+                            day: '2-digit', 
+                            month: 'long', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </div>
                 </div>
             `;
 
-            return card;
+            document.getElementById('content').innerHTML = html;
         }
 
-        function getMoodClass(score) {
-            if (score >= 4.5) return 'mood-excellent';
-            if (score >= 3.5) return 'mood-good';
-            if (score >= 2.5) return 'mood-ok';
-            return 'mood-tired';
+        function renderReactions(reactions) {
+            const reactionTypes = [
+                { key: 'like', icon: '❤️', label: 'Curtir', color: '#e74c3c' },
+                { key: 'love', icon: '💕', label: 'Amei', color: '#e91e63' },
+                { key: 'wow', icon: '⭐', label: 'Uau', color: '#f39c12' },
+                { key: 'celebrate', icon: '🎉', label: 'Celebrar', color: '#ff9800' },
+                { key: 'support', icon: '👍', label: 'Apoiar', color: '#2196f3' },
+                { key: 'thanks', icon: '🙏', label: 'Obrigado', color: '#9c27b0' }
+            ];
+
+            return reactionTypes.map(reaction => {
+                const count = reactions[reaction.key]?.length || 0;
+                return `
+                    <div class="reaction-btn" style="color: ${reaction.color};">
+                        <span class="icon">${reaction.icon}</span>
+                        ${count > 0 ? `<span class="count">${count}</span>` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
-        function getMoodLabel(score) {
-            if (score >= 4.5) return 'Incrível';
-            if (score >= 3.5) return 'Bom';
-            if (score >= 2.5) return 'Ok';
-            return 'Cansativo';
+        function setupRealtimeUpdates(tripId, entryId) {
+            db.collection('trips')
+                .doc(tripId)
+                .collection('journal')
+                .doc(entryId)
+                .onSnapshot(doc => {
+                    if (doc.exists) {
+                        const entry = doc.data();
+                        const reactionsDiv = document.getElementById('reactions');
+                        if (reactionsDiv) {
+                            reactionsDiv.innerHTML = renderReactions(entry.reactions || {});
+                        }
+                    }
+                });
         }
 
-        function getMoodEmoji(score) {
-            if (score >= 4.5) return '😍';
-            if (score >= 3.5) return '😊';
-            if (score >= 2.5) return '😐';
-            return '😕';
+        function showError(message) {
+            document.getElementById('content').innerHTML = `
+                <div class="error">
+                    <h2>❌ Ops!</h2>
+                    <p>${message}</p>
+                </div>
+            `;
         }
 
-        window.openModal = function(imageUrl) {
-            document.getElementById('modal-image').src = imageUrl;
-            document.getElementById('modal').classList.add('active');
+        function openModal(imageSrc) {
+            document.getElementById('modalImage').src = imageSrc;
+            document.getElementById('imageModal').classList.add('active');
         }
 
-        window.closeModal = function() {
-            document.getElementById('modal').classList.remove('active');
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
         }
 
         // Fechar modal ao clicar fora da imagem
-        document.getElementById('modal').addEventListener('click', function(e) {
+        document.getElementById('imageModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeModal();
             }

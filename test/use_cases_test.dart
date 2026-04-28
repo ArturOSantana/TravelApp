@@ -141,12 +141,12 @@ void main() {
         userName: 'Artur',
         date: DateTime.now(),
         content: 'Experiência fantástica no museu.',
-        moodScore: 4.5,
+        mood: MoodIcon.veryHappy,
         locationName: 'Louvre',
         createdAt: DateTime.now(),
       );
 
-      expect(entry.moodScore, greaterThan(4.0));
+      expect(entry.mood, equals(MoodIcon.veryHappy));
       expect(entry.content, contains('fantástica'));
     });
   });

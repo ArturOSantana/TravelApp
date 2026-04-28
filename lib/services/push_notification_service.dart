@@ -157,7 +157,7 @@ class PushNotificationService {
 
   static Future<void> notifySafetyAlert(String userName, String location) async {
     await _sendInstantNotification(
-      title: '🆘 ALERTA DE EMERGÊNCIA!',
+      title: 'ALERTA DE EMERGÊNCIA!',
       body: '$userName precisa de ajuda em $location',
       isCritical: true,
     );

@@ -20,7 +20,10 @@ class _InsightsPageState extends State<InsightsPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Insights & Análise", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Insights & Análise",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -30,7 +33,7 @@ class _InsightsPageState extends State<InsightsPage> {
               icon: const Icon(Icons.analytics_outlined),
               onPressed: () => setState(() => _showGeneral = true),
               tooltip: "Ver Geral",
-            )
+            ),
         ],
       ),
       body: StreamBuilder<List<Trip>>(
@@ -42,7 +45,9 @@ class _InsightsPageState extends State<InsightsPage> {
 
           final trips = snapshot.data ?? [];
           if (trips.isEmpty) {
-            return const Center(child: Text("Nenhuma viagem encontrada para análise."));
+            return const Center(
+              child: Text("Nenhuma viagem encontrada para análise."),
+            );
           }
 
           return Column(
@@ -51,7 +56,9 @@ class _InsightsPageState extends State<InsightsPage> {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
-                  child: _showGeneral ? _buildGeneralInsights(trips) : _buildIndividualInsights(_selectedTrip!),
+                  child: _showGeneral
+                      ? _buildGeneralInsights(trips)
+                      : _buildIndividualInsights(_selectedTrip!),
                 ),
               ),
             ],
@@ -75,7 +82,9 @@ class _InsightsPageState extends State<InsightsPage> {
               if (selected) setState(() => _showGeneral = true);
             },
             selectedColor: Colors.deepPurple,
-            labelStyle: TextStyle(color: _showGeneral ? Colors.white : Colors.black),
+            labelStyle: TextStyle(
+              color: _showGeneral ? Colors.white : Colors.black,
+            ),
           ),
           const SizedBox(width: 8),
           ...trips.map((trip) {
@@ -83,7 +92,9 @@ class _InsightsPageState extends State<InsightsPage> {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                label: Text(trip.destination), // Usando destination em vez de title
+                label: Text(
+                  trip.destination,
+                ), // Usando destination em vez de title
                 selected: isSelected,
                 onSelected: (selected) {
                   if (selected) {
@@ -94,7 +105,9 @@ class _InsightsPageState extends State<InsightsPage> {
                   }
                 },
                 selectedColor: Colors.deepPurple,
-                labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black,
+                ),
               ),
             );
           }).toList(),
@@ -114,9 +127,23 @@ class _InsightsPageState extends State<InsightsPage> {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildStatCard("Viagens", trips.length.toString(), Icons.map, Colors.blue)),
+            Expanded(
+              child: _buildStatCard(
+                "Viagens",
+                trips.length.toString(),
+                Icons.map,
+                Colors.blue,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildStatCard("Concluídas", completed.length.toString(), Icons.check_circle, Colors.green)),
+            Expanded(
+              child: _buildStatCard(
+                "Concluídas",
+                completed.length.toString(),
+                Icons.check_circle,
+                Colors.green,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -126,8 +153,6 @@ class _InsightsPageState extends State<InsightsPage> {
         const SizedBox(height: 24),
         _buildSectionTitle("Estilo de Viajante"),
         _buildTravelStyleChart(trips),
-        const SizedBox(height: 32),
-        _buildAIPredictionCard("Geral"),
       ],
     );
   }
@@ -137,40 +162,54 @@ class _InsightsPageState extends State<InsightsPage> {
       stream: _controller.getExpenses(trip.id),
       builder: (context, snapshot) {
         final expenses = snapshot.data ?? [];
-        double spent = expenses.fold(0, (sum, e) => sum + e.value); // Usando value em vez de amount
+        double spent = expenses.fold(
+          0,
+          (sum, e) => sum + e.value,
+        ); // Usando value em vez de amount
         double percent = trip.budget > 0 ? (spent / trip.budget) : 0;
         bool isOverBudget = spent > trip.budget;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(trip.destination, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), // Usando destination
+            Text(
+              trip.destination,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ), // Usando destination
             const SizedBox(height: 24),
-            
+
             _buildSectionTitle("Saúde Financeira"),
             const SizedBox(height: 12),
-            _buildExpenseComparisonCard(trip.budget, spent, percent, isOverBudget),
-            
+            _buildExpenseComparisonCard(
+              trip.budget,
+              spent,
+              percent,
+              isOverBudget,
+            ),
+
             const SizedBox(height: 24),
             _buildSectionTitle("Distribuição de Gastos"),
             _buildCategoryDistribution(expenses),
-            
-            const SizedBox(height: 24),
-            _buildSectionTitle("Recomendações IA"),
-            _buildIndividualAIAdvice(trip, spent, isOverBudget),
           ],
         );
       },
     );
   }
 
-  Widget _buildExpenseComparisonCard(double budget, double spent, double percent, bool isOver) {
+  Widget _buildExpenseComparisonCard(
+    double budget,
+    double spent,
+    double percent,
+    bool isOver,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isOver ? Colors.red[50] : Colors.green[50],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isOver ? Colors.red[100]! : Colors.green[100]!),
+        border: Border.all(
+          color: isOver ? Colors.red[100]! : Colors.green[100]!,
+        ),
       ),
       child: Column(
         children: [
@@ -178,7 +217,11 @@ class _InsightsPageState extends State<InsightsPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildSimpleInfo("Orçamento", "R\$ ${budget.toStringAsFixed(0)}"),
-              _buildSimpleInfo("Gasto Real", "R\$ ${spent.toStringAsFixed(0)}", color: isOver ? Colors.red : Colors.green),
+              _buildSimpleInfo(
+                "Gasto Real",
+                "R\$ ${spent.toStringAsFixed(0)}",
+                color: isOver ? Colors.red : Colors.green,
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -190,8 +233,13 @@ class _InsightsPageState extends State<InsightsPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            isOver ? "Você ultrapassou o planejado em R\$ ${(spent - budget).toStringAsFixed(0)}" : "Você ainda tem R\$ ${(budget - spent).toStringAsFixed(0)} disponíveis",
-            style: TextStyle(fontSize: 12, color: isOver ? Colors.red : Colors.green[800]),
+            isOver
+                ? "Você ultrapassou o planejado em R\$ ${(spent - budget).toStringAsFixed(0)}"
+                : "Você ainda tem R\$ ${(budget - spent).toStringAsFixed(0)} disponíveis",
+            style: TextStyle(
+              fontSize: 12,
+              color: isOver ? Colors.red : Colors.green[800],
+            ),
           ),
         ],
       ),
@@ -201,12 +249,17 @@ class _InsightsPageState extends State<InsightsPage> {
   Widget _buildCategoryDistribution(List<Expense> expenses) {
     Map<String, double> categories = {};
     for (var e in expenses) {
-      categories[e.category] = (categories[e.category] ?? 0) + e.value; // Usando value em vez de amount
+      categories[e.category] =
+          (categories[e.category] ?? 0) +
+          e.value; // Usando value em vez de amount
     }
 
     if (categories.isEmpty) return const Text("Sem gastos registrados.");
 
-    double totalSpent = expenses.fold(0.0, (sum, e) => sum + e.value); // Usando value
+    double totalSpent = expenses.fold(
+      0.0,
+      (sum, e) => sum + e.value,
+    ); // Usando value
 
     return Column(
       children: categories.entries.map((entry) {
@@ -214,7 +267,10 @@ class _InsightsPageState extends State<InsightsPage> {
           padding: const EdgeInsets.only(top: 8),
           child: Row(
             children: [
-              SizedBox(width: 100, child: Text(entry.key, style: const TextStyle(fontSize: 12))),
+              SizedBox(
+                width: 100,
+                child: Text(entry.key, style: const TextStyle(fontSize: 12)),
+              ),
               Expanded(
                 child: LinearProgressIndicator(
                   value: totalSpent > 0 ? entry.value / totalSpent : 0,
@@ -223,7 +279,13 @@ class _InsightsPageState extends State<InsightsPage> {
                 ),
               ),
               const SizedBox(width: 10),
-              Text("R\$ ${entry.value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(
+                "R\$ ${entry.value.toStringAsFixed(0)}",
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         );
@@ -231,28 +293,34 @@ class _InsightsPageState extends State<InsightsPage> {
     );
   }
 
-  Widget _buildIndividualAIAdvice(Trip trip, double spent, bool isOver) {
-    String advice = isOver 
-      ? "Alerta: Seus gastos em ${trip.destination} estão acima da média. Considere reduzir despesas com alimentação nos próximos dias."
-      : "Parabéns! Você está gerindo bem seu orçamento em ${trip.destination}. Sobrou fôlego para uma atividade extra!";
-    
-    return _buildAIPredictionCard(advice);
-  }
-
   Widget _buildSectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         ],
       ),
@@ -263,12 +331,22 @@ class _InsightsPageState extends State<InsightsPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[200]!)),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildSimpleInfo("Total Planejado", "R\$ ${total.toStringAsFixed(0)}"),
-          _buildSimpleInfo("Média/Viagem", "R\$ ${(count > 0 ? total / count : 0).toStringAsFixed(0)}"),
+          _buildSimpleInfo(
+            "Total Planejado",
+            "R\$ ${total.toStringAsFixed(0)}",
+          ),
+          _buildSimpleInfo(
+            "Média/Viagem",
+            "R\$ ${(count > 0 ? total / count : 0).toStringAsFixed(0)}",
+          ),
         ],
       ),
     );
@@ -279,7 +357,14 @@ class _InsightsPageState extends State<InsightsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -302,9 +387,15 @@ class _InsightsPageState extends State<InsightsPage> {
   Widget _buildStyleItem(String label, int count, IconData icon, Color color) {
     return Column(
       children: [
-        CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icon, color: color)),
+        CircleAvatar(
+          backgroundColor: color.withOpacity(0.1),
+          child: Icon(icon, color: color),
+        ),
         const SizedBox(height: 4),
-        Text(count.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          count.toString(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
@@ -314,7 +405,9 @@ class _InsightsPageState extends State<InsightsPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.deepPurple[700]!, Colors.deepPurple[400]!]),
+        gradient: LinearGradient(
+          colors: [Colors.deepPurple[700]!, Colors.deepPurple[400]!],
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -324,13 +417,25 @@ class _InsightsPageState extends State<InsightsPage> {
             children: [
               Icon(Icons.auto_awesome, color: Colors.white, size: 20),
               SizedBox(width: 8),
-              Text("Análise Inteligente", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Text(
+                "Análise Inteligente",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            message == "Geral" ? "Sua tendência atual indica preferência por destinos urbanos. Recomendamos planejar sua próxima viagem com 3 meses de antecedência para economizar 15%." : message,
-            style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+            message == "Geral"
+                ? "Sua tendência atual indica preferência por destinos urbanos. Recomendamos planejar sua próxima viagem com 3 meses de antecedência para economizar 15%."
+                : message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              height: 1.4,
+            ),
           ),
         ],
       ),
