@@ -22,7 +22,17 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
   final titleController = TextEditingController();
   final valueController = TextEditingController();
 
-  final String _selectedCategory = 'Alimentação';
+  final List<String> _categories = [
+    'Alimentação',
+    'Transporte',
+    'Hospedagem',
+    'Entretenimento',
+    'Compras',
+    'Saúde',
+    'Outros',
+  ];
+
+  String _selectedCategory = 'Alimentação';
   String _selectedCurrency = 'BRL';
   SplitType _selectedSplitType = SplitType.equal;
 
@@ -92,8 +102,8 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 uid: id,
                 name: id == currentUid
                     ? ((currentUser?.displayName?.trim().isNotEmpty ?? false)
-                          ? currentUser!.displayName!.trim()
-                          : 'Você')
+                        ? currentUser!.displayName!.trim()
+                        : 'Você')
                     : 'Participante',
                 email: id == currentUid ? (currentUser?.email ?? '') : '',
               ),
@@ -338,8 +348,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       return Scaffold(
         appBar: AppBar(
           title: const Text("Novo Gasto"),
-          backgroundColor: Colors.green[700],
-          foregroundColor: Colors.white,
         ),
         body: Center(
           child: Padding(
@@ -383,8 +391,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       return Scaffold(
         appBar: AppBar(
           title: const Text("Novo Gasto"),
-          backgroundColor: Colors.green[700],
-          foregroundColor: Colors.white,
         ),
         body: const Center(
           child: Padding(
@@ -401,8 +407,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Novo Gasto"),
-        backgroundColor: Colors.green[700],
-        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -411,7 +415,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
           children: [
             _buildQuickInfo(),
             const SizedBox(height: 20),
-
             TextField(
               controller: titleController,
               decoration: const InputDecoration(
@@ -421,7 +424,19 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               ),
             ),
             const SizedBox(height: 15),
-
+            DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              decoration: const InputDecoration(
+                labelText: "Categoria",
+                prefixIcon: Icon(Icons.category),
+                border: OutlineInputBorder(),
+              ),
+              items: _categories
+                  .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedCategory = val!),
+            ),
+            const SizedBox(height: 15),
             Row(
               children: [
                 Expanded(
@@ -455,7 +470,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 ),
               ],
             ),
-
             if (_members.length > 1) ...[
               const SizedBox(height: 25),
               const Text(
@@ -463,7 +477,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               _buildPayerSelector(),
-
               const SizedBox(height: 25),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -506,15 +519,12 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 ),
               ),
             ],
-
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -628,8 +638,8 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
           final hint = _selectedSplitType == SplitType.exact
               ? 'Valor'
               : _selectedSplitType == SplitType.percentage
-              ? '%'
-              : 'Cotas';
+                  ? '%'
+                  : 'Cotas';
 
           return ListTile(
             contentPadding: EdgeInsets.zero,

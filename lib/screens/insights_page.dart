@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../models/expense.dart';
+import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
+import 'premium_upgrade_page.dart';
 
 class InsightsPage extends StatefulWidget {
   const InsightsPage({super.key});
@@ -12,8 +17,34 @@ class InsightsPage extends StatefulWidget {
 
 class _InsightsPageState extends State<InsightsPage> {
   final TripController _controller = TripController();
+  final NumberFormat _currencyFormat = NumberFormat.currency(
+    locale: 'pt_BR',
+    symbol: 'R\$',
+    decimalDigits: 2,
+  );
   Trip? _selectedTrip;
   bool _showGeneral = true;
+  bool _isPremium = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPremiumStatus();
+  }
+
+  Future<void> _checkPremiumStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists) {
+        final userData = UserModel.fromMap(doc.data()!);
+        setState(() => _isPremium = userData.isPremium);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +83,7 @@ class _InsightsPageState extends State<InsightsPage> {
 
           return Column(
             children: [
+              if (!_isPremium) _buildPremiumBanner(),
               _buildTripSelector(trips),
               Expanded(
                 child: SingleChildScrollView(
@@ -64,6 +96,67 @@ class _InsightsPageState extends State<InsightsPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPremiumBanner() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.deepPurple[700]!, Colors.deepPurple[400]!],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.workspace_premium, color: Colors.white, size: 32),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Desbloqueie Insights Avançados",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Análises com IA, relatórios PDF e muito mais!",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PremiumUpgradePage(),
+                ),
+              );
+              if (result == true) {
+                _checkPremiumStatus();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.deepPurple,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text("Upgrade"),
+          ),
+        ],
       ),
     );
   }
@@ -216,10 +309,10 @@ class _InsightsPageState extends State<InsightsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSimpleInfo("Orçamento", "R\$ ${budget.toStringAsFixed(0)}"),
+              _buildSimpleInfo("Orçamento", _currencyFormat.format(budget)),
               _buildSimpleInfo(
                 "Gasto Real",
-                "R\$ ${spent.toStringAsFixed(0)}",
+                _currencyFormat.format(spent),
                 color: isOver ? Colors.red : Colors.green,
               ),
             ],
@@ -234,8 +327,8 @@ class _InsightsPageState extends State<InsightsPage> {
           const SizedBox(height: 8),
           Text(
             isOver
-                ? "Você ultrapassou o planejado em R\$ ${(spent - budget).toStringAsFixed(0)}"
-                : "Você ainda tem R\$ ${(budget - spent).toStringAsFixed(0)} disponíveis",
+                ? "Você ultrapassou o planejado em ${_currencyFormat.format(spent - budget)}"
+                : "Você ainda tem ${_currencyFormat.format(budget - spent)} disponíveis",
             style: TextStyle(
               fontSize: 12,
               color: isOver ? Colors.red : Colors.green[800],
@@ -249,8 +342,7 @@ class _InsightsPageState extends State<InsightsPage> {
   Widget _buildCategoryDistribution(List<Expense> expenses) {
     Map<String, double> categories = {};
     for (var e in expenses) {
-      categories[e.category] =
-          (categories[e.category] ?? 0) +
+      categories[e.category] = (categories[e.category] ?? 0) +
           e.value; // Usando value em vez de amount
     }
 
@@ -280,7 +372,7 @@ class _InsightsPageState extends State<InsightsPage> {
               ),
               const SizedBox(width: 10),
               Text(
-                "R\$ ${entry.value.toStringAsFixed(0)}",
+                _currencyFormat.format(entry.value),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -341,11 +433,11 @@ class _InsightsPageState extends State<InsightsPage> {
         children: [
           _buildSimpleInfo(
             "Total Planejado",
-            "R\$ ${total.toStringAsFixed(0)}",
+            _currencyFormat.format(total),
           ),
           _buildSimpleInfo(
             "Média/Viagem",
-            "R\$ ${(count > 0 ? total / count : 0).toStringAsFixed(0)}",
+            _currencyFormat.format(count > 0 ? total / count : 0),
           ),
         ],
       ),

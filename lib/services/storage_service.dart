@@ -41,7 +41,7 @@ class StorageService {
     }
   }
 
-  /// Upload de múltiplas fotos -> Vê se funciona dps 
+  /// Upload de múltiplas fotos -> Vê se funciona dps
   static Future<List<String>> uploadMultiplePhotos({
     required List<File> photos,
     required String tripId,
@@ -63,7 +63,7 @@ class StorageService {
           onProgress(i + 1, photos.length);
         }
       } catch (e) {
-        print('❌ Erro ao enviar foto ${i + 1}: $e');
+        print('[ERROR] Erro ao enviar foto ${i + 1}: $e');
       }
     }
 
@@ -107,7 +107,7 @@ class StorageService {
       }
       return null;
     } catch (e) {
-      print('❌ Erro ao selecionar imagem: $e');
+      print('[ERROR] Erro ao selecionar imagem: $e');
       return null;
     }
   }
@@ -128,7 +128,7 @@ class StorageService {
       }
       return null;
     } catch (e) {
-      print('❌ Erro ao tirar foto: $e');
+      print('[ERROR] Erro ao tirar foto: $e');
       return null;
     }
   }
@@ -154,7 +154,6 @@ class StorageService {
     return pickMultipleImages();
   }
 
-  
   static String getThumbnailUrl(String originalUrl, {String size = '200x200'}) {
     final uri = Uri.parse(originalUrl);
     final pathSegments = uri.pathSegments.toList();
@@ -170,4 +169,3 @@ class StorageService {
     return uri.replace(pathSegments: pathSegments).toString();
   }
 }
-

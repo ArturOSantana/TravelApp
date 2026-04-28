@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/trip.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
+import '../services/subscription_service.dart';
+import 'premium_upgrade_page.dart';
 
 class GroupMembersPage extends StatefulWidget {
   final Trip trip;
@@ -147,7 +149,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                         final bool isMemberOwner = liveTrip.ownerId.isNotEmpty
                             ? member.uid == liveTrip.ownerId
                             : (memberIds.isNotEmpty &&
-                                  member.uid == memberIds.first);
+                                member.uid == memberIds.first);
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 10),
@@ -175,15 +177,15 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                             trailing: isMemberOwner
                                 ? const BadgeADM()
                                 : (isAdm
-                                      ? IconButton(
-                                          icon: const Icon(
-                                            Icons.person_remove,
-                                            color: Colors.red,
-                                          ),
-                                          onPressed: () =>
-                                              _confirmRemove(context, member),
-                                        )
-                                      : null),
+                                    ? IconButton(
+                                        icon: const Icon(
+                                          Icons.person_remove,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () =>
+                                            _confirmRemove(context, member),
+                                      )
+                                    : null),
                           ),
                         );
                       },
@@ -198,7 +200,16 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
     );
   }
 
-  void _showInviteDialog(BuildContext context) {
+  Future<void> _showInviteDialog(BuildContext context) async {
+    // 🔒 VERIFICAÇÃO PREMIUM: Limitar membros por viagem
+    final canAdd = await SubscriptionService.canAddMember(widget.trip.id);
+    if (!canAdd) {
+      if (!mounted) return;
+      _showPremiumRequiredDialog();
+      return;
+    }
+
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -301,6 +312,96 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       Colors.teal,
     ];
     return colors[index % colors.length];
+  }
+
+  void _showPremiumRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.workspace_premium, color: Colors.amber[700]),
+            const SizedBox(width: 10),
+            const Text("Premium Necessário"),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Você atingiu o limite de membros do plano gratuito (3 pessoas).",
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber[50],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle,
+                          color: Colors.green[700], size: 18),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "Com Premium você tem:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildBenefitItem("Membros ilimitados por viagem"),
+                  _buildBenefitItem("Viagens ilimitadas"),
+                  _buildBenefitItem("Insights avançados com IA"),
+                  _buildBenefitItem("Suporte prioritário"),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Agora não"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber[700],
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PremiumUpgradePage(),
+                ),
+              );
+            },
+            child: const Text("Fazer Upgrade"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBenefitItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 26, top: 4),
+      child: Text(
+        "• $text",
+        style: const TextStyle(fontSize: 13),
+      ),
+    );
   }
 }
 

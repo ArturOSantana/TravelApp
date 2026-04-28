@@ -26,8 +26,6 @@ class _BusinessPanelPageState extends State<BusinessPanelPage> with SingleTicker
     return Scaffold(
       appBar: AppBar(
         title: const Text("Gestão Business B2B"),
-        backgroundColor: Colors.blue[900],
-        foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

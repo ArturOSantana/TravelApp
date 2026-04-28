@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
+import '../services/subscription_service.dart';
+import 'premium_upgrade_page.dart';
 
 class CreateTripPage extends StatefulWidget {
   const CreateTripPage({super.key});
@@ -52,7 +54,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
     return _endDate!.difference(_startDate!).inDays + 1;
   }
 
-  void _showConfirmationDialog() {
+  Future<void> _showConfirmationDialog() async {
     if (!formKey.currentState!.validate()) return;
 
     if (!_isNomad && (_startDate == null || _endDate == null)) {
@@ -62,6 +64,14 @@ class _CreateTripPageState extends State<CreateTripPage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return;
+    }
+
+    // 🔒 VERIFICAÇÃO PREMIUM: Limitar criação de viagens
+    final canCreate = await SubscriptionService.canCreateTrip();
+    if (!canCreate) {
+      if (!mounted) return;
+      _showPremiumRequiredDialog();
       return;
     }
 
@@ -424,5 +434,95 @@ class _CreateTripPageState extends State<CreateTripPage> {
     );
     if (picked != null)
       setState(() => isStart ? _startDate = picked : _endDate = picked);
+  }
+
+  void _showPremiumRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.workspace_premium, color: Colors.amber[700]),
+            const SizedBox(width: 10),
+            const Text("Premium Necessário"),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Você atingiu o limite de viagens do plano gratuito.",
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber[50],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle,
+                          color: Colors.green[700], size: 18),
+                      const SizedBox(width: 8),
+                      const Text(
+                        "Com Premium você tem:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildBenefitItem("Viagens ilimitadas"),
+                  _buildBenefitItem("Membros ilimitados por viagem"),
+                  _buildBenefitItem("Insights avançados com IA"),
+                  _buildBenefitItem("Suporte prioritário"),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Agora não"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber[700],
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PremiumUpgradePage(),
+                ),
+              );
+            },
+            child: const Text("Fazer Upgrade"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBenefitItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 26, top: 4),
+      child: Text(
+        "• $text",
+        style: const TextStyle(fontSize: 13),
+      ),
+    );
   }
 }

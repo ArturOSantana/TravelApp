@@ -30,6 +30,9 @@ dependencies:
   cached_network_image: ^3.4.1  # Cache de imagens
   geolocator: ^13.0.2
   reorderable_grid_view: ^2.2.8 # Drag and drop para reordenar
+  pdf: ^3.11.1  # Gerar PDFs
+  path_provider: ^2.1.5  # Salvar arquivos
+  screenshot: ^3.0.0  # Capturar tela para compartilhar
 
 dev_dependencies:
   flutter_test:

@@ -19,7 +19,8 @@ class PushNotificationService {
     importance: Importance.max,
   );
 
-  static const AndroidNotificationChannel _sosChannel = AndroidNotificationChannel(
+  static const AndroidNotificationChannel _sosChannel =
+      AndroidNotificationChannel(
     'sos_alerts',
     'Alertas de Segurança (SOS)',
     description: 'Canal crítico para alertas de emergência.',
@@ -39,10 +40,10 @@ class PushNotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      final androidPlugin = _localNotifications
-          .resolvePlatformSpecificImplementation<
+      final androidPlugin =
+          _localNotifications.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
-      
+
       await androidPlugin?.createNotificationChannel(_channel);
       await androidPlugin?.createNotificationChannel(_sosChannel);
 
@@ -53,7 +54,8 @@ class PushNotificationService {
   }
 
   static Future<void> _configureLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -69,7 +71,7 @@ class PushNotificationService {
     await _localNotifications.initialize(
       settings: initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse details) {
-        print('🔔 Notificação local clicada: ${details.payload}');
+        print('[NOTIFICATION] Notificação local clicada: ${details.payload}');
       },
     );
   }
@@ -125,16 +127,15 @@ class PushNotificationService {
     });
   }
 
-  static Future<void> _sendInstantNotification({
-    required String title, 
-    required String body, 
-    bool isCritical = false
-  }) async {
+  static Future<void> _sendInstantNotification(
+      {required String title,
+      required String body,
+      bool isCritical = false}) async {
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
-        isCritical ? _sosChannel.id : 'system_alerts', 
-        isCritical ? _sosChannel.name : 'Alertas do Sistema', 
-        importance: Importance.max, 
+        isCritical ? _sosChannel.id : 'system_alerts',
+        isCritical ? _sosChannel.name : 'Alertas do Sistema',
+        importance: Importance.max,
         priority: Priority.high,
         fullScreenIntent: isCritical,
         category: isCritical ? AndroidNotificationCategory.alarm : null,
@@ -143,19 +144,21 @@ class PushNotificationService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        interruptionLevel: isCritical ? InterruptionLevel.critical : InterruptionLevel.active,
+        interruptionLevel:
+            isCritical ? InterruptionLevel.critical : InterruptionLevel.active,
       ),
     );
-    
+
     await _localNotifications.show(
-      id: DateTime.now().millisecond, 
-      title: title, 
-      body: body, 
+      id: DateTime.now().millisecond,
+      title: title,
+      body: body,
       notificationDetails: details,
     );
   }
 
-  static Future<void> notifySafetyAlert(String userName, String location) async {
+  static Future<void> notifySafetyAlert(
+      String userName, String location) async {
     await _sendInstantNotification(
       title: 'ALERTA DE EMERGÊNCIA!',
       body: '$userName precisa de ajuda em $location',
