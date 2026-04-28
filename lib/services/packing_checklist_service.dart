@@ -166,4 +166,3 @@ class PackingChecklistService {
   }
 }
 
-// Made with Bob

@@ -460,4 +460,3 @@ class WelcomeContent {
   });
 }
 
-// Made with Bob

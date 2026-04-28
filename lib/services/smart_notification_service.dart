@@ -391,4 +391,3 @@ class SmartNotificationService {
   }
 }
 
-// Made with Bob

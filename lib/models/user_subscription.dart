@@ -132,4 +132,3 @@ class UserSubscription {
   }
 }
 
-// Made with Bob
