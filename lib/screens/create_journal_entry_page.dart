@@ -20,7 +20,7 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   final _locationController = TextEditingController();
   final List<File> _selectedImages = [];
   bool _isSaving = false;
-  double _moodScore = 3.0;
+  MoodIcon _selectedMood = MoodIcon.neutral;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -71,7 +71,7 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
         userName: user?.displayName ?? 'Viajante',
         date: DateTime.now(),
         content: _contentController.text.trim(),
-        moodScore: _moodScore,
+        mood: _selectedMood,
         photos: base64Images,
         locationName: _locationController.text.trim().isNotEmpty
             ? _locationController.text.trim()
@@ -131,6 +131,8 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                   ),
                 ),
                 const SizedBox(height: 25),
+                _buildMoodSelector(),
+                const SizedBox(height: 25),
                 if (_selectedImages.isNotEmpty)
                   SizedBox(
                     height: 120,
@@ -189,5 +191,82 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildMoodSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Como você está se sentindo?",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: MoodIcon.values.map((mood) {
+            final isSelected = _selectedMood == mood;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedMood = mood),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.deepPurple.withOpacity(0.1)
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: isSelected ? Colors.deepPurple : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      _getMoodIconData(mood.iconName),
+                      size: isSelected ? 40 : 32,
+                      color: isSelected ? Colors.deepPurple : Colors.grey,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      mood.label.split(' ').last, // Pega só a última palavra
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isSelected ? Colors.deepPurple : Colors.grey,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  IconData _getMoodIconData(String iconName) {
+    switch (iconName) {
+      case 'sentiment_very_satisfied':
+        return Icons.sentiment_very_satisfied;
+      case 'sentiment_satisfied':
+        return Icons.sentiment_satisfied;
+      case 'sentiment_neutral':
+        return Icons.sentiment_neutral;
+      case 'sentiment_dissatisfied':
+        return Icons.sentiment_dissatisfied;
+      case 'sentiment_very_dissatisfied':
+        return Icons.sentiment_very_dissatisfied;
+      default:
+        return Icons.sentiment_neutral;
+    }
   }
 }

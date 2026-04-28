@@ -14,6 +14,7 @@ import 'screens/onboarding_page.dart';
 import 'services/notification_service.dart';
 import 'services/push_notification_service.dart';
 import 'services/cache_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,25 +49,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Travel App',
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        useMaterial3: true,
-        cardTheme: const CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
+      // Tema claro com design system completo e acessível
+      theme: AppTheme.lightTheme,
+      // Tema escuro com design system completo e acessível
+      darkTheme: AppTheme.darkTheme,
+      // Respeita preferência do sistema
+      themeMode: ThemeMode.system,
       home: const AppInitializer(),
       onGenerateRoute: (settings) {
         final Uri uri = Uri.parse(settings.name ?? '/');

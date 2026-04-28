@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+enum ActivityStatus { pending, completed, cancelled }
+
 class Activity {
   final String id;
   final String tripId;
@@ -9,11 +11,13 @@ class Activity {
   final String location;
   final String category;
   final Map<String, int> votes; // userId: vote (1 or -1)
-  final List<Map<String, dynamic>> opinions; // [{ 'userId': '', 'userName': '', 'text': '' }]
+  final List<Map<String, dynamic>>
+  opinions; // [{ 'userId': '', 'userName': '', 'text': '' }]
   final bool isApproved;
   final double? latitude;
   final double? longitude;
-  final int index; // Novo: para ordenação manual
+  final int index; // para  manual
+  final ActivityStatus status; // Novo: status da atividade
 
   Activity({
     required this.id,
@@ -29,6 +33,7 @@ class Activity {
     this.latitude,
     this.longitude,
     this.index = 0,
+    this.status = ActivityStatus.pending,
   });
 
   Map<String, dynamic> toMap() {
@@ -45,6 +50,7 @@ class Activity {
       'latitude': latitude,
       'longitude': longitude,
       'index': index,
+      'status': status.index,
     };
   }
 
@@ -64,6 +70,7 @@ class Activity {
       latitude: data['latitude'],
       longitude: data['longitude'],
       index: data['index'] ?? 0,
+      status: ActivityStatus.values[data['status'] ?? 0],
     );
   }
 
@@ -81,6 +88,7 @@ class Activity {
     double? latitude,
     double? longitude,
     int? index,
+    ActivityStatus? status,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -96,6 +104,7 @@ class Activity {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       index: index ?? this.index,
+      status: status ?? this.status,
     );
   }
 }

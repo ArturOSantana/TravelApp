@@ -4,13 +4,17 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "build/web",
+    "public": "web",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/album",
+        "destination": "/album.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"

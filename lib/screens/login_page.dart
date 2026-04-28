@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
+import '../widgets/accessible_button.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      
+
       final String? error = await _authController.login(
         emailController.text.trim(),
         passwordController.text.trim(),
@@ -34,8 +37,8 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(error), 
-              backgroundColor: Colors.red,
+              content: Semantics(liveRegion: true, child: Text(error)),
+              backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -45,19 +48,21 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showForgotPasswordDialog() {
-    final TextEditingController resetEmailController = TextEditingController(text: emailController.text);
-    
+    final TextEditingController resetEmailController = TextEditingController(
+      text: emailController.text,
+    );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Recuperar Senha"),
+        title: Semantics(header: true, child: const Text("Recuperar Senha")),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               "Insira seu e-mail abaixo. Verificaremos se você tem uma conta e enviaremos o link.",
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: AppTextStyles.bodySmall(context),
             ),
             const SizedBox(height: 20),
             TextFormField(
@@ -72,47 +77,74 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
         actions: [
-          TextButton(
+          AccessibleButton(
+            label: "Cancelar",
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+            type: ButtonType.text,
+            semanticLabel: "Cancelar recuperação de senha",
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
+          AccessibleButton(
+            label: "Verificar e Enviar",
+            type: ButtonType.primary,
+            semanticLabel: "Verificar e-mail e enviar link de recuperação",
             onPressed: () async {
               final email = resetEmailController.text.trim();
               if (email.isNotEmpty) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Verificando cadastro..."), duration: Duration(seconds: 1)),
+                  SnackBar(
+                    content: Semantics(
+                      liveRegion: true,
+                      child: const Text("Verificando cadastro..."),
+                    ),
+                    duration: const Duration(seconds: 1),
+                  ),
                 );
 
-                final bool exists = await _authController.isEmailRegistered(email);
-                
+                final bool exists = await _authController.isEmailRegistered(
+                  email,
+                );
+
                 if (mounted) {
                   if (!exists) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Este e-mail não está cadastrado em nossa base. ❌"),
-                        backgroundColor: Colors.red,
+                      SnackBar(
+                        content: Semantics(
+                          liveRegion: true,
+                          child: const Text(
+                            "Este e-mail não está cadastrado em nossa base. ❌",
+                          ),
+                        ),
+                        backgroundColor: AppColors.error,
                       ),
                     );
                   } else {
-                    final String? error = await _authController.resetPassword(email);
+                    final String? error = await _authController.resetPassword(
+                      email,
+                    );
                     if (mounted) {
                       if (error == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Link enviado! Verifique seu e-mail (e a pasta de SPAM). 📧"),
-                            backgroundColor: Colors.green,
-                            duration: Duration(seconds: 5),
+                          SnackBar(
+                            content: Semantics(
+                              liveRegion: true,
+                              child: const Text(
+                                "Link enviado! Verifique seu e-mail (e a pasta de SPAM). 📧",
+                              ),
+                            ),
+                            backgroundColor: AppColors.success,
+                            duration: const Duration(seconds: 5),
                           ),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(error), backgroundColor: Colors.red),
+                          SnackBar(
+                            content: Semantics(
+                              liveRegion: true,
+                              child: Text(error),
+                            ),
+                            backgroundColor: AppColors.error,
+                          ),
                         );
                       }
                     }
@@ -120,7 +152,6 @@ class _LoginPageState extends State<LoginPage> {
                 }
               }
             },
-            child: const Text("Verificar e Enviar", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -133,7 +164,7 @@ class _LoginPageState extends State<LoginPage> {
     final double formWidth = screenWidth > 600 ? 450 : screenWidth;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -145,109 +176,146 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Semantics(
-                    label: "Logo do aplicativo",
-                    child: const Icon(
+                    label: "Logo do aplicativo Travel Planner",
+                    image: true,
+                    child: Icon(
                       Icons.travel_explore_rounded,
                       size: 100,
-                      color: Colors.deepPurple,
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(height: 24),
                   Semantics(
                     header: true,
-                    child: const Text(
-                      "Bem-vindo",
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
+                    child: Text("Bem-vindo", style: AppTextStyles.h1(context)),
                   ),
                   const SizedBox(height: 8),
-                  const Text("Acesse sua conta para continuar", style: TextStyle(color: Colors.grey)),
+                  Text(
+                    "Acesse sua conta para continuar",
+                    style: AppTextStyles.bodySmall(context),
+                  ),
                   const SizedBox(height: 48),
-                  
+
                   // E-MAIL
-                  TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: "E-mail",
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      filled: true,
-                      fillColor: Colors.grey[50],
+                  Semantics(
+                    textField: true,
+                    label: "Campo de e-mail",
+                    child: TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      textInputAction: TextInputAction.next,
+                      style: AppTextStyles.body(context),
+                      decoration: InputDecoration(
+                        labelText: "E-mail",
+                        labelStyle: AppTextStyles.body(
+                          context,
+                          color: AppColors.textSecondary,
+                        ),
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: AppColors.surfaceVariant,
+                      ),
+                      validator: (value) => value == null || value.isEmpty
+                          ? "Informe seu e-mail"
+                          : null,
                     ),
-                    validator: (value) =>
-                        value == null || value.isEmpty ? "Informe seu e-mail" : null,
                   ),
                   const SizedBox(height: 16),
 
                   // SENHA
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: _obscurePassword,
-                    autofillHints: const [AutofillHints.password],
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _handleLogin(),
-                    decoration: InputDecoration(
-                      labelText: "Senha",
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  Semantics(
+                    textField: true,
+                    label: "Campo de senha",
+                    obscured: _obscurePassword,
+                    child: TextFormField(
+                      controller: passwordController,
+                      obscureText: _obscurePassword,
+                      autofillHints: const [AutofillHints.password],
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _handleLogin(),
+                      style: AppTextStyles.body(context),
+                      decoration: InputDecoration(
+                        labelText: "Senha",
+                        labelStyle: AppTextStyles.body(
+                          context,
+                          color: AppColors.textSecondary,
+                        ),
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: AccessibleIconButton(
+                          icon: _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
+                          tooltip: _obscurePassword
+                              ? "Mostrar senha"
+                              : "Ocultar senha",
+                          semanticLabel: _obscurePassword
+                              ? "Mostrar senha digitada"
+                              : "Ocultar senha digitada",
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: AppColors.surfaceVariant,
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      filled: true,
-                      fillColor: Colors.grey[50],
+                      validator: (value) => value == null || value.isEmpty
+                          ? "Informe sua senha"
+                          : null,
                     ),
-                    validator: (value) =>
-                        value == null || value.isEmpty ? "Informe sua senha" : null,
                   ),
-                  
+
                   Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton(
+                    child: AccessibleButton(
+                      label: "Esqueci minha senha",
                       onPressed: _showForgotPasswordDialog,
-                      style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                      child: const Text("Esqueci minha senha", style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.w600)),
+                      type: ButtonType.text,
+                      semanticLabel: "Recuperar senha esquecida",
                     ),
                   ),
 
                   const SizedBox(height: 32),
 
                   // BOTÃO ENTRAR
-                  Semantics(
-                    button: true,
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text("Entrar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AccessibleButton(
+                      label: "Entrar",
+                      onPressed: _isLoading ? null : _handleLogin,
+                      type: ButtonType.primary,
+                      size: ButtonSize.large,
+                      isLoading: _isLoading,
+                      semanticLabel: "Fazer login na sua conta",
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Não tem uma conta?"),
-                      TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/register'),
-                        style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                        child: const Text("Cadastre-se", style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
+                  Semantics(
+                    label: "Não tem uma conta? Cadastre-se",
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Não tem uma conta?",
+                          style: AppTextStyles.body(context),
+                        ),
+                        AccessibleButton(
+                          label: "Cadastre-se",
+                          onPressed: () =>
+                              Navigator.pushNamed(context, '/register'),
+                          type: ButtonType.text,
+                          semanticLabel: "Ir para página de cadastro",
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

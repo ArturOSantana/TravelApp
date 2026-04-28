@@ -8,7 +8,6 @@ class NotificationService {
 
   static Future<void> init() async {
     tz_data.initializeTimeZones();
-    // Definir o local padrão
     tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
     
     const AndroidInitializationSettings initializationSettingsAndroid = 

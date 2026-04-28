@@ -24,10 +24,10 @@ class SafetyPage extends StatefulWidget {
 class _SafetyPageState extends State<SafetyPage> {
   final TripController _controller = TripController();
   final AuthController _authController = AuthController();
-  
+
   // Nosso canal de comunicação com o Android nativo
   static const platform = MethodChannel('com.example.travel_app/sms');
-  
+
   bool _isLoading = false;
   UserModel? _user;
   Trip? _trip;
@@ -76,7 +76,9 @@ class _SafetyPageState extends State<SafetyPage> {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ative o GPS do seu aparelho.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Ative o GPS do seu aparelho.")),
+        );
       }
       return false;
     }
@@ -98,13 +100,21 @@ class _SafetyPageState extends State<SafetyPage> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
       );
-      String addr = await _getAddressFromCoords(position.latitude, position.longitude);
+      String addr = await _getAddressFromCoords(
+        position.latitude,
+        position.longitude,
+      );
       setState(() {
         _safeDestination = position;
         _safeDestinationName = addr;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Destino definido: $addr"), backgroundColor: Colors.blue));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Destino definido: $addr"),
+            backgroundColor: Colors.blue,
+          ),
+        );
       }
     } catch (e) {
       debugPrint("Erro ao definir destino: $e");
@@ -123,28 +133,31 @@ class _SafetyPageState extends State<SafetyPage> {
       _hasExitedSafeZone = false;
     });
 
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        distanceFilter: 5
-      )
-    ).listen((Position position) {
-      if (_safeDestination != null && _timerActive) {
-        double distance = Geolocator.distanceBetween(
-          position.latitude, position.longitude,
-          _safeDestination!.latitude, _safeDestination!.longitude
-        );
+    _positionStream =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            distanceFilter: 5,
+          ),
+        ).listen((Position position) {
+          if (_safeDestination != null && _timerActive) {
+            double distance = Geolocator.distanceBetween(
+              position.latitude,
+              position.longitude,
+              _safeDestination!.latitude,
+              _safeDestination!.longitude,
+            );
 
-        if (distance < 50) {
-          _handleArrival();
-        } 
-        
-        if (distance > 300 && !_hasExitedSafeZone) {
-          _hasExitedSafeZone = true;
-          _notifyExitSafeZone(position);
-        }
-      }
-    });
+            if (distance < 50) {
+              _handleArrival();
+            }
+
+            if (distance > 300 && !_hasExitedSafeZone) {
+              _hasExitedSafeZone = true;
+              _notifyExitSafeZone(position);
+            }
+          }
+        });
 
     _safetyTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
@@ -153,24 +166,53 @@ class _SafetyPageState extends State<SafetyPage> {
           _secondsRemaining--;
         } else {
           _stopMonitoring();
-          _triggerFullSOS(); 
+          _triggerFullSOS();
         }
       });
     });
   }
 
-  void _handleArrival() {
+  void _handleArrival() async {
     _stopMonitoring();
-    _controller.performSafetyCheckIn(widget.tripId, "Chegada Automática: ${_safeDestinationName ?? 'Destino'}", false);
+    if (_safeDestination != null) {
+      await _controller.performSafetyCheckIn(
+        widget.tripId,
+        "Chegada Automática: ${_safeDestinationName ?? 'Destino'}",
+        false,
+        latitude: _safeDestination!.latitude,
+        longitude: _safeDestination!.longitude,
+      );
+    }
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Você chegou em segurança!"), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Você chegou em segurança!"),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   void _notifyExitSafeZone(Position pos) async {
     if (_trip != null && _trip!.members.length > 1) {
       String addr = await _getAddressFromCoords(pos.latitude, pos.longitude);
-      await _controller.performSafetyCheckIn(widget.tripId, "⚠️ DESVIO DE ROTA: Estou em $addr", false);
+      await _controller.performSafetyCheckIn(
+        widget.tripId,
+        "⚠️ DESVIO DE ROTA: Estou em $addr",
+        false,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("⚠️ Grupo notificado sobre desvio de rota"),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -192,8 +234,12 @@ class _SafetyPageState extends State<SafetyPage> {
       });
       debugPrint("SMS STATUS: $result");
     } on PlatformException catch (e) {
-      debugPrint("FALHA AO ENVIAR SMS NATIVO: '${e.message}'. Tentando WhatsApp...");
-      final whatsappUrl = Uri.parse("whatsapp://send?phone=55$phone&text=${Uri.encodeComponent(message)}");
+      debugPrint(
+        "FALHA AO ENVIAR SMS NATIVO: '${e.message}'. Tentando WhatsApp...",
+      );
+      final whatsappUrl = Uri.parse(
+        "whatsapp://send?phone=55$phone&text=${Uri.encodeComponent(message)}",
+      );
       if (await canLaunchUrl(whatsappUrl)) await launchUrl(whatsappUrl);
     }
   }
@@ -201,60 +247,143 @@ class _SafetyPageState extends State<SafetyPage> {
   Future<void> _triggerFullSOS() async {
     if (_user == null) return;
 
+    // Mostrar diálogo de confirmação
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
+            SizedBox(width: 12),
+            Text("ALERTA SOS", style: TextStyle(color: Colors.red)),
+          ],
+        ),
+        content: Text(
+          "Você está prestes a enviar um alerta de emergência para:\n\n"
+          "• Todos os membros do grupo\n"
+          "• Seu contato de emergência\n\n"
+          "Confirma que precisa de ajuda?",
+          style: TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("CANCELAR"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(
+              "SIM, PRECISO DE AJUDA",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     try {
       debugPrint("[SEGURANÇA] Iniciando captura de localização precisa...");
       Position? pos;
+
       try {
         pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.best,
           timeLimit: const Duration(seconds: 12),
         );
       } catch (e) {
+        debugPrint("[SEGURANÇA] Erro ao obter localização atual: $e");
         pos = await Geolocator.getLastKnownPosition();
       }
 
-      String loc = pos != null 
+      String loc = pos != null
           ? await _getAddressFromCoords(pos.latitude, pos.longitude)
           : "Localização não obtida (verifique o sinal)";
-      
+
       debugPrint("[SEGURANÇA] Localização obtida: $loc");
 
       bool inGroup = (_trip?.members.length ?? 0) > 1;
-      final message = "SOS TRAVEL APP: ${_user!.name} precisa de ajuda urgente. Localizacao: $loc";
-      final cleanPhone = _user!.emergencyPhone.replaceAll(RegExp(r'[^0-9]'), '');
+      final message =
+          "🆘 SOS TRAVEL APP: ${_user!.name} precisa de ajuda urgente!\n"
+          "Localização: $loc\n"
+          "Horário: ${DateTime.now().toString().substring(0, 16)}";
+      final cleanPhone = _user!.emergencyPhone.replaceAll(
+        RegExp(r'[^0-9]'),
+        '',
+      );
 
-      // 1. FIREBASE (GRUPO)
+      // 1. FIREBASE (GRUPO) - Com coordenadas GPS
       if (inGroup) {
         debugPrint("[SEGURANÇA] Enviando alerta para o grupo via Firebase...");
-        await _controller.performSafetyCheckIn(widget.tripId, loc, true);
+        await _controller.performSafetyCheckIn(
+          widget.tripId,
+          loc,
+          true,
+          latitude: pos?.latitude,
+          longitude: pos?.longitude,
+        );
       }
 
-      // 2. SMS REAL (NOSSO MÉTODO NOVO)
+      // 2. SMS REAL
       if (cleanPhone.isNotEmpty) {
         debugPrint("[SEGURANÇA] Enviando SMS Real para $cleanPhone...");
         await _sendRealSMS(cleanPhone, message);
+      } else {
+        debugPrint("[SEGURANÇA] Nenhum telefone de emergência configurado");
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("ALERTA CRÍTICO DISPARADO!"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "🆘 ALERTA ENVIADO!\n${inGroup ? 'Grupo notificado' : ''}${cleanPhone.isNotEmpty ? '\nSMS enviado' : ''}",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            duration: Duration(seconds: 5),
+          ),
         );
       }
     } catch (e) {
-      debugPrint("Erro geral no SOS: $e");
+      debugPrint("[SEGURANÇA] Erro geral no SOS: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao enviar alerta. Tente novamente."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<String> _getAddressFromCoords(double lat, double lon) async {
     try {
-      final response = await http.get(
-        Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon&accept-language=pt-BR'),
-        headers: {'User-Agent': 'TravelPlannerApp/1.0'},
-      ).timeout(const Duration(seconds: 7));
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon&accept-language=pt-BR',
+            ),
+            headers: {'User-Agent': 'TravelPlannerApp/1.0'},
+          )
+          .timeout(const Duration(seconds: 7));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final parts = data['display_name'].toString().split(',');
-        return parts.length > 2 ? "${parts[0]}, ${parts[1]}, ${parts[2]}" : parts[0];
+        return parts.length > 2
+            ? "${parts[0]}, ${parts[1]}, ${parts[2]}"
+            : parts[0];
       }
     } catch (e) {}
     return "Local: $lat, $lon";
@@ -271,12 +400,24 @@ class _SafetyPageState extends State<SafetyPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nome")),
-            TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Telefone (com DDD)"), keyboardType: TextInputType.phone),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: "Nome"),
+            ),
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(
+                labelText: "Telefone (com DDD)",
+              ),
+              keyboardType: TextInputType.phone,
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancelar"),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (_user != null) {
@@ -289,7 +430,7 @@ class _SafetyPageState extends State<SafetyPage> {
               }
               Navigator.pop(context);
             },
-            child: const Text("Salvar")
+            child: const Text("Salvar"),
           ),
         ],
       ),
@@ -301,41 +442,67 @@ class _SafetyPageState extends State<SafetyPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FA),
       appBar: AppBar(
-        title: const Text("Segurança Ativa", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Segurança Ativa",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.redAccent,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildEmergencyContactCard(),
-                const SizedBox(height: 20),
-                _buildDestinationCard(),
-                const SizedBox(height: 20),
-                if (_timerActive) _buildActiveTimerUI() else _buildStartMonitoringUI(),
-                const SizedBox(height: 30),
-                const Text("AÇÕES RÁPIDAS", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey, fontSize: 13, letterSpacing: 0.8)),
-                const SizedBox(height: 12),
-                _buildPanicButton(),
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("HISTÓRICO", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey, fontSize: 13, letterSpacing: 0.8)),
-                    Icon(Icons.history, size: 16, color: Colors.blueGrey.withOpacity(0.6)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildTimelineHistory(),
-              ],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildEmergencyContactCard(),
+                  const SizedBox(height: 20),
+                  _buildDestinationCard(),
+                  const SizedBox(height: 20),
+                  if (_timerActive)
+                    _buildActiveTimerUI()
+                  else
+                    _buildStartMonitoringUI(),
+                  const SizedBox(height: 30),
+                  const Text(
+                    "AÇÕES RÁPIDAS",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey,
+                      fontSize: 13,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildPanicButton(),
+                  const SizedBox(height: 30),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "HISTÓRICO",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey,
+                          fontSize: 13,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      Icon(
+                        Icons.history,
+                        size: 16,
+                        color: Colors.blueGrey.withOpacity(0.6),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTimelineHistory(),
+                ],
+              ),
             ),
-          ),
     );
   }
 
@@ -346,32 +513,59 @@ class _SafetyPageState extends State<SafetyPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: hasContact ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-            child: Icon(hasContact ? Icons.contact_phone : Icons.person_add, color: hasContact ? Colors.green : Colors.orange),
+            backgroundColor: hasContact
+                ? Colors.green.withOpacity(0.1)
+                : Colors.orange.withOpacity(0.1),
+            child: Icon(
+              hasContact ? Icons.contact_phone : Icons.person_add,
+              color: hasContact ? Colors.green : Colors.orange,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Contato de Emergência", style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+                const Text(
+                  "Contato de Emergência",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 Text(
-                  hasContact ? "${_user!.emergencyContact} (${_user!.emergencyPhone})" : "Não configurado",
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  hasContact
+                      ? "${_user!.emergencyContact} (${_user!.emergencyPhone})"
+                      : "Não configurado",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
             key: const Key('edit_contact_btn'),
-            icon: const Icon(Icons.edit_outlined, size: 20, color: Colors.blueAccent),
+            icon: const Icon(
+              Icons.edit_outlined,
+              size: 20,
+              color: Colors.blueAccent,
+            ),
             onPressed: _showSetupContactDialog,
-          )
+          ),
         ],
       ),
     );
@@ -381,25 +575,53 @@ class _SafetyPageState extends State<SafetyPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _safeDestinationName != null ? Colors.blue.shade50 : Colors.white,
+        color: _safeDestinationName != null
+            ? Colors.blue.shade50
+            : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _safeDestinationName != null ? Colors.blue.shade100 : Colors.transparent),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(
+          color: _safeDestinationName != null
+              ? Colors.blue.shade100
+              : Colors.transparent,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Icon(Icons.location_on, color: _safeDestinationName != null ? Colors.blue : Colors.grey),
+              Icon(
+                Icons.location_on,
+                color: _safeDestinationName != null ? Colors.blue : Colors.grey,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Destino de Segurança", style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
+                    const Text(
+                      "Destino de Segurança",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     Text(
                       _safeDestinationName ?? "Marque seu local de chegada",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _safeDestinationName != null ? Colors.blue.shade900 : Colors.black87),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: _safeDestinationName != null
+                            ? Colors.blue.shade900
+                            : Colors.black87,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -417,14 +639,17 @@ class _SafetyPageState extends State<SafetyPage> {
                 IconButton(
                   icon: const Icon(Icons.close, size: 18, color: Colors.blue),
                   onPressed: () => setState(() => _safeDestinationName = null),
-                )
+                ),
             ],
           ),
           if (_safeDestinationName != null)
             const Padding(
               padding: EdgeInsets.only(top: 8.0, left: 36),
-              child: Text("Parada automática ao chegar aqui.", style: TextStyle(fontSize: 10, color: Colors.blueAccent)),
-            )
+              child: Text(
+                "Parada automática ao chegar aqui.",
+                style: TextStyle(fontSize: 10, color: Colors.blueAccent),
+              ),
+            ),
         ],
       ),
     );
@@ -436,13 +661,21 @@ class _SafetyPageState extends State<SafetyPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Duração do Trajeto", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const Text("Defina quanto tempo você levará.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const Text(
+            "Duração do Trajeto",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const Text(
+            "Defina quanto tempo você levará.",
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -469,7 +702,13 @@ class _SafetyPageState extends State<SafetyPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.orange.shade200, width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -478,13 +717,26 @@ class _SafetyPageState extends State<SafetyPage> {
             children: [
               Icon(Icons.radar, color: Colors.orange, size: 18),
               SizedBox(width: 8),
-              Text("MONITORAMENTO ATIVO", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, letterSpacing: 1, fontSize: 12)),
+              Text(
+                "MONITORAMENTO ATIVO",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                  letterSpacing: 1,
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
           Text(
-            "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}", 
-            style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold, color: Colors.orange, fontFeatures: [FontFeature.tabularFigures()]),
+            "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}",
+            style: const TextStyle(
+              fontSize: 56,
+              fontWeight: FontWeight.bold,
+              color: Colors.orange,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -495,11 +747,16 @@ class _SafetyPageState extends State<SafetyPage> {
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text("ESTOU SEGURO / CHEGUEI", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                "ESTOU SEGURO / CHEGUEI",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -523,16 +780,33 @@ class _SafetyPageState extends State<SafetyPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(15)),
-                child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 16),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("BOTÃO DE PÂNICO", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
-                    Text("Alertar grupo e contatos agora", style: TextStyle(fontSize: 12, color: Colors.black54)),
+                    Text(
+                      "BOTÃO DE PÂNICO",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    Text(
+                      "Alertar grupo e contatos agora",
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
                   ],
                 ),
               ),
@@ -549,33 +823,68 @@ class _SafetyPageState extends State<SafetyPage> {
       stream: _controller.getSafetyHistory(widget.tripId),
       builder: (context, snapshot) {
         final list = snapshot.data ?? [];
-        if (list.isEmpty) return const Center(child: Text("Sem registros recentes.", style: TextStyle(color: Colors.grey, fontSize: 13)));
-        
+        if (list.isEmpty)
+          return const Center(
+            child: Text(
+              "Sem registros recentes.",
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+          );
+
         return Column(
           children: list.take(5).map((item) {
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+              ),
               child: Row(
                 children: [
                   Container(
                     width: 4,
                     height: 40,
-                    decoration: BoxDecoration(color: item.isPanic ? Colors.red : Colors.green, borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(
+                      color: item.isPanic ? Colors.red : Colors.green,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.isPanic ? "ALERTA DE SEGURANÇA" : "Check-in Seguro", 
-                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: item.isPanic ? Colors.red : Colors.black87)),
-                        Text(item.locationName, style: const TextStyle(fontSize: 11, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          item.isPanic
+                              ? "ALERTA DE SEGURANÇA"
+                              : "Check-in Seguro",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: item.isPanic ? Colors.red : Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          item.locationName,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),
-                  Text(DateFormat('HH:mm').format(item.timestamp), style: const TextStyle(fontSize: 11, color: Colors.blueGrey, fontWeight: FontWeight.w600)),
+                  Text(
+                    DateFormat('HH:mm').format(item.timestamp),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.blueGrey,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -589,7 +898,12 @@ class _SafetyPageState extends State<SafetyPage> {
     return Expanded(
       child: ActionChip(
         key: key,
-        label: Center(child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold))),
+        label: Center(
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
         onPressed: () => _startSafetyTimer(min),
         backgroundColor: Colors.white,
         side: BorderSide(color: Colors.blueAccent.withOpacity(0.2)),

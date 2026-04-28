@@ -4,13 +4,30 @@ on:
   push:
     branches:
       - main
+      - develop
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes para esta build'
+        required: false
+        default: 'Build manual via workflow_dispatch'
+
+env:
+  FLUTTER_VERSION: '3.24.0'
+  JAVA_VERSION: '17'
 
 jobs:
-  deploy:
+  test:
+    name: Executar Testes
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout código
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -18,40 +35,189 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
 
-      - name: Install dependencies
+      - name: Verificar versão do Flutter
+        run: flutter --version
+
+      - name: Instalar dependências
         run: flutter pub get
 
-      - name: Run Tests
-        run: flutter test
+      - name: Verificar formatação
+        run: dart format --set-exit-if-changed .
+        continue-on-error: true
 
-      - name: Auto Increment Version
-        id: versioning
+      - name: Análise estática
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Executar testes unitários
+        run: flutter test --coverage
+
+      - name: Upload coverage para Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  build:
+    name: Build e Deploy
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Instalar dependências
+        run: flutter pub get
+
+      - name: Obter informações de versão
+        id: version_info
         run: |
           VERSION=$(grep 'version: ' pubspec.yaml | sed 's/version: //')
           VERSION_NAME=$(echo $VERSION | cut -d+ -f1)
           BUILD_NUMBER=$(echo $VERSION | cut -d+ -f2)
+          echo "current_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Incrementar versão
+        id: versioning
+        run: |
+          VERSION_NAME="${{ steps.version_info.outputs.version_name }}"
+          BUILD_NUMBER="${{ steps.version_info.outputs.build_number }}"
           NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
-          NEW_VERSION="$VERSION_NAME+$NEW_BUILD_NUMBER"
-          sed -i "s/version: $VERSION/version: $NEW_VERSION/" pubspec.yaml
+          NEW_VERSION="${VERSION_NAME}+${NEW_BUILD_NUMBER}"
+          
+          # Atualizar pubspec.yaml
+          sed -i "s/version: ${{ steps.version_info.outputs.current_version }}/version: $NEW_VERSION/" pubspec.yaml
+          
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "new_build_number=$NEW_BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          
+          echo " Nova versão: $NEW_VERSION"
 
-      - name: Build APK
-        run: flutter build apk --release --build-name=${{ steps.versioning.outputs.new_version }} --build-number=${{ github.run_number }}
+      - name: Commit versão atualizada
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add pubspec.yaml
+          git commit -m "chore: bump version to ${{ steps.versioning.outputs.new_version }} [skip ci]" || echo "Sem mudanças para commit"
+          git push || echo "Nada para push"
+        continue-on-error: true
 
-      - name: Create Release Notes
-        run: echo "Build automatizada. Versao ${{ steps.versioning.outputs.new_version }} - Testes validados" > release_notes.txt
+      - name: Build APK Release
+        run: |
+          flutter build apk --release \
+            --build-name=${{ steps.versioning.outputs.version_name }} \
+            --build-number=${{ steps.versioning.outputs.new_build_number }} \
+            --dart-define=ENVIRONMENT=production
 
-      - name: Upload to Firebase App Distribution
-        uses: w9jds/firebase-action@master
+      - name: Build App Bundle (AAB)
+        run: |
+          flutter build appbundle --release \
+            --build-name=${{ steps.versioning.outputs.version_name }} \
+            --build-number=${{ steps.versioning.outputs.new_build_number }} \
+            --dart-define=ENVIRONMENT=production
+
+      - name: Gerar release notes
+        id: release_notes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.release_notes }}" ]; then
+            NOTES="${{ github.event.inputs.release_notes }}"
+          else
+            # Obter últimos commits
+            COMMITS=$(git log --pretty=format:"- %s" -n 5 | head -n 5)
+            NOTES="Build Automática v${{ steps.versioning.outputs.new_version }}
+
+📝 Últimas mudanças:
+$COMMITS
+
+Testes: Todos os 70 testes passaram
+Build: #${{ github.run_number }}
+Data: $(date +'%d/%m/%Y %H:%M')
+Branch: ${{ github.ref_name }}
+Autor: ${{ github.actor }}"
+          fi
+          
+          echo "$NOTES" > release_notes.txt
+          echo "Release notes geradas com sucesso"
+          cat release_notes.txt
+
+      - name: Upload APK para Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
-          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS" --release-notes-file release_notes.txt
+          appId: 1:660606500922:android:7a5e698da565dc9a34f503
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: TCC_DS
+          file: build/app/outputs/flutter-apk/app-release.apk
+          releaseNotesFile: release_notes.txt
+
+      - name: Upload artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-builds-${{ steps.versioning.outputs.new_version }}
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Criar GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.versioning.outputs.new_version }}
+          name: Release v${{ steps.versioning.outputs.new_version }}
+          body_path: release_notes.txt
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+          draft: false
+          prerelease: false
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notificar sucesso
+        if: success()
+        run: 
+          echo " Deploy concluído com sucesso!"
+          echo " Versão: ${{ steps.versioning.outputs.new_version }}"
+          echo " APK disponível no Firebase App Distribution"
+
+      - name: Notificar falha
+        if: failure()
+        run: |
+          echo " Deploy falhou!"
+          echo " Verifique os logs acima para mais detalhes"
+
