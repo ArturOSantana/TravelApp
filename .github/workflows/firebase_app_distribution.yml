@@ -3,11 +3,10 @@ name: Firebase App Distribution
 on:
   push:
     branches:
-      - main
-      - develop
+      - main  # Deploy apenas na main
   pull_request:
     branches:
-      - main
+      - main  # Testa PRs mas não faz deploy
   workflow_dispatch:
     inputs:
       release_notes:
