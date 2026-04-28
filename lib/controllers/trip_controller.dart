@@ -23,11 +23,10 @@ class TripController {
         .where('receiverId', isEqualTo: uid)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs
-                  .map((doc) => AppNotification.fromFirestore(doc))
-                  .toList()
-                ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+          (snap) => snap.docs
+              .map((doc) => AppNotification.fromFirestore(doc))
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
         );
   }
 
@@ -80,9 +79,8 @@ class TripController {
     var query = _db.collection('trips').where('members', arrayContains: uid);
     if (status != null) query = query.where('status', isEqualTo: status);
     return query.snapshots().map((snapshot) {
-      final trips = snapshot.docs
-          .map((doc) => Trip.fromFirestore(doc))
-          .toList();
+      final trips =
+          snapshot.docs.map((doc) => Trip.fromFirestore(doc)).toList();
       trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return trips;
     });
@@ -264,12 +262,10 @@ class TripController {
         .where('tripId', isEqualTo: tripId)
         .snapshots()
         .map((snap) {
-          final list = snap.docs
-              .map((doc) => Activity.fromFirestore(doc))
-              .toList();
-          list.sort((a, b) => a.time.compareTo(b.time));
-          return list;
-        });
+      final list = snap.docs.map((doc) => Activity.fromFirestore(doc)).toList();
+      list.sort((a, b) => a.time.compareTo(b.time));
+      return list;
+    });
   }
 
   Stream<List<String>> watchTripCategories(String tripId) {
@@ -278,12 +274,12 @@ class TripController {
         .where('tripId', isEqualTo: tripId)
         .snapshots()
         .map((snap) {
-          final cats = snap.docs
-              .map((doc) => doc.data()['category']?.toString() ?? 'Geral')
-              .toSet()
-              .toList();
-          return ['Todos', ...cats];
-        });
+      final cats = snap.docs
+          .map((doc) => doc.data()['category']?.toString() ?? 'Geral')
+          .toSet()
+          .toList();
+      return ['Todos', ...cats];
+    });
   }
 
   Future<void> addActivity(Activity activity) async =>
@@ -332,12 +328,10 @@ class TripController {
         .where('tripId', isEqualTo: tripId)
         .snapshots()
         .map((snap) {
-          final list = snap.docs
-              .map((doc) => Expense.fromFirestore(doc))
-              .toList();
-          list.sort((a, b) => b.date.compareTo(a.date));
-          return list;
-        });
+      final list = snap.docs.map((doc) => Expense.fromFirestore(doc)).toList();
+      list.sort((a, b) => b.date.compareTo(a.date));
+      return list;
+    });
   }
 
   Future<void> addExpense(Expense expense) async =>
@@ -396,9 +390,7 @@ class TripController {
       for (final memberId in trip.members) {
         if (memberId == user?.uid) continue;
 
-        await _db
-            .collection('notifications')
-            .add(
+        await _db.collection('notifications').add(
               AppNotification(
                 id: '',
                 receiverId: memberId,
@@ -408,7 +400,7 @@ class TripController {
                 postName: trip.destination,
                 type: NotificationType.safetyAlert,
                 commentText:
-                    "🆘 ALERTA SOS: Estou em $location e preciso de ajuda!",
+                    "ALERTA SOS: Estou em $location e preciso de ajuda!",
                 createdAt: DateTime.now(),
               ).toMap(),
             );
@@ -444,11 +436,8 @@ class TripController {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    final docRef = _db
-        .collection('trips')
-        .doc(tripId)
-        .collection('journal')
-        .doc(entryId);
+    final docRef =
+        _db.collection('trips').doc(tripId).collection('journal').doc(entryId);
 
     final doc = await docRef.get();
     if (!doc.exists) return;
@@ -486,11 +475,8 @@ class TripController {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final token = '${entryId}_$timestamp';
 
-    final docRef = _db
-        .collection('trips')
-        .doc(tripId)
-        .collection('journal')
-        .doc(entryId);
+    final docRef =
+        _db.collection('trips').doc(tripId).collection('journal').doc(entryId);
 
     await docRef.update({'isPublic': true, 'shareToken': token});
 

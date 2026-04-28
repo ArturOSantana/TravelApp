@@ -182,8 +182,6 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Busca de Vôos"),
-        backgroundColor: Colors.blue[800],
-        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -254,7 +252,6 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                   child: ActionChip(
                     padding: EdgeInsets.zero,
                     label: Text(suggestion['name']!, style: const TextStyle(fontSize: 11)),
-                    backgroundColor: Colors.blue[900],
                     labelStyle: const TextStyle(color: Colors.white),
                     onPressed: () {
                       setState(() {
@@ -363,7 +360,6 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _bookFlight(f),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[800], foregroundColor: Colors.white),
                         child: const Text("ATRIBUIR VALOR"),
                       ),
                     ),

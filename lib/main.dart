@@ -51,10 +51,8 @@ class MyApp extends StatelessWidget {
       title: 'Travel App',
       // Tema claro com design system completo e acessível
       theme: AppTheme.lightTheme,
-      // Tema escuro com design system completo e acessível
-      darkTheme: AppTheme.darkTheme,
-      // Respeita preferência do sistema
-      themeMode: ThemeMode.system,
+      // Forçar sempre tema claro
+      themeMode: ThemeMode.light,
       home: const AppInitializer(),
       onGenerateRoute: (settings) {
         final Uri uri = Uri.parse(settings.name ?? '/');

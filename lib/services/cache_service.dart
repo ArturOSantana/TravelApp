@@ -6,7 +6,7 @@ class CacheService {
 
   static Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
-    print('✅ Cache Service inicializado');
+    print('[CACHE] Cache Service inicializado');
   }
 
   static Future<bool> saveData(String key, dynamic data) async {
@@ -28,7 +28,7 @@ class CacheService {
         return await _prefs!.setString(key, jsonString);
       }
     } catch (e) {
-      print('❌ Erro ao salvar cache: $e');
+      print('[ERROR] Erro ao salvar cache: $e');
       return false;
     }
   }
@@ -38,7 +38,7 @@ class CacheService {
       if (_prefs == null) return defaultValue;
       return _prefs!.get(key) ?? defaultValue;
     } catch (e) {
-      print('❌ Erro ao recuperar cache: $e');
+      print('[ERROR] Erro ao recuperar cache: $e');
       return defaultValue;
     }
   }
@@ -50,7 +50,7 @@ class CacheService {
       if (jsonString == null) return null;
       return json.decode(jsonString) as Map<String, dynamic>;
     } catch (e) {
-      print('❌ Erro ao recuperar JSON do cache: $e');
+      print('[ERROR] Erro ao recuperar JSON do cache: $e');
       return null;
     }
   }
@@ -65,7 +65,7 @@ class CacheService {
       if (_prefs == null) await initialize();
       return await _prefs!.remove(key);
     } catch (e) {
-      print('❌ Erro ao remover chave do cache: $e');
+      print('[ERROR] Erro ao remover chave do cache: $e');
       return false;
     }
   }
@@ -75,11 +75,10 @@ class CacheService {
       if (_prefs == null) await initialize();
       return await _prefs!.clear();
     } catch (e) {
-      print('❌ Erro ao limpar cache: $e');
+      print('[ERROR] Erro ao limpar cache: $e');
       return false;
     }
   }
-
 
   static bool isOnboardingCompleted() {
     return getData('onboarding_completed', defaultValue: false) as bool;
