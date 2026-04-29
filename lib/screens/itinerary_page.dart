@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/activity.dart';
 import '../models/trip.dart';
+import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
+import '../controllers/auth_controller.dart';
+import '../services/external_apps_service.dart';
 import 'create_activity_page.dart';
+import 'activity_suggestions_page.dart';
+import 'premium_upgrade_page.dart';
 
 class ItineraryPage extends StatefulWidget {
   final String tripId;
@@ -16,16 +23,19 @@ class ItineraryPage extends StatefulWidget {
 
 class _ItineraryPageState extends State<ItineraryPage> {
   final TripController _controller = TripController();
+  final AuthController _authController = AuthController();
   final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
   String _selectedCategory = 'Todos';
   String _selectedFilter = 'Todos';
   String _selectedStatus = 'Todas';
   Trip? _trip;
+  UserModel? _currentUser;
 
   @override
   void initState() {
     super.initState();
     _loadTrip();
+    _loadUser();
   }
 
   Future<void> _loadTrip() async {
@@ -33,6 +43,60 @@ class _ItineraryPageState extends State<ItineraryPage> {
     if (mounted) {
       setState(() => _trip = trip);
     }
+  }
+
+  Future<void> _loadUser() async {
+    final user = await _authController.getUserData();
+    if (mounted) {
+      setState(() => _currentUser = user);
+    }
+  }
+
+  void _showPremiumDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.star, color: Colors.amber),
+            SizedBox(width: 8),
+            Text('Recurso Premium'),
+          ],
+        ),
+        content: const Text(
+          'As sugestões inteligentes de atividades são exclusivas para usuários Premium.\n\n'
+          'Upgrade agora e tenha acesso a:\n'
+          '• Sugestões de atrações turísticas\n'
+          '• Recomendações de restaurantes\n'
+          '• Informações sobre entretenimento\n'
+          '• Dados do clima e país\n'
+          '• Conversão de moedas',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Agora não'),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.star),
+            label: const Text('Fazer Upgrade'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber[700],
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PremiumUpgradePage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -50,6 +114,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
       ),
       body: Column(
         children: [
+          _buildSuggestionsButton(),
           _buildCategoryFilter(),
           _buildStatusFilter(),
           if (_trip?.isGroup ?? false) _buildVoteFilter(),
@@ -67,6 +132,90 @@ class _ItineraryPageState extends State<ItineraryPage> {
             ),
           ),
           child: const Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsButton() {
+    if (_trip == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.auto_awesome),
+          label: const Text('Ver Sugestões de Atividades'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            backgroundColor: Colors.deepPurple,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () async {
+            // Verificar se é premium
+            if (_currentUser?.isPremium != true) {
+              _showPremiumDialog();
+              return;
+            }
+
+            // Buscar coordenadas do destino
+            try {
+              final url = Uri.parse(
+                'https://nominatim.openstreetmap.org/search?q=${_trip!.destination}&format=json&limit=1',
+              );
+
+              final response = await http.get(
+                url,
+                headers: {'User-Agent': 'TravelPlannerApp/1.0'},
+              );
+
+              if (response.statusCode == 200) {
+                final List<dynamic> data = json.decode(response.body);
+                if (data.isNotEmpty && mounted) {
+                  final lat = double.tryParse(data[0]['lat']);
+                  final lon = double.tryParse(data[0]['lon']);
+
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ActivitySuggestionsPage(
+                        tripId: widget.tripId,
+                        destination: _trip!.destination,
+                        lat: lat,
+                        lon: lon,
+                      ),
+                    ),
+                  );
+
+                  // Se retornou dados, abrir tela de criar atividade com dados preenchidos
+                  if (result != null && mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateActivityPage(
+                          tripId: widget.tripId,
+                          suggestedName: result['name'],
+                          suggestedLocation: result['location'],
+                          suggestedLat: result['lat'],
+                          suggestedLon: result['lon'],
+                        ),
+                      ),
+                    );
+                  }
+                }
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Erro ao buscar sugestões'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+          },
         ),
       ),
     );
@@ -376,6 +525,79 @@ class _ItineraryPageState extends State<ItineraryPage> {
                         SizedBox(width: 8),
                         Text('Excluir', style: TextStyle(color: Colors.red)),
                       ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Botões de ação rápida (Maps e Calendar)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Botão Maps
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.map, size: 18),
+                      label: const Text('Abrir no Maps'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onPressed: activity.latitude != null &&
+                              activity.longitude != null
+                          ? () async {
+                              final success =
+                                  await ExternalAppsService.openInMaps(
+                                latitude: activity.latitude!,
+                                longitude: activity.longitude!,
+                                label: activity.title,
+                              );
+
+                              if (!success && mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Não foi possível abrir o Maps'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            }
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Botão Calendar
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.calendar_today, size: 18),
+                      label: const Text('Adicionar'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onPressed: () async {
+                        final success =
+                            await ExternalAppsService.addToCalendar(activity);
+
+                        if (success && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Abrindo calendário...'),
+                              behavior: SnackBarBehavior.floating,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        } else if (!success && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Não foi possível abrir o calendário'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
                     ),
                   ),
                 ],

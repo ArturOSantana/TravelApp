@@ -93,7 +93,16 @@ Desenvolver um sistema multiplataforma para planejamento e gestão de viagens qu
 - Criação de atividades com data, horário e localização
 - Categorização (transporte, hospedagem, alimentação, passeio, etc.)
 - Sistema de votação democrática para aprovação em grupos
-- Integração com busca de voos e hotéis
+- **Sugestões Inteligentes de Atividades** (NOVO)
+  - Atrações turísticas próximas
+  - Restaurantes e cafés recomendados
+  - Opções de entretenimento
+- **Integração com Maps** (NOVO)
+  - Abrir localização no Google Maps ou Apple Maps
+  - Navegação direta para atividades
+- **Integração com Calendar** (NOVO)
+  - Adicionar atividades ao Google Calendar ou Apple Calendar
+  - Sincronização automática de horários
 - Visualização em lista ordenada por data
 - Notificações de atividades próximas
 
@@ -156,13 +165,30 @@ Desenvolver um sistema multiplataforma para planejamento e gestão de viagens qu
 - Configuração de contato de emergência
 - Compartilhamento de localização em tempo real
 
-### 8. Recursos Adicionais
+### 8. Previsão do Tempo (NOVO)
+
+**Descrição:** Informações meteorológicas detalhadas para o destino.
+
+**Recursos:**
+- Clima atual com temperatura, umidade e vento
+- Previsão de 5 dias
+- Probabilidade de chuva
+- Horário do nascer e pôr do sol
+- Alertas meteorológicos
+- Integração com OpenWeatherMap API
+
+### 9. Recursos Adicionais
 
 - **Modo escuro:** Interface adaptável para diferentes condições de luz
 - **Acessibilidade:** Suporte a leitores de tela e navegação por teclado
 - **Notificações inteligentes:** Lembretes contextuais baseados em atividades
 - **Cache offline:** Funcionamento sem conexão com sincronização automática
-- **Busca de voos e hotéis:** Integração com APIs de busca
+- **APIs Gratuitas Integradas:** (NOVO)
+  - Geoapify - Sugestões de locais
+  - OpenWeatherMap - Previsão do tempo
+  - REST Countries - Informações de países
+  - ExchangeRate - Conversão de moedas
+  - Nominatim - Geocoding
 
 ---
 
@@ -182,9 +208,13 @@ Desenvolver um sistema multiplataforma para planejamento e gestão de viagens qu
 - Firebase Cloud Messaging (Notificações push)
 
 **APIs Externas:**
-- API de conversão de moedas
+- **Geoapify API** - Sugestões de atrações, restaurantes e entretenimento
+- **OpenWeatherMap API** - Previsão do tempo detalhada
+- **REST Countries API** - Informações sobre países
+- **ExchangeRate API** - Conversão de moedas em tempo real
+- **Nominatim (OpenStreetMap)** - Geocoding e busca de endereços
 - Geolocator (Serviços de localização)
-- URL Launcher (Integração com SMS/WhatsApp)
+- URL Launcher (Integração com SMS/WhatsApp/Maps/Calendar)
 
 ### Padrão Arquitetural
 
@@ -442,7 +472,8 @@ travel_app/
 │   ├── widget_test.dart
 │   ├── use_cases_test.dart
 │   ├── security_test.dart
-│   └── profile_validation_test.dart
+│   ├── profile_validation_test.dart
+│   └── apis_integration_test.dart  # NOVO: Testes das APIs
 │
 ├── assets/                  # Recursos estáticos
 │   └── images/
@@ -518,12 +549,16 @@ O Travel App atende aos objetivos propostos, oferecendo uma solução completa e
 
 Possíveis melhorias e expansões:
 
-1. Integração com mais APIs de serviços de viagem
-2. Implementação de inteligência artificial para recomendações personalizadas
-3. Sistema de gamificação para engajamento
-4. Suporte a mais idiomas
-5. Integração com assistentes virtuais
-6. Modo offline completo com sincronização otimizada
+1. ~~Integração com APIs de serviços de viagem~~ ✓ IMPLEMENTADO
+2. ~~Sugestões inteligentes de atividades~~ ✓ IMPLEMENTADO
+3. ~~Previsão do tempo detalhada~~ ✓ IMPLEMENTADO
+4. ~~Integração com Maps e Calendar~~ ✓ IMPLEMENTADO
+5. Sistema de gamificação para engajamento
+6. Suporte a mais idiomas
+7. Integração com assistentes virtuais
+8. Modo offline completo com sincronização otimizada
+9. Cache de dados das APIs para reduzir requisições
+10. Integração do OpenWeatherMap nas telas (dashboard e roteiro)
 
 ### Limitações Conhecidas
 

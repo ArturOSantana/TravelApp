@@ -93,7 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              value ? "Modo PREMIUM ativado! ⭐" : "Modo PREMIUM desativado."),
+              value ? "Modo PREMIUM ativado!" : "Modo PREMIUM desativado."),
           backgroundColor: value ? Colors.amber[800] : Colors.grey[800],
         ),
       );
@@ -264,8 +264,14 @@ class _ProfilePageState extends State<ProfilePage> {
                             : Colors.grey[300]!),
                   ),
                   child: SwitchListTile(
-                    title: const Text("Usuário Premium ⭐",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    title: Row(
+                      children: const [
+                        Icon(Icons.star, color: Colors.amber, size: 20),
+                        SizedBox(width: 8),
+                        Text("Usuário Premium",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                     subtitle:
                         const Text("Desbloqueia clima, câmbio e segurança"),
                     value: _user?.isPremium ?? false,

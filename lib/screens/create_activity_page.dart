@@ -9,8 +9,20 @@ import '../services/notification_service.dart';
 class CreateActivityPage extends StatefulWidget {
   final String tripId;
   final Activity? activity;
+  final String? suggestedName;
+  final String? suggestedLocation;
+  final double? suggestedLat;
+  final double? suggestedLon;
 
-  const CreateActivityPage({super.key, required this.tripId, this.activity});
+  const CreateActivityPage({
+    super.key,
+    required this.tripId,
+    this.activity,
+    this.suggestedName,
+    this.suggestedLocation,
+    this.suggestedLat,
+    this.suggestedLon,
+  });
 
   @override
   State<CreateActivityPage> createState() => _CreateActivityPageState();
@@ -21,7 +33,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   final titleController = TextEditingController();
   final locationController = TextEditingController();
   final categoryController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   double? _lat;
@@ -38,6 +50,12 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       _selectedTime = TimeOfDay.fromDateTime(widget.activity!.time);
       _lat = widget.activity!.latitude;
       _lon = widget.activity!.longitude;
+    } else if (widget.suggestedName != null) {
+      // Preencher com dados sugeridos
+      titleController.text = widget.suggestedName!;
+      locationController.text = widget.suggestedLocation ?? '';
+      _lat = widget.suggestedLat;
+      _lon = widget.suggestedLon;
     }
   }
 
@@ -45,16 +63,19 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     if (query.length < 3) return [];
     try {
       final response = await http.get(
-        Uri.parse('https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5&accept-language=pt-BR'),
+        Uri.parse(
+            'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5&accept-language=pt-BR'),
         headers: {'User-Agent': 'TravelPlannerApp/1.0'},
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => {
-          'display_name': item['display_name'],
-          'lat': double.tryParse(item['lat']),
-          'lon': double.tryParse(item['lon']),
-        }).toList();
+        return data
+            .map((item) => {
+                  'display_name': item['display_name'],
+                  'lat': double.tryParse(item['lat']),
+                  'lon': double.tryParse(item['lon']),
+                })
+            .toList();
       }
     } catch (e) {
       debugPrint("Erro na busca de locais: $e");
@@ -86,7 +107,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   void _saveActivity() async {
     if (titleController.text.isEmpty) return;
     if (categoryController.text.trim().isEmpty) {
-       ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Defina uma categoria!")),
       );
       return;
@@ -122,19 +143,23 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
         await _controller.updateActivity(activity);
       }
 
-      final scheduledTime = combinedDateTime.subtract(const Duration(minutes: 15));
+      final scheduledTime =
+          combinedDateTime.subtract(const Duration(minutes: 15));
       if (scheduledTime.isAfter(DateTime.now())) {
         await NotificationService.scheduleNotification(
           id: combinedDateTime.millisecondsSinceEpoch.remainder(100000),
           title: "Sua atividade começa em breve! ✈️",
-          body: "Prepare as coisas, '${activity.title}' em ${activity.location} começa em 15 minutos.",
+          body:
+              "Prepare as coisas, '${activity.title}' em ${activity.location} começa em 15 minutos.",
           scheduledDate: scheduledTime,
         );
       }
 
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
     }
   }
 
@@ -142,7 +167,8 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.activity != null ? "Editar Atividade" : "Nova Atividade"),
+        title: Text(
+            widget.activity != null ? "Editar Atividade" : "Nova Atividade"),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -161,11 +187,11 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
               ),
             ),
             const SizedBox(height: 20),
-            
             Semantics(
               label: "Campo para buscar localização da atividade",
               child: SearchAnchor(
-                builder: (BuildContext context, SearchController searchController) {
+                builder:
+                    (BuildContext context, SearchController searchController) {
                   return TextFormField(
                     controller: locationController,
                     readOnly: true,
@@ -178,24 +204,28 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
                     ),
                   );
                 },
-                suggestionsBuilder: (BuildContext context, SearchController searchController) async {
+                suggestionsBuilder: (BuildContext context,
+                    SearchController searchController) async {
                   final results = await _searchLocations(searchController.text);
-                  return results.map((loc) => ListTile(
-                    leading: const Icon(Icons.place, color: Colors.deepPurple),
-                    title: Text(loc['display_name'], maxLines: 2, overflow: TextOverflow.ellipsis),
-                    onTap: () {
-                      setState(() {
-                        locationController.text = loc['display_name'];
-                        _lat = loc['lat'];
-                        _lon = loc['lon'];
-                      });
-                      searchController.closeView(loc['display_name']);
-                    },
-                  )).toList();
+                  return results
+                      .map((loc) => ListTile(
+                            leading: const Icon(Icons.place,
+                                color: Colors.deepPurple),
+                            title: Text(loc['display_name'],
+                                maxLines: 2, overflow: TextOverflow.ellipsis),
+                            onTap: () {
+                              setState(() {
+                                locationController.text = loc['display_name'];
+                                _lat = loc['lat'];
+                                _lon = loc['lon'];
+                              });
+                              searchController.closeView(loc['display_name']);
+                            },
+                          ))
+                      .toList();
                 },
               ),
             ),
-            
             const SizedBox(height: 20),
             TextField(
               controller: categoryController,
@@ -206,9 +236,10 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
               ),
               textCapitalization: TextCapitalization.words,
             ),
-
             const SizedBox(height: 30),
-            const Text("Quando?", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            const Text("Quando?",
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -231,7 +262,6 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
@@ -240,10 +270,12 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _saveActivity,
-                child: const Text("SALVAR ATIVIDADE", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text("SALVAR ATIVIDADE",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           ],
@@ -252,7 +284,11 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     );
   }
 
-  Widget _buildPickerCard({required String label, required String value, required IconData icon, required VoidCallback onTap}) {
+  Widget _buildPickerCard(
+      {required String label,
+      required String value,
+      required IconData icon,
+      required VoidCallback onTap}) {
     return Semantics(
       button: true,
       label: "Selecionar $label. Valor atual: $value",
@@ -269,8 +305,11 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
             children: [
               Icon(icon, color: Colors.deepPurple, size: 20),
               const SizedBox(height: 8),
-              Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(label,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(value,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
         ),
