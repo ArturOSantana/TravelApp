@@ -26,6 +26,7 @@ dependencies:
   firebase_messaging: ^16.1.3  # Push notifications
   shared_preferences: ^2.3.3   # Cache local
   connectivity_plus: ^7.1.1    # Detectar conexão
+  provider: ^6.1.2             # Gerenciamento de estado
   smooth_page_indicator: ^2.0.1  # Indicador de onboarding
   cached_network_image: ^3.4.1  # Cache de imagens
   geolocator: ^13.0.2

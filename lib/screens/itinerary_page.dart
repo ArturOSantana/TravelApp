@@ -38,7 +38,6 @@ class _ItineraryPageState extends State<ItineraryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
       appBar: AppBar(
         title: Semantics(
           header: true,
@@ -47,8 +46,6 @@ class _ItineraryPageState extends State<ItineraryPage> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0,
       ),
       body: Column(
@@ -62,14 +59,14 @@ class _ItineraryPageState extends State<ItineraryPage> {
       floatingActionButton: Semantics(
         label: "Adicionar nova atividade ao roteiro",
         child: FloatingActionButton(
-          backgroundColor: Colors.blue,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CreateActivityPage(tripId: widget.tripId),
             ),
           ),
-          child: const Icon(Icons.add, color: Colors.white),
+          child: const Icon(Icons.add),
         ),
       ),
     );
@@ -187,8 +184,8 @@ class _ItineraryPageState extends State<ItineraryPage> {
         var activities = _selectedCategory == 'Todos'
             ? allActivities
             : allActivities
-                  .where((a) => a.category == _selectedCategory)
-                  .toList();
+                .where((a) => a.category == _selectedCategory)
+                .toList();
 
         // Filtrar por status
         if (_selectedStatus == 'Pendentes') {
@@ -231,7 +228,14 @@ class _ItineraryPageState extends State<ItineraryPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
+                Icon(
+                  Icons.event_note,
+                  size: 64,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withOpacity(0.5),
+                ),
                 const SizedBox(height: 16),
                 const Text("Nenhuma atividade encontrada."),
               ],
@@ -279,12 +283,15 @@ class _ItineraryPageState extends State<ItineraryPage> {
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primaryContainer
+                      .withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on,
-                  color: Colors.blue,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
               ),
@@ -638,4 +645,3 @@ class _ItineraryPageState extends State<ItineraryPage> {
     );
   }
 }
-

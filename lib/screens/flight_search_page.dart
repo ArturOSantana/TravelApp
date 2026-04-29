@@ -18,7 +18,8 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
   final TripController _controller = TripController();
   final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-  final TextEditingController _originController = TextEditingController(text: 'SAO');
+  final TextEditingController _originController =
+      TextEditingController(text: 'SAO');
   final TextEditingController _destController = TextEditingController();
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 7));
   String _selectedClass = 'economy';
@@ -48,7 +49,8 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
 
   void _searchFlights() {
     if (_destController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Informe o destino")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Informe o destino")));
       return;
     }
 
@@ -110,7 +112,8 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
     final expense = Expense(
       id: '',
       tripId: trip.id,
-      title: "Passagem: ${flight['company']} (${_originController.text} -> ${_destController.text})",
+      title:
+          "Passagem: ${flight['company']} (${_originController.text} -> ${_destController.text})",
       value: flight['price'],
       category: 'Transporte',
       payerId: _currentUid,
@@ -118,10 +121,11 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
     );
 
     await _controller.addExpense(expense);
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("R\$ ${flight['price']} atribuído à viagem para ${trip.destination}!"),
+        content: Text(
+            "R\$ ${flight['price']} atribuído à viagem para ${trip.destination}!"),
         backgroundColor: Colors.green,
         action: SnackBarAction(
           label: "VER SITE",
@@ -144,11 +148,14 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
             stream: _controller.getTrips(),
             builder: (context, snapshot) {
               final allTrips = snapshot.data ?? [];
-              final validTrips = allTrips.where((t) => t.status == 'active' || t.status == 'planned').toList();
+              final validTrips = allTrips
+                  .where((t) => t.status == 'active' || t.status == 'planned')
+                  .toList();
 
               if (validTrips.isEmpty) {
                 return const Center(
-                  child: Text("Crie uma viagem ativa ou planejada primeiro.", textAlign: TextAlign.center),
+                  child: Text("Crie uma viagem ativa ou planejada primeiro.",
+                      textAlign: TextAlign.center),
                 );
               }
 
@@ -158,11 +165,15 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                   final t = validTrips[i];
                   return ListTile(
                     leading: Icon(
-                      t.status == 'active' ? Icons.play_circle : Icons.calendar_today,
-                      color: t.status == 'active' ? Colors.green : Colors.orange,
+                      t.status == 'active'
+                          ? Icons.play_circle
+                          : Icons.calendar_today,
+                      color:
+                          t.status == 'active' ? Colors.green : Colors.orange,
                     ),
                     title: Text(t.destination),
-                    subtitle: Text(t.status == 'active' ? "Viagem Ativa" : "Planejada"),
+                    subtitle: Text(
+                        t.status == 'active' ? "Viagem Ativa" : "Planejada"),
                     onTap: () => Navigator.pop(context, t),
                   );
                 },
@@ -171,7 +182,9 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("CANCELAR")),
         ],
       ),
     );
@@ -187,11 +200,11 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
         children: [
           _buildSearchForm(),
           Expanded(
-            child: _isSearching 
-              ? const Center(child: CircularProgressIndicator())
-              : _results.isEmpty 
-                ? _buildEmptyState()
-                : _buildResultsList(),
+            child: _isSearching
+                ? const Center(child: CircularProgressIndicator())
+                : _results.isEmpty
+                    ? _buildEmptyState()
+                    : _buildResultsList(),
           ),
         ],
       ),
@@ -212,11 +225,17 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                   controller: _originController,
                   textCapitalization: TextCapitalization.characters,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: "Origem (IATA)",
-                    labelStyle: TextStyle(color: Colors.white70),
-                    prefixIcon: Icon(Icons.flight_takeoff, color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon:
+                        const Icon(Icons.flight_takeoff, color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white38)),
+                    focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 2)),
                   ),
                 ),
               ),
@@ -226,11 +245,17 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                   controller: _destController,
                   textCapitalization: TextCapitalization.characters,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: "Destino (IATA)",
-                    labelStyle: TextStyle(color: Colors.white70),
-                    prefixIcon: Icon(Icons.flight_land, color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    prefixIcon:
+                        const Icon(Icons.flight_land, color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white38)),
+                    focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white, width: 2)),
                   ),
                 ),
               ),
@@ -238,7 +263,8 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
           ),
           const SizedBox(height: 12),
           // Lista de sugestões de destinos
-          const Text("Sugestões:", style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const Text("Sugestões:",
+              style: TextStyle(color: Colors.white70, fontSize: 12)),
           const SizedBox(height: 8),
           SizedBox(
             height: 30,
@@ -251,8 +277,10 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
                     padding: EdgeInsets.zero,
-                    label: Text(suggestion['name']!, style: const TextStyle(fontSize: 11)),
-                    labelStyle: const TextStyle(color: Colors.white),
+                    backgroundColor: Colors.blue[700],
+                    label: Text(suggestion['name']!,
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.white)),
                     onPressed: () {
                       setState(() {
                         _destController.text = suggestion['code']!;
@@ -282,9 +310,12 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                     decoration: const InputDecoration(
                       labelText: "Data",
                       labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
+                      filled: false,
+                      enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white38)),
                     ),
-                    child: Text(DateFormat('dd/MM/yyyy').format(_selectedDate), style: const TextStyle(color: Colors.white)),
+                    child: Text(DateFormat('dd/MM/yyyy').format(_selectedDate),
+                        style: const TextStyle(color: Colors.white)),
                   ),
                 ),
               ),
@@ -296,7 +327,10 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                   isExpanded: true,
                   style: const TextStyle(color: Colors.white),
                   underline: Container(height: 1, color: Colors.white38),
-                  items: _classes.map((c) => DropdownMenuItem(value: c['id'], child: Text(c['label']!))).toList(),
+                  items: _classes
+                      .map((c) => DropdownMenuItem(
+                          value: c['id'], child: Text(c['label']!)))
+                      .toList(),
                   onChanged: (val) => setState(() => _selectedClass = val!),
                 ),
               ),
@@ -308,8 +342,11 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
             height: 50,
             child: ElevatedButton(
               onPressed: _searchFlights,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-              child: const Text("BUSCAR NO SKYSCANNER", style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white),
+              child: const Text("BUSCAR NO SKYSCANNER",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -325,7 +362,8 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
         final f = _results[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -333,18 +371,27 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(f['company'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text(f['company'],
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18)),
                     Text(f['time'], style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(Icons.timer_outlined, size: 14, color: Colors.grey),
+                    const Icon(Icons.timer_outlined,
+                        size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
-                    Text(f['duration'], style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(f['duration'],
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 12)),
                     const Spacer(),
-                    Text("R\$ ${f['price'].toStringAsFixed(2)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
+                    Text("R\$ ${f['price'].toStringAsFixed(2)}",
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green)),
                   ],
                 ),
                 const Divider(height: 30),
@@ -378,9 +425,11 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.airplane_ticket_outlined, size: 80, color: Colors.grey[300]),
+          Icon(Icons.airplane_ticket_outlined,
+              size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          const Text("Busque os melhores preços via Skyscanner", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          const Text("Busque os melhores preços via Skyscanner",
+              style: TextStyle(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

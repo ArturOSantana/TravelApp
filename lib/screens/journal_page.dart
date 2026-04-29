@@ -28,9 +28,8 @@ class _JournalPageState extends State<JournalPage> {
     await Share.share(
       message,
       subject: "Álbum de Viagem",
-      sharePositionOrigin: box != null
-          ? box.localToGlobal(Offset.zero) & box.size
-          : null,
+      sharePositionOrigin:
+          box != null ? box.localToGlobal(Offset.zero) & box.size : null,
     );
   }
 
@@ -39,7 +38,6 @@ class _JournalPageState extends State<JournalPage> {
     final controller = TripController();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
       appBar: AppBar(
         title: Semantics(
           header: true,
@@ -86,7 +84,7 @@ class _JournalPageState extends State<JournalPage> {
       floatingActionButton: Semantics(
         label: "Adicionar novo registro ou foto à viagem",
         child: FloatingActionButton.extended(
-          backgroundColor: Colors.deepPurple,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           label: const Text(
             "NOVO REGISTRO",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -341,10 +339,10 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Widget _errorImage() => Container(
-    height: 200,
-    color: Colors.grey[100],
-    child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
-  );
+        height: 200,
+        color: Colors.grey[100],
+        child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+      );
 
   Widget _buildReactionBar(JournalEntry entry) {
     final controller = TripController();

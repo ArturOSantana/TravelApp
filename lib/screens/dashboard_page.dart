@@ -81,16 +81,18 @@ class _DashboardPageState extends State<DashboardPage> {
                           Icon(
                             Icons.error_outline,
                             size: 64,
-                            color: Colors.red[300],
+                            color: Theme.of(context).colorScheme.error,
                           ),
                           const SizedBox(height: 16),
                           const Text("Erro ao carregar notificações"),
                           const SizedBox(height: 8),
                           Text(
                             snapshot.error.toString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -113,7 +115,10 @@ class _DashboardPageState extends State<DashboardPage> {
                           Icon(
                             Icons.notifications_none,
                             size: 64,
-                            color: Colors.grey[300],
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withOpacity(0.5),
                           ),
                           const SizedBox(height: 16),
                           const Text("Nenhuma notificação por enquanto."),
@@ -133,7 +138,10 @@ class _DashboardPageState extends State<DashboardPage> {
                           Icon(
                             Icons.notifications_none,
                             size: 64,
-                            color: Colors.grey[300],
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withOpacity(0.5),
                           ),
                           const SizedBox(height: 16),
                           const Text("Nenhuma notificação por enquanto."),
@@ -192,8 +200,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                     : FontWeight.bold,
                                 color:
                                     notif.type == NotificationType.safetyAlert
-                                    ? Colors.orange[900]
-                                    : null,
+                                        ? Theme.of(context).colorScheme.error
+                                        : null,
                               ),
                             ),
                             subtitle: Column(
@@ -221,7 +229,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ).format(notif.createdAt),
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey[600],
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
                                   ),
                                 ),
                               ],
@@ -336,7 +346,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             const SizedBox(height: 20),
-
             _buildMainCard(
               context,
               "Minhas Viagens",
@@ -349,9 +358,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 MaterialPageRoute(builder: (context) => const TripsPage()),
               ),
             ),
-
             const SizedBox(height: 15),
-
             Row(
               children: [
                 Expanded(
@@ -387,7 +394,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 25),
             Semantics(
               header: true,
@@ -400,7 +406,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             const SizedBox(height: 15),
-
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -482,8 +487,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       Text(
                         sub,
-                        style: const TextStyle(
-                          color: Colors.black54,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 13,
                         ),
                         maxLines: 1,
@@ -492,10 +497,10 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios,
                   size: 14,
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ],
             ),

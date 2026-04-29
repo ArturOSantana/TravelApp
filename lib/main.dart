@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
@@ -15,6 +16,7 @@ import 'services/notification_service.dart';
 import 'services/push_notification_service.dart';
 import 'services/cache_service.dart';
 import 'theme/app_theme.dart';
+import 'controllers/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,59 +48,65 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Travel App',
-      // Tema claro com design system completo e acessível
-      theme: AppTheme.lightTheme,
-      // Forçar sempre tema claro
-      themeMode: ThemeMode.light,
-      home: const AppInitializer(),
-      onGenerateRoute: (settings) {
-        final Uri uri = Uri.parse(settings.name ?? '/');
+    return ChangeNotifierProvider(
+      create: (_) => ThemeController(),
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Travel App',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeController.themeMode,
+            home: const AppInitializer(),
+            onGenerateRoute: (settings) {
+              final Uri uri = Uri.parse(settings.name ?? '/');
 
-        if (uri.pathSegments.length == 2 &&
-            uri.pathSegments.first == 'journal') {
-          final String tripId = uri.pathSegments[1];
-          return MaterialPageRoute(
-            builder: (context) => JournalPage(tripId: tripId),
-            settings: settings,
+              if (uri.pathSegments.length == 2 &&
+                  uri.pathSegments.first == 'journal') {
+                final String tripId = uri.pathSegments[1];
+                return MaterialPageRoute(
+                  builder: (context) => JournalPage(tripId: tripId),
+                  settings: settings,
+                );
+              }
+
+              switch (uri.path) {
+                case '/':
+                  return MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                    settings: settings,
+                  );
+                case '/onboarding':
+                  return MaterialPageRoute(
+                    builder: (context) => const OnboardingPage(),
+                    settings: settings,
+                  );
+                case '/register':
+                  return MaterialPageRoute(
+                    builder: (context) => const RegisterPage(),
+                    settings: settings,
+                  );
+                case '/home':
+                  return MaterialPageRoute(
+                    builder: (context) => const DashboardPage(),
+                    settings: settings,
+                  );
+                case '/community':
+                  return MaterialPageRoute(
+                    builder: (context) => const CommunityPage(),
+                    settings: settings,
+                  );
+                default:
+                  return MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                    settings: settings,
+                  );
+              }
+            },
           );
-        }
-
-        switch (uri.path) {
-          case '/':
-            return MaterialPageRoute(
-              builder: (context) => const LoginPage(),
-              settings: settings,
-            );
-          case '/onboarding':
-            return MaterialPageRoute(
-              builder: (context) => const OnboardingPage(),
-              settings: settings,
-            );
-          case '/register':
-            return MaterialPageRoute(
-              builder: (context) => const RegisterPage(),
-              settings: settings,
-            );
-          case '/home':
-            return MaterialPageRoute(
-              builder: (context) => const DashboardPage(),
-              settings: settings,
-            );
-          case '/community':
-            return MaterialPageRoute(
-              builder: (context) => const CommunityPage(),
-              settings: settings,
-            );
-          default:
-            return MaterialPageRoute(
-              builder: (context) => const LoginPage(),
-              settings: settings,
-            );
-        }
-      },
+        },
+      ),
     );
   }
 }

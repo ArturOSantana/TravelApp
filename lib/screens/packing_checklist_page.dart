@@ -24,11 +24,9 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
       appBar: AppBar(
         title: const Text('Checklist da Viagem'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         actions: [
           IconButton(
             icon: const Icon(Icons.library_add_outlined),
@@ -46,8 +44,7 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
         onPressed: () => _showAddItemDialog(context),
         icon: const Icon(Icons.add),
         label: const Text('Novo item'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: SafeArea(
         child: StreamBuilder<PackingChecklistViewData>(
@@ -95,7 +92,7 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.14),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.14),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -159,7 +156,7 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
             child: LinearProgressIndicator(
               value: viewData.progress,
               minHeight: 7,
-              backgroundColor: Colors.white24,
+              backgroundColor: Colors.white.withOpacity(0.24),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ),
@@ -173,11 +170,11 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -261,15 +258,15 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
         title: Text(category,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        leading:
-            Icon(_categoryIcon(category), color: Colors.deepPurple, size: 20),
+        leading: Icon(_categoryIcon(category),
+            color: Theme.of(context).colorScheme.primary, size: 20),
         children: items.map((item) => _buildItemCard(item)).toList(),
       ),
     );
@@ -301,7 +298,12 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[350]),
+          Icon(
+            Icons.inventory_2_outlined,
+            size: 80,
+            color:
+                Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+          ),
           const SizedBox(height: 18),
           const Text('Seu checklist está vazio',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

@@ -68,9 +68,12 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Finalizar Viagem?"),
-        content: const Text("Isso moverá a viagem para o seu histórico de viagens concluídas."),
+        content: const Text(
+            "Isso moverá a viagem para o seu histórico de viagens concluídas."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             onPressed: () async {
@@ -92,9 +95,12 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Apagar Viagem?"),
-        content: const Text("Tem certeza que deseja excluir este planejamento?"),
+        content:
+            const Text("Tem certeza que deseja excluir este planejamento?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Manter")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Manter")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -116,12 +122,12 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     final bool isPlanned = widget.trip.status == 'planned';
     final bool isActive = widget.trip.status == 'active';
     final bool isCompleted = widget.trip.status == 'completed';
-    
+
     // URL estável para imagem de destino usando Unsplash Source
-    final String cityImageUrl = "https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1200&auto=format&fit=crop";
+    final String cityImageUrl =
+        "https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1200&auto=format&fit=crop";
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -129,15 +135,16 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
             pinned: true,
             elevation: 0,
             stretch: true,
-            backgroundColor: Colors.indigo[900],
+            backgroundColor: Theme.of(context).colorScheme.primary,
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Semantics(
                 label: "Botão voltar",
                 child: CircleAvatar(
-                  backgroundColor: Colors.black38,
+                  backgroundColor: Colors.black.withOpacity(0.3),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                    icon: const Icon(Icons.arrow_back,
+                        color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -187,17 +194,21 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                     right: 20,
                     child: Semantics(
                       header: true,
-                      label: "Cabeçalho da viagem para ${widget.trip.destination}",
+                      label:
+                          "Cabeçalho da viagem para ${widget.trip.destination}",
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 20),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withOpacity(0.25), width: 0.5),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 0.5),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,9 +227,12 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: Colors.indigoAccent.withOpacity(0.5),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -232,13 +246,18 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    const Icon(Icons.calendar_today_outlined, color: Colors.white70, size: 12),
+                                    const Icon(Icons.calendar_today_outlined,
+                                        color: Colors.white70, size: 12),
                                     const SizedBox(width: 6),
                                     Text(
-                                      widget.trip.startDate != null 
-                                          ? DateFormat('MMM yyyy').format(widget.trip.startDate!)
+                                      widget.trip.startDate != null
+                                          ? DateFormat('MMM yyyy')
+                                              .format(widget.trip.startDate!)
                                           : "A definir",
-                                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                                      style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500),
                                     ),
                                   ],
                                 ),
@@ -254,33 +273,62 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
             ),
             actions: [
               if (isPlanned)
-                _buildActionCircle(Icons.delete_outline, Colors.redAccent, "Apagar planejamento", _showDeleteDialog)
+                _buildActionCircle(Icons.delete_outline, Colors.redAccent,
+                    "Apagar planejamento", _showDeleteDialog)
               else if (isActive)
-                _buildActionCircle(Icons.check_circle_outline, Colors.greenAccent, "Finalizar viagem", _showFinalizeDialog),
-              
-              _buildActionCircle(Icons.group_outlined, Colors.white, "Ver membros do grupo", () {
-                 Navigator.push(context, MaterialPageRoute(builder: (context) => GroupMembersPage(trip: widget.trip)));
+                _buildActionCircle(
+                    Icons.check_circle_outline,
+                    Colors.greenAccent,
+                    "Finalizar viagem",
+                    _showFinalizeDialog),
+              _buildActionCircle(
+                  Icons.group_outlined, Colors.white, "Ver membros do grupo",
+                  () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            GroupMembersPage(trip: widget.trip)));
               }),
               const SizedBox(width: 10),
             ],
           ),
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 30, 20, 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Semantics(header: true, child: const Text("ESTADO ATUAL", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black38, letterSpacing: 1.5))),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      "ESTADO ATUAL",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _buildWeatherCard(),
                   const SizedBox(height: 20),
                   _buildStatusSection(isActive, isCompleted),
                   const SizedBox(height: 40),
-                  
-                  Semantics(header: true, child: const Text("GESTÃO DA VIAGEM", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black38, letterSpacing: 1.5))),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      "GESTÃO DA VIAGEM",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 15),
-
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -289,13 +337,24 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                     mainAxisSpacing: 16,
                     childAspectRatio: 1.25,
                     children: [
-                      _buildMenuCard(context, "Roteiro", Icons.explore_rounded, Colors.blue, "Planejar atividades"),
-                      _buildMenuCard(context, "Gastos", Icons.account_balance_wallet_rounded, Colors.green, "Controle financeiro"),
-                      _buildMenuCard(context, "Checklist", Icons.rule_rounded, Colors.orange, "Organizar bagagem"),
-                      _buildMenuCard(context, "Registros", Icons.auto_awesome_motion_rounded, Colors.pink, "Fotos e memórias"),
+                      _buildMenuCard(context, "Roteiro", Icons.explore_rounded,
+                          Colors.blue, "Planejar atividades"),
+                      _buildMenuCard(
+                          context,
+                          "Gastos",
+                          Icons.account_balance_wallet_rounded,
+                          Colors.green,
+                          "Controle financeiro"),
+                      _buildMenuCard(context, "Checklist", Icons.rule_rounded,
+                          Colors.orange, "Organizar bagagem"),
+                      _buildMenuCard(
+                          context,
+                          "Registros",
+                          Icons.auto_awesome_motion_rounded,
+                          Colors.pink,
+                          "Fotos e memórias"),
                     ],
                   ),
-
                   const SizedBox(height: 30),
                   _buildSecurityAction(context),
                 ],
@@ -307,7 +366,8 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     );
   }
 
-  Widget _buildActionCircle(IconData icon, Color color, String label, VoidCallback onTap) {
+  Widget _buildActionCircle(
+      IconData icon, Color color, String label, VoidCallback onTap) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Semantics(
@@ -317,7 +377,7 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
           onTap: onTap,
           child: CircleAvatar(
             radius: 20,
-            backgroundColor: Colors.black26,
+            backgroundColor: Colors.black.withOpacity(0.25),
             child: Icon(icon, color: color, size: 20),
           ),
         ),
@@ -326,41 +386,78 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
   }
 
   Widget _buildWeatherCard() {
-    if (_isLoadingWeather) return const LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent);
+    if (_isLoadingWeather)
+      return const LinearProgressIndicator(
+          minHeight: 2, backgroundColor: Colors.transparent);
     if (_weatherData == null) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: Colors.indigo.withOpacity(0.06), blurRadius: 30, offset: const Offset(0, 15))]
-      ),
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.06),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
+            )
+          ]),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(16)),
-            child: Text(_weatherData!['icon'], style: const TextStyle(fontSize: 32)),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(_weatherData!['icon'],
+                style: const TextStyle(fontSize: 32)),
           ),
           const SizedBox(width: 20),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("${_weatherData!['temp']}°C", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.black87)),
-              Text(_weatherData!['desc'].toString().toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.black38, fontWeight: FontWeight.w800, letterSpacing: 1)),
+              Text(
+                "${_weatherData!['temp']}°C",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              Text(
+                _weatherData!['desc'].toString().toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1,
+                ),
+              ),
             ],
           ),
           const Spacer(),
-          const Icon(Icons.cloud_sync_outlined, color: Colors.blueAccent, size: 24),
+          Icon(
+            Icons.cloud_sync_outlined,
+            color: Theme.of(context).colorScheme.primary,
+            size: 24,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildStatusSection(bool isActive, bool isCompleted) {
-    String text = isCompleted ? "VIAGEM CONCLUÍDA" : (isActive ? "EM ANDAMENTO" : "PRÓXIMA VIAGEM");
-    Color color = isCompleted ? Colors.grey : (isActive ? Colors.green : Colors.orangeAccent);
-    
+    String text = isCompleted
+        ? "VIAGEM CONCLUÍDA"
+        : (isActive ? "EM ANDAMENTO" : "PRÓXIMA VIAGEM");
+    Color color = isCompleted
+        ? Colors.grey
+        : (isActive ? Colors.green : Colors.orangeAccent);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -373,30 +470,58 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
         children: [
           Icon(Icons.info_outline_rounded, color: color, size: 16),
           const SizedBox(width: 10),
-          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.2)),
+          Text(text,
+              style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 10,
+                  letterSpacing: 1.2)),
         ],
       ),
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, String sub) {
+  Widget _buildMenuCard(BuildContext context, String title, IconData icon,
+      Color color, String sub) {
     return Semantics(
       button: true,
       label: "$title. $sub",
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: Colors.grey[100]!),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              if (title == "Roteiro") Navigator.push(context, MaterialPageRoute(builder: (context) => ItineraryPage(tripId: widget.trip.id)));
-              if (title == "Gastos") Navigator.push(context, MaterialPageRoute(builder: (context) => ExpensesPage(tripId: widget.trip.id)));
-              if (title == "Checklist") Navigator.push(context, MaterialPageRoute(builder: (context) => PackingChecklistPage(tripId: widget.trip.id)));
-              if (title == "Registros") Navigator.push(context, MaterialPageRoute(builder: (context) => JournalPage(tripId: widget.trip.id)));
+              if (title == "Roteiro")
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            ItineraryPage(tripId: widget.trip.id)));
+              if (title == "Gastos")
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            ExpensesPage(tripId: widget.trip.id)));
+              if (title == "Checklist")
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            PackingChecklistPage(tripId: widget.trip.id)));
+              if (title == "Registros")
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            JournalPage(tripId: widget.trip.id)));
             },
             borderRadius: BorderRadius.circular(28),
             child: Column(
@@ -404,11 +529,19 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: color.withOpacity(0.1), shape: BoxShape.circle),
                   child: Icon(icon, color: color, size: 28),
                 ),
                 const SizedBox(height: 12),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.black87)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
               ],
             ),
           ),
@@ -425,29 +558,48 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.red.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10))
+          ],
         ),
         child: Material(
           color: Colors.redAccent,
           borderRadius: BorderRadius.circular(28),
           child: InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SafetyPage(tripId: widget.trip.id))),
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => SafetyPage(tripId: widget.trip.id))),
             borderRadius: BorderRadius.circular(28),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: Row(
                 children: [
-                  const Icon(Icons.shield_rounded, color: Colors.white, size: 32),
+                  const Icon(Icons.shield_rounded,
+                      color: Colors.white, size: 32),
                   const SizedBox(width: 20),
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("SEGURANÇA", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1)),
-                      Text("Check-in de localização", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
+                      Text("SEGURANÇA",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              letterSpacing: 1)),
+                      Text("Check-in de localização",
+                          style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500)),
                     ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                  const Icon(Icons.arrow_forward_ios_rounded,
+                      color: Colors.white, size: 16),
                 ],
               ),
             ),

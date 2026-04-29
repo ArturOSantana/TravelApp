@@ -38,7 +38,8 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
 
   void _searchHotels() {
     if (_locationController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Informe a cidade ou hotel")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Informe a cidade ou hotel")));
       return;
     }
 
@@ -108,7 +109,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
     );
 
     await _controller.addExpense(expense);
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Reserva de R\$ ${hotel['price']} atribuída à viagem!"),
@@ -134,7 +135,9 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
             stream: _controller.getTrips(),
             builder: (context, snapshot) {
               final allTrips = snapshot.data ?? [];
-              final validTrips = allTrips.where((t) => t.status == 'active' || t.status == 'planned').toList();
+              final validTrips = allTrips
+                  .where((t) => t.status == 'active' || t.status == 'planned')
+                  .toList();
 
               if (validTrips.isEmpty) {
                 return const Center(
@@ -148,11 +151,15 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
                   final t = validTrips[i];
                   return ListTile(
                     leading: Icon(
-                      t.status == 'active' ? Icons.play_circle : Icons.calendar_today,
-                      color: t.status == 'active' ? Colors.green : Colors.orange,
+                      t.status == 'active'
+                          ? Icons.play_circle
+                          : Icons.calendar_today,
+                      color:
+                          t.status == 'active' ? Colors.green : Colors.orange,
                     ),
                     title: Text(t.destination),
-                    subtitle: Text(t.status == 'active' ? "Viagem Ativa" : "Planejada"),
+                    subtitle: Text(
+                        t.status == 'active' ? "Viagem Ativa" : "Planejada"),
                     onTap: () => Navigator.pop(context, t),
                   );
                 },
@@ -161,7 +168,9 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCELAR")),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("CANCELAR")),
         ],
       ),
     );
@@ -179,11 +188,11 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
         children: [
           _buildSearchForm(),
           Expanded(
-            child: _isSearching 
-              ? const Center(child: CircularProgressIndicator())
-              : _results.isEmpty 
-                ? _buildEmptyState()
-                : _buildResultsList(),
+            child: _isSearching
+                ? const Center(child: CircularProgressIndicator())
+                : _results.isEmpty
+                    ? _buildEmptyState()
+                    : _buildResultsList(),
           ),
         ],
       ),
@@ -200,15 +209,21 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
           TextField(
             controller: _locationController,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "Destino ou Nome do Hotel",
-              labelStyle: TextStyle(color: Colors.white70),
-              prefixIcon: Icon(Icons.location_on, color: Colors.white70),
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
+              labelStyle: const TextStyle(color: Colors.white70),
+              prefixIcon: const Icon(Icons.location_on, color: Colors.white70),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.1),
+              enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white38)),
+              focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white, width: 2)),
             ),
           ),
           const SizedBox(height: 12),
-          const Text("Sugestões:", style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const Text("Sugestões:",
+              style: TextStyle(color: Colors.white70, fontSize: 12)),
           const SizedBox(height: 8),
           SizedBox(
             height: 30,
@@ -220,10 +235,12 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    label: Text(s['name']!, style: const TextStyle(fontSize: 11)),
+                    label: Text(s['name']!,
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.white)),
                     backgroundColor: Colors.indigo[700],
-                    labelStyle: const TextStyle(color: Colors.white),
-                    onPressed: () => setState(() => _locationController.text = s['query']!),
+                    onPressed: () =>
+                        setState(() => _locationController.text = s['query']!),
                   ),
                 );
               },
@@ -233,11 +250,13 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
           Row(
             children: [
               Expanded(
-                child: _buildDateTile("Check-in", _checkInDate, (d) => setState(() => _checkInDate = d)),
+                child: _buildDateTile("Check-in", _checkInDate,
+                    (d) => setState(() => _checkInDate = d)),
               ),
               const SizedBox(width: 20),
               Expanded(
-                child: _buildDateTile("Check-out", _checkOutDate, (d) => setState(() => _checkOutDate = d)),
+                child: _buildDateTile("Check-out", _checkOutDate,
+                    (d) => setState(() => _checkOutDate = d)),
               ),
             ],
           ),
@@ -247,8 +266,11 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
             height: 50,
             child: ElevatedButton(
               onPressed: _searchHotels,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.pinkAccent, foregroundColor: Colors.white),
-              child: const Text("BUSCAR HOTÉIS", style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.pinkAccent,
+                  foregroundColor: Colors.white),
+              child: const Text("BUSCAR HOTÉIS",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -256,7 +278,8 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
     );
   }
 
-  Widget _buildDateTile(String label, DateTime date, Function(DateTime) onPicked) {
+  Widget _buildDateTile(
+      String label, DateTime date, Function(DateTime) onPicked) {
     return InkWell(
       onTap: () async {
         final picked = await showDatePicker(
@@ -271,9 +294,12 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.white70),
-          enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
+          filled: false,
+          enabledBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white38)),
         ),
-        child: Text(DateFormat('dd/MM/yyyy').format(date), style: const TextStyle(color: Colors.white)),
+        child: Text(DateFormat('dd/MM/yyyy').format(date),
+            style: const TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -286,7 +312,8 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
         final h = _results[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -295,9 +322,18 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(h['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+                    Expanded(
+                        child: Text(h['name'],
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 18))),
                     Row(
-                      children: List.generate(5, (i) => Icon(Icons.star, size: 14, color: i < h['stars'] ? Colors.amber : Colors.grey[300])),
+                      children: List.generate(
+                          5,
+                          (i) => Icon(Icons.star,
+                              size: 14,
+                              color: i < h['stars']
+                                  ? Colors.amber
+                                  : Colors.grey[300])),
                     ),
                   ],
                 ),
@@ -305,26 +341,43 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.indigo[50], borderRadius: BorderRadius.circular(4)),
-                      child: Text(h['rating'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                          color: Colors.indigo[50],
+                          borderRadius: BorderRadius.circular(4)),
+                      child: Text(h['rating'].toString(),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.indigo)),
                     ),
                     const SizedBox(width: 8),
-                    const Text("Muito bom", style: TextStyle(color: Colors.grey)),
+                    const Text("Muito bom",
+                        style: TextStyle(color: Colors.grey)),
                     const Spacer(),
-                    Text("R\$ ${h['price'].toStringAsFixed(2)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                    Text("R\$ ${h['price'].toStringAsFixed(2)}",
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.indigo)),
                   ],
                 ),
-                const Text("/ noite", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                const Text("/ noite",
+                    style: TextStyle(fontSize: 10, color: Colors.grey)),
                 const Divider(height: 30),
                 Row(
                   children: [
-                    Expanded(child: OutlinedButton(onPressed: () => _openHotelsCom(h['url']), child: const Text("VER SITE"))),
+                    Expanded(
+                        child: OutlinedButton(
+                            onPressed: () => _openHotelsCom(h['url']),
+                            child: const Text("VER SITE"))),
                     const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () => _bookHotel(h),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo[900], foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo[900],
+                            foregroundColor: Colors.white),
                         child: const Text("ATRIBUIR VALOR"),
                       ),
                     ),
@@ -345,7 +398,8 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
         children: [
           Icon(Icons.apartment_rounded, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          const Text("Encontre sua hospedagem ideal", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          const Text("Encontre sua hospedagem ideal",
+              style: TextStyle(color: Colors.grey, fontSize: 16)),
         ],
       ),
     );

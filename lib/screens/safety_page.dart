@@ -133,31 +133,30 @@ class _SafetyPageState extends State<SafetyPage> {
       _hasExitedSafeZone = false;
     });
 
-    _positionStream =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.best,
-            distanceFilter: 5,
-          ),
-        ).listen((Position position) {
-          if (_safeDestination != null && _timerActive) {
-            double distance = Geolocator.distanceBetween(
-              position.latitude,
-              position.longitude,
-              _safeDestination!.latitude,
-              _safeDestination!.longitude,
-            );
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 5,
+      ),
+    ).listen((Position position) {
+      if (_safeDestination != null && _timerActive) {
+        double distance = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          _safeDestination!.latitude,
+          _safeDestination!.longitude,
+        );
 
-            if (distance < 50) {
-              _handleArrival();
-            }
+        if (distance < 50) {
+          _handleArrival();
+        }
 
-            if (distance > 300 && !_hasExitedSafeZone) {
-              _hasExitedSafeZone = true;
-              _notifyExitSafeZone(position);
-            }
-          }
-        });
+        if (distance > 300 && !_hasExitedSafeZone) {
+          _hasExitedSafeZone = true;
+          _notifyExitSafeZone(position);
+        }
+      }
+    });
 
     _safetyTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
@@ -370,14 +369,12 @@ class _SafetyPageState extends State<SafetyPage> {
 
   Future<String> _getAddressFromCoords(double lat, double lon) async {
     try {
-      final response = await http
-          .get(
-            Uri.parse(
-              'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon&accept-language=pt-BR',
-            ),
-            headers: {'User-Agent': 'TravelPlannerApp/1.0'},
-          )
-          .timeout(const Duration(seconds: 7));
+      final response = await http.get(
+        Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lon&accept-language=pt-BR',
+        ),
+        headers: {'User-Agent': 'TravelPlannerApp/1.0'},
+      ).timeout(const Duration(seconds: 7));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final parts = data['display_name'].toString().split(',');
@@ -440,14 +437,12 @@ class _SafetyPageState extends State<SafetyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FA),
       appBar: AppBar(
         title: const Text(
           "Segurança Ativa",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.error,
         elevation: 0,
         centerTitle: true,
       ),
@@ -575,9 +570,8 @@ class _SafetyPageState extends State<SafetyPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _safeDestinationName != null
-            ? Colors.blue.shade50
-            : Colors.white,
+        color:
+            _safeDestinationName != null ? Colors.blue.shade50 : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: _safeDestinationName != null
@@ -744,8 +738,7 @@ class _SafetyPageState extends State<SafetyPage> {
             child: ElevatedButton(
               onPressed: _stopMonitoring,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -905,7 +898,7 @@ class _SafetyPageState extends State<SafetyPage> {
           ),
         ),
         onPressed: () => _startSafetyTimer(min),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         side: BorderSide(color: Colors.blueAccent.withOpacity(0.2)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),

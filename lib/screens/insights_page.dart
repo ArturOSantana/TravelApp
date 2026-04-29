@@ -49,14 +49,11 @@ class _InsightsPageState extends State<InsightsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Insights & Análise",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0,
         actions: [
           if (!_showGeneral)
@@ -150,8 +147,8 @@ class _InsightsPageState extends State<InsightsPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.deepPurple,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              foregroundColor: Theme.of(context).colorScheme.primary,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             child: const Text("Upgrade"),
@@ -320,7 +317,7 @@ class _InsightsPageState extends State<InsightsPage> {
           const SizedBox(height: 20),
           LinearProgressIndicator(
             value: percent > 1 ? 1 : percent,
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             color: isOver ? Colors.red : Colors.green,
             minHeight: 10,
           ),
