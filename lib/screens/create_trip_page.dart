@@ -67,7 +67,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
       return;
     }
 
-    // 🔒 VERIFICAÇÃO PREMIUM: Limitar criação de viagens
+    //verificao do premium
     final canCreate = await SubscriptionService.canCreateTrip();
     if (!canCreate) {
       if (!mounted) return;

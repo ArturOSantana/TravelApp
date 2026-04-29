@@ -49,6 +49,9 @@ app.*.map.json
 .env.local
 .env.*.local
 
+# API Keys - nao sobe
+lib/config/api_keys.dart
+
 # Firebase
 .firebase/
 .firebaserc

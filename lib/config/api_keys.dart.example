@@ -1,0 +1,21 @@
+/// Configuração de API Keys - ARQUIVO DE EXEMPLO
+/// 
+/// INSTRUÇÕES:
+/// 1. Copie este arquivo para 'api_keys.dart' (sem o .example)
+/// 2. Preencha com suas chaves reais
+/// 3. O arquivo api_keys.dart está no .gitignore e NÃO será commitado
+/// 
+/// COMO OBTER AS KEYS:
+/// - OpenTripMap: https://opentripmap.io/product
+/// - Foursquare: https://location.foursquare.com/developer/
+/// - Geoapify: https://www.geoapify.com/get-started-with-maps-api
+class ApiKeys {
+  // OpenTripMap - Pontos Turísticos
+  static const String openTripMap = 'COLE_SUA_KEY_AQUI';
+  
+  // Foursquare - Restaurantes e Locais
+  static const String foursquare = 'COLE_SUA_KEY_AQUI';
+  
+  // Geoapify - Rotas e Mapas
+  static const String geoapify = 'COLE_SUA_KEY_AQUI';
+}

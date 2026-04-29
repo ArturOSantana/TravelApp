@@ -6,7 +6,6 @@ import '../models/trip.dart';
 import '../models/expense.dart';
 import '../controllers/trip_controller.dart';
 
-/// Envia notificações contextuais baseadas no comportamento do usuário
 class SmartNotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -14,12 +13,11 @@ class SmartNotificationService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   static Future<void> initialize() async {
-    // Agendar verificações periódicas
+    //  periódicas
     await _scheduleSmartChecks();
   }
 
   static Future<void> _scheduleSmartChecks() async {
-    // Verificar viagens próximas (diariamente às 9h)
     await _scheduleDaily(
       id: 1000,
       hour: 9,
@@ -116,7 +114,7 @@ class SmartNotificationService {
         if (trip.startDate != null) {
           final daysUntil = trip.startDate!.difference(DateTime.now()).inDays;
 
-          // Notificações baseadas em proximidade da viagem
+//nao apaga isso anta
           if (daysUntil == 1) {
             await _sendNotification(
               id: trip.id.hashCode,
@@ -147,7 +145,6 @@ class SmartNotificationService {
     }
   }
 
-  /// Verifica status do orçamento e envia alertas
   static Future<void> _checkBudgetStatus() async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -162,7 +159,6 @@ class SmartNotificationService {
       for (var doc in tripsSnapshot.docs) {
         final trip = Trip.fromFirestore(doc);
 
-        // Buscar despesas da viagem
         final expensesSnapshot = await FirebaseFirestore.instance
             .collection('expenses')
             .where('tripId', isEqualTo: trip.id)

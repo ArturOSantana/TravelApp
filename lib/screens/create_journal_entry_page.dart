@@ -39,7 +39,7 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
     }
   }
 
-  // Converte a imagem para uma String Base64 (Texto)
+  // converte a imagem para uma String
   Future<String> _imageToBase64(File file) async {
     List<int> imageBytes = await file.readAsBytes();
     return base64Encode(imageBytes);
