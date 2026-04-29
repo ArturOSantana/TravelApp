@@ -51,7 +51,7 @@ class _InsightsPageState extends State<InsightsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Insights & Análise",
+          "Resumo & Análise",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
@@ -116,7 +116,7 @@ class _InsightsPageState extends State<InsightsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Desbloqueie Insights Avançados",
+                  "Desbloqueie Resumos Avançados",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

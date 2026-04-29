@@ -416,7 +416,7 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 _buildGridItem(
                   context,
-                  "Insights",
+                  "Resumo",
                   Icons.analytics_rounded,
                   Colors.deepOrange,
                   "Ver estatísticas financeiras",
