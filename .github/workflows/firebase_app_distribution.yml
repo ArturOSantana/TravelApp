@@ -29,6 +29,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create API Keys file
+        run: |
+          cat > lib/config/api_keys.dart << 'EOF'
+          class ApiKeys {
+            static const String geoapify = '${{ secrets.GEOAPIFY_API_KEY }}';
+            static const String openWeatherMap = '${{ secrets.OPENWEATHERMAP_API_KEY }}';
+          }
+          EOF
+
       - name: Run Tests
         run: flutter test
 
@@ -52,6 +61,6 @@ jobs:
       - name: Upload to Firebase App Distribution
         uses: w9jds/firebase-action@master
         with:
-          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS" --release-notes-file release_notes.txt
+          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS,TCC_APRESENTACAO" --release-notes-file release_notes.txt
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
