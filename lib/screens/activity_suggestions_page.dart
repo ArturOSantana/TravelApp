@@ -223,5 +223,3 @@ class _ActivitySuggestionsPageState extends State<ActivitySuggestionsPage>
     }
   }
 }
-
-// Made with Bob

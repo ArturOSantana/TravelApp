@@ -614,5 +614,3 @@ class _SmartSuggestionsPageState extends State<SmartSuggestionsPage>
     );
   }
 }
-
-// Made with Bob

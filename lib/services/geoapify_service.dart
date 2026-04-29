@@ -7,7 +7,6 @@ class GeoapifyService {
   static const String _apiKey = ApiKeys.geoapify;
   static const String _baseUrl = 'https://api.geoapify.com/v1';
 
- 
   static Future<Map<String, dynamic>?> calculateRoute({
     required double startLat,
     required double startLon,
@@ -375,5 +374,3 @@ class GeoapifyService {
     return degrees * pi / 180;
   }
 }
-
-// Made with Bob
