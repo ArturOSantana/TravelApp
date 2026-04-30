@@ -6,6 +6,7 @@ import '../models/trip.dart';
 import '../models/expense.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
+import '../theme/app_colors.dart';
 import 'premium_upgrade_page.dart';
 
 class InsightsPage extends StatefulWidget {
@@ -102,14 +103,13 @@ class _InsightsPageState extends State<InsightsPage> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.deepPurple[700]!, Colors.deepPurple[400]!],
-        ),
+        gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.workspace_premium, color: Colors.white, size: 32),
+          const Icon(Icons.workspace_premium,
+              color: AppColors.textOnPrimary, size: 32),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -118,7 +118,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 const Text(
                   "Desbloqueie Resumos Avançados",
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textOnPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -127,7 +127,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 Text(
                   "Análises com IA, relatórios PDF e muito mais!",
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: AppColors.textOnPrimary.withOpacity(0.9),
                     fontSize: 12,
                   ),
                 ),
@@ -171,9 +171,11 @@ class _InsightsPageState extends State<InsightsPage> {
             onSelected: (selected) {
               if (selected) setState(() => _showGeneral = true);
             },
-            selectedColor: Colors.deepPurple,
+            selectedColor: AppColors.primary,
             labelStyle: TextStyle(
-              color: _showGeneral ? Colors.white : Colors.black,
+              color: _showGeneral
+                  ? AppColors.textOnPrimary
+                  : AppColors.textPrimary,
             ),
           ),
           const SizedBox(width: 8),
@@ -194,9 +196,11 @@ class _InsightsPageState extends State<InsightsPage> {
                     });
                   }
                 },
-                selectedColor: Colors.deepPurple,
+                selectedColor: AppColors.primary,
                 labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black,
+                  color: isSelected
+                      ? AppColors.textOnPrimary
+                      : AppColors.textPrimary,
                 ),
               ),
             );
@@ -222,7 +226,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 "Viagens",
                 trips.length.toString(),
                 Icons.map,
-                Colors.blue,
+                AppColors.info,
               ),
             ),
             const SizedBox(width: 12),
@@ -231,7 +235,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 "Concluídas",
                 completed.length.toString(),
                 Icons.check_circle,
-                Colors.green,
+                AppColors.success,
               ),
             ),
           ],
@@ -295,10 +299,10 @@ class _InsightsPageState extends State<InsightsPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isOver ? Colors.red[50] : Colors.green[50],
+        color: isOver ? AppColors.errorBackground : AppColors.successBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isOver ? Colors.red[100]! : Colors.green[100]!,
+          color: isOver ? AppColors.errorLight : AppColors.successLight,
         ),
       ),
       child: Column(
@@ -310,7 +314,7 @@ class _InsightsPageState extends State<InsightsPage> {
               _buildSimpleInfo(
                 "Gasto Real",
                 _currencyFormat.format(spent),
-                color: isOver ? Colors.red : Colors.green,
+                color: isOver ? AppColors.error : AppColors.success,
               ),
             ],
           ),
@@ -318,7 +322,7 @@ class _InsightsPageState extends State<InsightsPage> {
           LinearProgressIndicator(
             value: percent > 1 ? 1 : percent,
             backgroundColor: Theme.of(context).colorScheme.surface,
-            color: isOver ? Colors.red : Colors.green,
+            color: isOver ? AppColors.error : AppColors.success,
             minHeight: 10,
           ),
           const SizedBox(height: 8),
@@ -328,7 +332,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 : "Você ainda tem ${_currencyFormat.format(budget - spent)} disponíveis",
             style: TextStyle(
               fontSize: 12,
-              color: isOver ? Colors.red : Colors.green[800],
+              color: isOver ? AppColors.error : AppColors.success,
             ),
           ),
         ],
@@ -363,8 +367,8 @@ class _InsightsPageState extends State<InsightsPage> {
               Expanded(
                 child: LinearProgressIndicator(
                   value: totalSpent > 0 ? entry.value / totalSpent : 0,
-                  color: Colors.deepPurple,
-                  backgroundColor: Colors.grey[200],
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.divider,
                 ),
               ),
               const SizedBox(width: 10),
@@ -410,7 +414,9 @@ class _InsightsPageState extends State<InsightsPage> {
             value,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(label,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 12)),
         ],
       ),
     );
@@ -421,9 +427,9 @@ class _InsightsPageState extends State<InsightsPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: AppColors.divider),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -445,7 +451,9 @@ class _InsightsPageState extends State<InsightsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label,
+            style:
+                const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         Text(
           value,
           style: TextStyle(
@@ -466,8 +474,8 @@ class _InsightsPageState extends State<InsightsPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStyleItem("Solo", solo, Icons.person, Colors.orange),
-          _buildStyleItem("Grupo", group, Icons.group, Colors.indigo),
+          _buildStyleItem("Solo", solo, Icons.person, AppColors.warning),
+          _buildStyleItem("Grupo", group, Icons.group, AppColors.info),
         ],
       ),
     );
@@ -485,7 +493,9 @@ class _InsightsPageState extends State<InsightsPage> {
           count.toString(),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label,
+            style:
+                const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
       ],
     );
   }
@@ -494,9 +504,7 @@ class _InsightsPageState extends State<InsightsPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.deepPurple[700]!, Colors.deepPurple[400]!],
-        ),
+        gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -504,12 +512,13 @@ class _InsightsPageState extends State<InsightsPage> {
         children: [
           const Row(
             children: [
-              Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+              Icon(Icons.auto_awesome,
+                  color: AppColors.textOnPrimary, size: 20),
               SizedBox(width: 8),
               Text(
                 "Análise Inteligente",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -521,7 +530,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 ? "Sua tendência atual indica preferência por destinos urbanos. Recomendamos planejar sua próxima viagem com 3 meses de antecedência para economizar 15%."
                 : message,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.textOnPrimary,
               fontSize: 14,
               height: 1.4,
             ),
