@@ -213,16 +213,20 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       }
 
       double finalVal = originalVal;
+      double exchangeRate = 1.0;
+      DateTime? conversionDate;
 
       if (_selectedCurrency != _trip!.baseCurrency) {
         double? rate = await ExchangeRateService.getExchangeRate(
           from: _selectedCurrency,
           to: _trip!.baseCurrency,
         );
-        finalVal = originalVal * (rate ?? 1.0);
+        exchangeRate = rate ?? 1.0;
+        finalVal = originalVal * exchangeRate;
+        conversionDate = DateTime.now();
       }
 
-      final Map<String, double> finalSplits = _buildFinalSplits(originalVal);
+      final Map<String, double> finalSplits = _buildFinalSplits(finalVal);
       if (finalSplits.isEmpty) return;
 
       final expense = Expense(
@@ -237,6 +241,8 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
         date: DateTime.now(),
         splitType: _selectedSplitType,
         splits: finalSplits,
+        exchangeRateUsed: exchangeRate,
+        conversionDate: conversionDate,
       );
 
       await _controller.addExpense(expense);

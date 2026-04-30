@@ -7,13 +7,15 @@ class Expense {
   final String tripId;
   final String title;
   final double value;
-  final double originalValue; 
-  final String currency; 
+  final double originalValue;
+  final String currency;
   final String category;
-  final String payerId; 
-  final Map<String, double> splits; 
+  final String payerId;
+  final Map<String, double> splits;
   final SplitType splitType;
   final DateTime date;
+  final double exchangeRateUsed;
+  final DateTime? conversionDate;
 
   Expense({
     required this.id,
@@ -27,6 +29,8 @@ class Expense {
     this.splits = const {},
     this.splitType = SplitType.equal,
     required this.date,
+    this.exchangeRateUsed = 1.0,
+    this.conversionDate,
   });
 
   Map<String, dynamic> toMap() {
@@ -41,6 +45,8 @@ class Expense {
       'splits': splits,
       'splitType': splitType.name,
       'date': date,
+      'exchangeRateUsed': exchangeRateUsed,
+      'conversionDate': conversionDate,
     };
   }
 
@@ -61,6 +67,10 @@ class Expense {
         orElse: () => SplitType.equal,
       ),
       date: (data['date'] as Timestamp).toDate(),
+      exchangeRateUsed: (data['exchangeRateUsed'] ?? 1.0).toDouble(),
+      conversionDate: data['conversionDate'] != null
+          ? (data['conversionDate'] as Timestamp).toDate()
+          : null,
     );
   }
 }

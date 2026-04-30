@@ -282,7 +282,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 20),
 
-                // Modo Noturno
+                // Modo Noturno (talvaz nao funcione)
                 Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceVariant,
