@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/service_model.dart';
 import '../controllers/trip_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_colors.dart';
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
@@ -238,12 +239,17 @@ class _CommunityPageState extends State<CommunityPage> {
                           children: [
                             _iconStat(
                                 Icons.favorite,
-                                isLiked ? Colors.red : Colors.grey[400]!,
+                                isLiked
+                                    ? AppColors.error
+                                    : AppColors.textDisabled,
                                 '${post.likes.length}',
                                 "curtidas"),
                             const SizedBox(width: 20),
-                            _iconStat(Icons.comment_outlined, Colors.grey[400]!,
-                                '${post.comments.length}', "comentários"),
+                            _iconStat(
+                                Icons.comment_outlined,
+                                AppColors.textDisabled,
+                                '${post.comments.length}',
+                                "comentários"),
                           ],
                         ),
                       ],
@@ -280,7 +286,7 @@ class _CommunityPageState extends State<CommunityPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.overlay,
       builder: (context) => StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection('services')
@@ -330,7 +336,9 @@ class _CommunityPageState extends State<CommunityPage> {
                                     isLiked
                                         ? Icons.favorite
                                         : Icons.favorite_border,
-                                    color: isLiked ? Colors.red : Colors.grey,
+                                    color: isLiked
+                                        ? AppColors.error
+                                        : AppColors.textDisabled,
                                     size: 28),
                                 onPressed: () => _controller.toggleLikeService(
                                     post.id, post.likes),
@@ -413,7 +421,7 @@ class _CommunityPageState extends State<CommunityPage> {
                               decoration: InputDecoration(
                                 hintText: "Adicione um comentário...",
                                 filled: true,
-                                fillColor: Colors.grey[100],
+                                fillColor: AppColors.surfaceVariant,
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(25),
                                     borderSide: BorderSide.none),
@@ -428,10 +436,10 @@ class _CommunityPageState extends State<CommunityPage> {
                           button: true,
                           label: "Enviar comentário",
                           child: CircleAvatar(
-                            backgroundColor: Colors.indigo,
+                            backgroundColor: AppColors.primary,
                             child: IconButton(
                               icon: const Icon(Icons.send,
-                                  color: Colors.white, size: 20),
+                                  color: AppColors.textOnPrimary, size: 20),
                               onPressed: () async {
                                 if (commentController.text.trim().isNotEmpty) {
                                   final text = commentController.text.trim();
