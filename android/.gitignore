@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+generate_icons.sh
+/Users/artur.santana/estudos/etec/TCC/generate_icons.sh

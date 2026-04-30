@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                         content: Semantics(
                           liveRegion: true,
                           child: const Text(
-                            "Este e-mail não está cadastrado em nossa base. ❌",
+                            "Este e-mail não está cadastrado em nossa base. ",
                           ),
                         ),
                         backgroundColor: AppColors.error,
@@ -129,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
                             content: Semantics(
                               liveRegion: true,
                               child: const Text(
-                                "Link enviado! Verifique seu e-mail (e a pasta de SPAM). 📧",
+                                "Link enviado! Verifique seu e-mail (e a pasta de SPAM). ",
                               ),
                             ),
                             backgroundColor: AppColors.success,
@@ -178,10 +178,15 @@ class _LoginPageState extends State<LoginPage> {
                   Semantics(
                     label: "Logo do aplicativo Travel Planner",
                     image: true,
-                    child: Icon(
-                      Icons.travel_explore_rounded,
-                      size: 100,
-                      color: AppColors.primary,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      child: Image.asset(
+                        'assets/images/app_logo.png',
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),

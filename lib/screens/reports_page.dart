@@ -381,7 +381,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       'A imagem para redes sociais:\n'
                       '• Formato otimizado para Instagram Stories\n'
                       '• Design profissional e atraente\n'
-                      '• Estatísticas da sua viagem',
+                      '• Estatísticas da sua viagemgit',
                       style: TextStyle(fontSize: 14, height: 1.5),
                     ),
                   ],
