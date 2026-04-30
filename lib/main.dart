@@ -15,6 +15,7 @@ import 'screens/onboarding_page.dart';
 import 'services/notification_service.dart';
 import 'services/push_notification_service.dart';
 import 'services/cache_service.dart';
+import 'services/memory_manager_service.dart';
 import 'theme/app_theme.dart';
 import 'controllers/theme_controller.dart';
 
@@ -26,10 +27,21 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Inicializa o gerenciador de memória para otimizar dispositivos antigos
+  await MemoryManagerService().initialize();
+
   if (!kIsWeb) {
-    FirebaseFirestore.instance.settings = const Settings(
+    // Configurações otimizadas do Firestore baseadas no dispositivo
+    final memoryManager = MemoryManagerService();
+    final settings = memoryManager.getOptimizedSettings();
+
+    // Cache do Firestore deve estar entre 1MB (1048576) e 100MB (104857600)
+    final cacheSize = settings['cacheSize'] as int;
+    final validCacheSize = cacheSize.clamp(1048576, 104857600);
+
+    FirebaseFirestore.instance.settings = Settings(
       persistenceEnabled: true,
-      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      cacheSizeBytes: validCacheSize,
     );
   }
 

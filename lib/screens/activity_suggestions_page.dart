@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/geoapify_service.dart';
 
-/// Tela de Sugestões de Atividades para o Roteiro
-/// Ao clicar em uma sugestão, preenche apenas nome e localização
-/// Usuário precisa completar os outros campos obrigatórios
+
 class ActivitySuggestionsPage extends StatefulWidget {
   final String tripId;
   final String destination;

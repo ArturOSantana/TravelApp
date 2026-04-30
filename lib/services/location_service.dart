@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'http_client_service.dart';
 
 /// - Nominatim (OpenStreetMap) para geocoding
 /// - Geolocator para localização em tempo real
@@ -12,12 +12,16 @@ class LocationService {
     if (query.length < 3) return [];
 
     try {
-      final response = await http.get(
+      final response = await HttpClientService.get(
         Uri.parse(
           '$_nominatimBase/search?q=$query&format=json&limit=10&accept-language=pt-BR',
         ),
         headers: {'User-Agent': _userAgent},
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(hours: 24),
       );
+
+      if (response == null) return [];
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -45,12 +49,16 @@ class LocationService {
     double lon,
   ) async {
     try {
-      final response = await http.get(
+      final response = await HttpClientService.get(
         Uri.parse(
           '$_nominatimBase/reverse?lat=$lat&lon=$lon&format=json&accept-language=pt-BR',
         ),
         headers: {'User-Agent': _userAgent},
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(hours: 12),
       );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -134,7 +142,7 @@ class LocationService {
   ) async {
     try {
       // Nominatim não tem busca por categoria diretamente, mas podemos buscar por tipo
-      final response = await http.get(
+      final response = await HttpClientService.get(
         Uri.parse(
           '$_nominatimBase/search?'
           'q=$category&'
@@ -145,7 +153,11 @@ class LocationService {
           'accept-language=pt-BR',
         ),
         headers: {'User-Agent': _userAgent},
+        timeout: const Duration(seconds: 10),
+        cacheDuration: const Duration(hours: 6),
       );
+
+      if (response == null) return [];
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -162,10 +174,11 @@ class LocationService {
             'distance': distance,
             'distance_text': _formatDistance(distance),
           };
-        }).toList()..sort(
-          (a, b) =>
-              (a['distance'] as double).compareTo(b['distance'] as double),
-        );
+        }).toList()
+          ..sort(
+            (a, b) =>
+                (a['distance'] as double).compareTo(b['distance'] as double),
+          );
       }
     } catch (e) {
       print('Erro ao buscar lugares próximos: $e');
@@ -188,7 +201,7 @@ class LocationService {
     double lon,
   ) async {
     try {
-      final response = await http.get(
+      final response = await HttpClientService.get(
         Uri.parse(
           '$_nominatimBase/reverse?'
           'lat=$lat&'
@@ -199,7 +212,11 @@ class LocationService {
           'accept-language=pt-BR',
         ),
         headers: {'User-Agent': _userAgent},
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(hours: 12),
       );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -219,4 +236,3 @@ class LocationService {
     return null;
   }
 }
-

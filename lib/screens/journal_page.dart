@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/journal_entry.dart';
 import '../controllers/trip_controller.dart';
+import '../services/memory_manager_service.dart';
+import '../widgets/optimized_image.dart';
 import 'create_journal_entry_page.dart';
 
 class JournalPage extends StatefulWidget {
@@ -113,11 +115,35 @@ class _JournalPageState extends State<JournalPage> {
 
           if (entries.isEmpty) return _buildEmptyState();
 
+          final memoryManager = MemoryManagerService();
+          final pageSize = memoryManager.getOptimalPageSize();
+
+          // Carrega apenas os primeiros itens para dispositivos leves
+          final displayEntries =
+              memoryManager.isLowEndDevice && entries.length > pageSize
+                  ? entries.take(pageSize).toList()
+                  : entries;
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: entries.length,
-            itemBuilder: (context, index) =>
-                _buildAlbumEntry(context, entries[index]),
+            itemCount: displayEntries.length +
+                (memoryManager.isLowEndDevice && entries.length > pageSize
+                    ? 1
+                    : 0),
+            itemBuilder: (context, index) {
+              if (index >= displayEntries.length) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Mostrando ${displayEntries.length} de ${entries.length} registros',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                );
+              }
+              return _buildAlbumEntry(context, displayEntries[index]);
+            },
           );
         },
       ),
@@ -148,15 +174,27 @@ class _JournalPageState extends State<JournalPage> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 14,
-                    child: Icon(Icons.person, size: 16),
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.person,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       entry.userName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   _buildMoodTag(entry.mood),
@@ -233,14 +271,15 @@ class _JournalPageState extends State<JournalPage> {
               width: double.infinity,
               height: height,
               fit: BoxFit.cover,
+              cacheWidth: MemoryManagerService().isLowEndDevice ? 800 : null,
               errorBuilder: (_, __, ___) => _errorImage(),
             )
-          : Image.network(
-              photoData,
+          : OptimizedImage(
+              imageUrl: photoData,
               width: double.infinity,
               height: height,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _errorImage(),
+              errorWidget: _errorImage(),
             ),
     );
   }

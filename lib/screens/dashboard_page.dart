@@ -43,211 +43,223 @@ class _DashboardPageState extends State<DashboardPage> {
   void _showNotifications(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      enableDrag: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Semantics(
-                  header: true,
-                  child: const Text(
-                    "Notificações",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: const Text(
+                      "Notificações",
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  tooltip: "Fechar notificações",
-                ),
-              ],
-            ),
-            const Divider(),
-            Expanded(
-              child: StreamBuilder<List<AppNotification>>(
-                stream: _tripController.getNotifications(),
-                builder: (context, snapshot) {
-                  // Estado de erro
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text("Erro ao carregar notificações"),
-                          const SizedBox(height: 8),
-                          Text(
-                            snapshot.error.toString(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: "Fechar notificações",
+                  ),
+                ],
+              ),
+              const Divider(),
+              Expanded(
+                child: StreamBuilder<List<AppNotification>>(
+                  stream: _tripController.getNotifications(),
+                  builder: (context, snapshot) {
+                    // Estado de erro
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Theme.of(context).colorScheme.error,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  // Estado de carregamento
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  // Sem dados ainda
-                  if (!snapshot.hasData) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notifications_none,
-                            size: 64,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant
-                                .withOpacity(0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text("Nenhuma notificação por enquanto."),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final notifications = snapshot.data!;
-
-                  // Lista vazia
-                  if (notifications.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notifications_none,
-                            size: 64,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant
-                                .withOpacity(0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text("Nenhuma notificação por enquanto."),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final notif = notifications[index];
-
-                      // Definir ícone e cor baseado no tipo
-                      IconData icon;
-                      Color color;
-                      String message;
-
-                      switch (notif.type) {
-                        case NotificationType.like:
-                          icon = Icons.favorite;
-                          color = Colors.red;
-                          message = "${notif.senderName} curtiu seu post";
-                          break;
-                        case NotificationType.comment:
-                          icon = Icons.comment;
-                          color = Colors.blue;
-                          message = "${notif.senderName} comentou no seu post";
-                          break;
-                        case NotificationType.safetyAlert:
-                          icon = Icons.warning;
-                          color = Colors.orange;
-                          message = "🆘 ALERTA DE SEGURANÇA";
-                          break;
-                      }
-
-                      return Semantics(
-                        button: true,
-                        label: "Notificação de ${notif.senderName}",
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          color: notif.isRead ? null : color.withOpacity(0.05),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: color.withOpacity(0.1),
-                              child: Icon(icon, color: color, size: 20),
-                            ),
-                            title: Text(
-                              message,
+                            const SizedBox(height: 16),
+                            const Text("Erro ao carregar notificações"),
+                            const SizedBox(height: 8),
+                            Text(
+                              snapshot.error.toString(),
                               style: TextStyle(
-                                fontWeight: notif.isRead
-                                    ? FontWeight.normal
-                                    : FontWeight.bold,
-                                color:
-                                    notif.type == NotificationType.safetyAlert
-                                        ? Theme.of(context).colorScheme.error
-                                        : null,
+                                fontSize: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
+                              textAlign: TextAlign.center,
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (notif.type ==
-                                        NotificationType.safetyAlert &&
-                                    notif.commentText != null)
-                                  Text(
-                                    notif.commentText!,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    notif.postName,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat(
-                                    'dd/MM/yyyy HH:mm',
-                                  ).format(notif.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            onTap: () {
-                              _tripController.markNotificationAsRead(notif.id);
-                            },
-                          ),
+                          ],
                         ),
                       );
-                    },
-                  );
-                },
+                    }
+
+                    // Estado de carregamento
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    // Sem dados ainda
+                    if (!snapshot.hasData) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_none,
+                              size: 64,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text("Nenhuma notificação por enquanto."),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final notifications = snapshot.data!;
+
+                    // Lista vazia
+                    if (notifications.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_none,
+                              size: 64,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text("Nenhuma notificação por enquanto."),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final notif = notifications[index];
+
+                        // Definir ícone e cor baseado no tipo
+                        IconData icon;
+                        Color color;
+                        String message;
+
+                        switch (notif.type) {
+                          case NotificationType.like:
+                            icon = Icons.favorite;
+                            color = Colors.red;
+                            message = "${notif.senderName} curtiu seu post";
+                            break;
+                          case NotificationType.comment:
+                            icon = Icons.comment;
+                            color = Colors.blue;
+                            message =
+                                "${notif.senderName} comentou no seu post";
+                            break;
+                          case NotificationType.safetyAlert:
+                            icon = Icons.warning;
+                            color = Colors.orange;
+                            message = "🆘 ALERTA DE SEGURANÇA";
+                            break;
+                        }
+
+                        return Semantics(
+                          button: true,
+                          label: "Notificação de ${notif.senderName}",
+                          child: Card(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            color:
+                                notif.isRead ? null : color.withOpacity(0.05),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: color.withOpacity(0.1),
+                                child: Icon(icon, color: color, size: 20),
+                              ),
+                              title: Text(
+                                message,
+                                style: TextStyle(
+                                  fontWeight: notif.isRead
+                                      ? FontWeight.normal
+                                      : FontWeight.bold,
+                                  color:
+                                      notif.type == NotificationType.safetyAlert
+                                          ? Theme.of(context).colorScheme.error
+                                          : null,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (notif.type ==
+                                          NotificationType.safetyAlert &&
+                                      notif.commentText != null)
+                                    Text(
+                                      notif.commentText!,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      notif.postName,
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    DateFormat(
+                                      'dd/MM/yyyy HH:mm',
+                                    ).format(notif.createdAt),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                _tripController
+                                    .markNotificationAsRead(notif.id);
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

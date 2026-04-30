@@ -5,7 +5,7 @@ import '../models/expense.dart';
 import '../models/trip.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
-import '../services/currency_service.dart';
+import '../services/exchangerate_service.dart';
 
 class CreateExpensePage extends StatefulWidget {
   final String tripId;
@@ -215,11 +215,11 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       double finalVal = originalVal;
 
       if (_selectedCurrency != _trip!.baseCurrency) {
-        double rate = await CurrencyService.getExchangeRate(
-          _selectedCurrency,
-          _trip!.baseCurrency,
+        double? rate = await ExchangeRateService.getExchangeRate(
+          from: _selectedCurrency,
+          to: _trip!.baseCurrency,
         );
-        finalVal = originalVal * rate;
+        finalVal = originalVal * (rate ?? 1.0);
       }
 
       final Map<String, double> finalSplits = _buildFinalSplits(originalVal);

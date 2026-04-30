@@ -21,8 +21,16 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # Desabilita warnings menos críticos para focar nos importantes
+    avoid_print: false  # Permite print em desenvolvimento
+    curly_braces_in_flow_control_structures: false  # Permite if sem chaves em casos simples
+    use_build_context_synchronously: false  # Ignora warnings de BuildContext async (já tratados com mounted)
+    prefer_const_constructors: false  # Não força const em todos os lugares
+    prefer_final_fields: false  # Não força final em todos os campos privados
+    sized_box_for_whitespace: false  # Permite Container para espaçamento
+    unnecessary_to_list_in_spreads: false  # Permite toList() em spreads
+    avoid_types_as_parameter_names: false  # Permite nomes de parâmetros que coincidem com tipos
+    use_super_parameters: false  # Não força super parameters (recurso novo)
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

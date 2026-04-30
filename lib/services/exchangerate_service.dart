@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'http_client_service.dart';
 
 class ExchangeRateService {
   static const String _baseUrl = 'https://api.exchangerate-api.com/v4/latest';
@@ -9,7 +8,6 @@ class ExchangeRateService {
   static const String _cacheTimeKey = 'exchange_rates_cache_time';
   static const int _cacheDurationHours = 24; // Cache por 24 horas
 
-  
   static Future<double?> convert({
     required double amount,
     required String from,
@@ -44,7 +42,7 @@ class ExchangeRateService {
     }
   }
 
-  /// Obtém todas as taxas de câmbio 
+  /// Obtém todas as taxas de câmbio
   static Future<Map<String, dynamic>?> _getRates(String baseCurrency) async {
     try {
       final cachedRates = await _getCachedRates(baseCurrency);
@@ -53,7 +51,13 @@ class ExchangeRateService {
       }
 
       final url = Uri.parse('$_baseUrl/$baseCurrency');
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 10),
+        useCache: false, // Usa cache próprio do serviço
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -99,7 +103,6 @@ class ExchangeRateService {
     return results;
   }
 
-
   static Future<Map<String, double>> getMultipleRates({
     required String baseCurrency,
     required List<String> targetCurrencies,
@@ -120,7 +123,6 @@ class ExchangeRateService {
     final symbol = getCurrencySymbol(currency);
     return '$symbol ${amount.toStringAsFixed(2)}';
   }
-
 
   static String getCurrencySymbol(String currencyCode) {
     final symbols = {
@@ -284,4 +286,3 @@ class ExchangeRateService {
     };
   }
 }
-

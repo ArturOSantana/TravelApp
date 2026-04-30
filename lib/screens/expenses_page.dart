@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
-import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
-import '../services/currency_service.dart';
 import 'create_expense_page.dart';
 import 'reports_page.dart';
 
@@ -23,26 +20,12 @@ class _ExpensesPageState extends State<ExpensesPage> {
   final TripController _controller = TripController();
   final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
   double _exchangeRate = 1.0;
-  String _selectedCurrency = 'BRL';
-  bool _isConverting = false;
 
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'pt_BR',
     symbol: 'R\$',
     decimalDigits: 2,
   );
-
-  Future<void> _updateExchangeRate(String from) async {
-    setState(() => _isConverting = true);
-    final rate = await CurrencyService.getExchangeRate(from, 'BRL');
-    if (mounted) {
-      setState(() {
-        _exchangeRate = rate;
-        _selectedCurrency = from;
-        _isConverting = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

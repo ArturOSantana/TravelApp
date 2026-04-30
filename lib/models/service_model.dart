@@ -80,7 +80,8 @@ class ServiceModel {
   final bool isPublic;
   final String? userName;
   final List<String> likes;
-  final List<String> savedBy; // Nova lista para IDs de usuários que salvaram o post
+  final List<String>
+      savedBy; // Nova lista para IDs de usuários que salvaram o post
   final int savesCount;
   final List<PostComment> comments;
   final bool commentsEnabled;
@@ -149,7 +150,7 @@ class ServiceModel {
       photos: List<String>.from(data['photos'] ?? []),
       lastUsed: (data['lastUsed'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isPublic: data['isPublic'] ?? false,
-      userName: data['userName'],
+      userName: data['userName'] ?? 'Viajante',
       likes: List<String>.from(data['likes'] ?? []),
       savedBy: List<String>.from(data['savedBy'] ?? []),
       savesCount: data['savesCount'] ?? 0,

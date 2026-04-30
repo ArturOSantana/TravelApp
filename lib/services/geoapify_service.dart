@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:http/http.dart' as http;
 import '../config/api_keys.dart';
+import 'http_client_service.dart';
 
 class GeoapifyService {
   static const String _apiKey = ApiKeys.geoapify;
@@ -19,7 +19,13 @@ class GeoapifyService {
         '$_baseUrl/routing?waypoints=$startLat,$startLon|$endLat,$endLon&mode=$mode&apiKey=$_apiKey',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 10),
+        cacheDuration: const Duration(hours: 2),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -63,7 +69,13 @@ class GeoapifyService {
         '$_baseUrl/routing?waypoints=$waypointsStr&mode=$mode&apiKey=$_apiKey',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 12),
+        cacheDuration: const Duration(hours: 2),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -108,7 +120,13 @@ class GeoapifyService {
         '$_baseUrl/routematrix?sources=$locationsStr&targets=$locationsStr&mode=$mode&apiKey=$_apiKey',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 15),
+        cacheDuration: const Duration(hours: 4),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -257,7 +275,13 @@ class GeoapifyService {
         'https://api.geoapify.com/v2/places?categories=$categories&filter=circle:$lon,$lat,$radius&limit=$limit&apiKey=$_apiKey',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 10),
+        cacheDuration: const Duration(hours: 6),
+      );
+
+      if (response == null) return [];
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
