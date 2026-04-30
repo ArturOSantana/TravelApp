@@ -5,6 +5,7 @@ import '../controllers/auth_controller.dart';
 import '../models/user_model.dart';
 import '../services/storage_service.dart';
 import '../widgets/theme_toggle_button.dart';
+import '../theme/app_colors.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -69,7 +70,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text("Erro ao carregar perfil: $e"),
-              backgroundColor: Colors.red),
+              backgroundColor: AppColors.error),
         );
       }
     }
@@ -94,7 +95,7 @@ class _ProfilePageState extends State<ProfilePage> {
         SnackBar(
           content: Text(
               value ? "Modo PREMIUM ativado!" : "Modo PREMIUM desativado."),
-          backgroundColor: value ? Colors.amber[800] : Colors.grey[800],
+          backgroundColor: value ? AppColors.warning : AppColors.textDisabled,
         ),
       );
     }
@@ -111,7 +112,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SnackBar(
             content:
                 Text("O telefone de emergência não pode ser igual ao seu!"),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warning,
           ),
         );
         return;
@@ -150,7 +151,7 @@ class _ProfilePageState extends State<ProfilePage> {
             _loadUserData();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error), backgroundColor: Colors.red),
+              SnackBar(content: Text(error), backgroundColor: AppColors.error),
             );
           }
         }
@@ -160,7 +161,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text("Erro ao salvar: $e"),
-                backgroundColor: Colors.red),
+                backgroundColor: AppColors.error),
           );
         }
       }
@@ -218,7 +219,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: AppColors.surfaceVariant,
                       backgroundImage: _imageFile != null
                           ? FileImage(_imageFile!)
                           : (_user?.photoUrl != null &&
@@ -229,18 +230,18 @@ class _ProfilePageState extends State<ProfilePage> {
                               (_user?.photoUrl == null ||
                                   _user!.photoUrl!.isEmpty))
                           ? const Icon(Icons.person,
-                              size: 60, color: Colors.grey)
+                              size: 60, color: AppColors.textDisabled)
                           : null,
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
                       child: CircleAvatar(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: AppColors.primary,
                         radius: 20,
                         child: IconButton(
                           icon: const Icon(Icons.camera_alt,
-                              size: 20, color: Colors.white),
+                              size: 20, color: AppColors.textOnPrimary),
                           onPressed: _pickImage,
                         ),
                       ),
@@ -249,24 +250,24 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 10),
                 Text(_user?.email ?? '',
-                    style: const TextStyle(color: Colors.grey)),
+                    style: const TextStyle(color: AppColors.textSecondary)),
                 const SizedBox(height: 20),
 
                 Container(
                   decoration: BoxDecoration(
                     color: (_user?.isPremium ?? false)
-                        ? Colors.amber[50]
-                        : Colors.grey[100],
+                        ? AppColors.warningBackground
+                        : AppColors.surfaceVariant,
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(
                         color: (_user?.isPremium ?? false)
-                            ? Colors.amber[300]!
-                            : Colors.grey[300]!),
+                            ? AppColors.warningLight
+                            : AppColors.divider),
                   ),
                   child: SwitchListTile(
                     title: Row(
                       children: const [
-                        Icon(Icons.star, color: Colors.amber, size: 20),
+                        Icon(Icons.star, color: AppColors.warning, size: 20),
                         SizedBox(width: 8),
                         Text("Usuário Premium",
                             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -275,7 +276,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     subtitle:
                         const Text("Desbloqueia clima, câmbio e segurança"),
                     value: _user?.isPremium ?? false,
-                    activeColor: Colors.amber[800],
+                    activeColor: AppColors.warning,
                     onChanged: _togglePremium,
                   ),
                 ),
@@ -327,7 +328,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 const Divider(),
                 const Row(
                   children: [
-                    Icon(Icons.emergency, color: Colors.red),
+                    Icon(Icons.emergency, color: AppColors.error),
                     SizedBox(width: 10),
                     Text("Contato de Emergência",
                         style: TextStyle(
@@ -379,8 +380,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                     icon: const Icon(Icons.logout),
                     label: const Text("Sair da Conta"),
-                    style:
-                        OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error),
                   ),
                 ),
               ],

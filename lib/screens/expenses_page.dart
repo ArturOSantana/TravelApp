@@ -6,6 +6,7 @@ import '../models/expense.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 import '../services/exchangerate_service.dart';
+import '../theme/app_colors.dart';
 import 'create_expense_page.dart';
 import 'reports_page.dart';
 
@@ -144,7 +145,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: Colors.green[700],
+          color: AppColors.success,
           borderRadius:
               const BorderRadius.vertical(bottom: Radius.circular(30))),
       child: Column(
@@ -155,11 +156,13 @@ class _ExpensesPageState extends State<ExpensesPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Total Gasto",
-                      style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  Text("Total Gasto",
+                      style: TextStyle(
+                          color: AppColors.textOnPrimary.withOpacity(0.7),
+                          fontSize: 14)),
                   Text("R\$ ${spent.toStringAsFixed(2)}",
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textOnPrimary,
                           fontSize: 24,
                           fontWeight: FontWeight.bold)),
                 ],
@@ -167,11 +170,13 @@ class _ExpensesPageState extends State<ExpensesPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text("Disponível",
-                      style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  Text("Disponível",
+                      style: TextStyle(
+                          color: AppColors.textOnPrimary.withOpacity(0.7),
+                          fontSize: 14)),
                   Text("R\$ ${(budget - spent).toStringAsFixed(2)}",
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textOnPrimary,
                           fontSize: 20,
                           fontWeight: FontWeight.bold)),
                 ],
@@ -181,8 +186,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
           const SizedBox(height: 20),
           LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.white24,
-              color: Colors.white,
+              backgroundColor: AppColors.textOnPrimary.withOpacity(0.24),
+              color: AppColors.textOnPrimary,
               minHeight: 8),
         ],
       ),
@@ -202,10 +207,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: isPayment
-                ? Colors.blue.withOpacity(0.1)
-                : Colors.green.withOpacity(0.1),
+                ? AppColors.info.withOpacity(0.1)
+                : AppColors.success.withOpacity(0.1),
             child: Icon(isPayment ? Icons.handshake : Icons.payments,
-                color: isPayment ? Colors.blue : Colors.green),
+                color: isPayment ? AppColors.info : AppColors.success),
           ),
           title: Text(expense.title,
               style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -217,12 +222,14 @@ class _ExpensesPageState extends State<ExpensesPage> {
                 const SizedBox(height: 4),
                 Text(
                   'Original: ${ExchangeRateService.formatCurrency(expense.originalValue, expense.currency)}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 if (expense.exchangeRateUsed != 1.0)
                   Text(
                     'Taxa: 1 ${expense.currency} = ${expense.exchangeRateUsed.toStringAsFixed(4)} BRL',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    style:
+                        TextStyle(fontSize: 11, color: AppColors.textDisabled),
                   ),
               ],
             ],
@@ -238,14 +245,15 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     "R\$ ${expense.value.toStringAsFixed(2)}",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.redAccent,
+                      color: AppColors.error,
                       fontSize: 16,
                     ),
                   ),
                   if (isDifferentCurrency && expense.conversionDate != null)
                     Text(
                       DateFormat('dd/MM').format(expense.conversionDate!),
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                      style: TextStyle(
+                          fontSize: 10, color: AppColors.textDisabled),
                     ),
                 ],
               ),
@@ -295,21 +303,22 @@ class _ExpensesPageState extends State<ExpensesPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.receipt_long,
+                      size: 64, color: AppColors.textDisabled),
                   const SizedBox(height: 16),
                   Text(
                     'Nenhum gasto registrado ainda',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Adicione gastos para ver a divisão entre os membros',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[500]),
+                    style: TextStyle(color: AppColors.textDisabled),
                   ),
                 ],
               ),
@@ -373,7 +382,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.account_balance_wallet, color: Colors.green[700]),
+                Icon(Icons.account_balance_wallet, color: AppColors.success),
                 const SizedBox(width: 10),
                 const Text(
                   'Balanço dos Membros',
@@ -415,10 +424,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
                           ),
                           decoration: BoxDecoration(
                             color: isPositive
-                                ? Colors.green[50]
+                                ? AppColors.successBackground
                                 : isNegative
-                                    ? Colors.red[50]
-                                    : Colors.grey[100],
+                                    ? AppColors.errorBackground
+                                    : AppColors.surfaceVariant,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -427,10 +436,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: isPositive
-                                  ? Colors.green[700]
+                                  ? AppColors.success
                                   : isNegative
-                                      ? Colors.red[700]
-                                      : Colors.grey[700],
+                                      ? AppColors.error
+                                      : AppColors.textSecondary,
                             ),
                           ),
                         ),
@@ -451,12 +460,12 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
     if (settlements.isEmpty) {
       return Card(
-        color: Colors.green[50],
+        color: AppColors.successBackground,
         child: const Padding(
           padding: EdgeInsets.all(20),
           child: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 32),
+              Icon(Icons.check_circle, color: AppColors.success, size: 32),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -483,7 +492,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.swap_horiz, color: Colors.blue[700]),
+                Icon(Icons.swap_horiz, color: AppColors.info),
                 const SizedBox(width: 10),
                 const Text(
                   'Sugestões de Acerto',
@@ -497,7 +506,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
             const SizedBox(height: 4),
             Text(
               'Transferências necessárias para acertar as contas:',
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const Divider(height: 24),
             ...settlements.map((settlement) {
@@ -518,9 +527,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: AppColors.infoBackground,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue[200]!),
+                      border: Border.all(color: AppColors.infoLight),
                     ),
                     child: Row(
                       children: [
@@ -529,7 +538,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                             text: TextSpan(
                               style: const TextStyle(
                                 fontSize: 15,
-                                color: Colors.black87,
+                                color: AppColors.textPrimary,
                               ),
                               children: [
                                 TextSpan(
@@ -544,7 +553,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                                       .format(double.parse(amount)),
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.blue[700],
+                                    color: AppColors.info,
                                   ),
                                 ),
                                 const TextSpan(text: ' para '),
@@ -558,7 +567,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                             ),
                           ),
                         ),
-                        Icon(Icons.arrow_forward, color: Colors.blue[700]),
+                        Icon(Icons.arrow_forward, color: AppColors.info),
                       ],
                     ),
                   );
@@ -625,7 +634,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.list_alt, color: Colors.orange[700]),
+                Icon(Icons.list_alt, color: AppColors.warning),
                 const SizedBox(width: 10),
                 const Text(
                   'Detalhamento dos Gastos',
@@ -651,7 +660,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     ),
                     subtitle: Text(
                       'Pago por $payerName • ${DateFormat('dd/MM/yyyy').format(expense.date)}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      style: TextStyle(
+                          color: AppColors.textSecondary, fontSize: 13),
                     ),
                     trailing: Text(
                       _currencyFormat.format(expense.value),
@@ -663,7 +673,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(12),
-                        color: Colors.grey[50],
+                        color: AppColors.surfaceVariant,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -671,7 +681,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                               'Divisão (${_getSplitTypeLabel(expense.splitType)}):',
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
+                                color: AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -748,7 +758,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Não foi possível obter a taxa de câmbio atual'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -814,7 +824,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: difference >= 0 ? Colors.red[50] : Colors.green[50],
+                  color: difference >= 0
+                      ? AppColors.errorBackground
+                      : AppColors.successBackground,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -823,7 +835,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       difference >= 0
                           ? Icons.arrow_upward
                           : Icons.arrow_downward,
-                      color: difference >= 0 ? Colors.red : Colors.green,
+                      color:
+                          difference >= 0 ? AppColors.error : AppColors.success,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -832,8 +845,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
                         'Diferença: ${_currencyFormat.format(difference.abs())} (${percentChange.toStringAsFixed(1)}%)',
                         style: TextStyle(
                           color: difference >= 0
-                              ? Colors.red[700]
-                              : Colors.green[700],
+                              ? AppColors.error
+                              : AppColors.success,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -862,7 +875,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Despesa reconvertida com sucesso!'),
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppColors.success,
                       ),
                     );
                   }
@@ -872,7 +885,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Erro ao reconverter: $e'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: AppColors.error,
                       ),
                     );
                   }
@@ -888,7 +901,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -904,7 +917,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
           Text(
             label,
             style: TextStyle(
-              color: Colors.grey[600],
+              color: AppColors.textSecondary,
               fontSize: 13,
             ),
           ),
@@ -912,7 +925,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
             value,
             style: TextStyle(
               fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
-              color: highlight ? Colors.blue[700] : Colors.black87,
+              color: highlight ? AppColors.info : AppColors.textPrimary,
               fontSize: highlight ? 14 : 13,
             ),
           ),
