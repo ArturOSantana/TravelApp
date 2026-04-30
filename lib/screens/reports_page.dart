@@ -5,6 +5,7 @@ import '../models/expense.dart';
 import '../services/subscription_service.dart';
 import '../services/pdf_export_service.dart';
 import '../services/social_share_service.dart';
+import '../services/exchangerate_service.dart';
 import 'premium_upgrade_page.dart';
 
 class ReportsPage extends StatefulWidget {
@@ -328,6 +329,11 @@ class _ReportsPageState extends State<ReportsPage> {
 
             const SizedBox(height: 24),
 
+            // Relatório por Moeda
+            _buildCurrencyBreakdown(),
+
+            const SizedBox(height: 24),
+
             // Botão Exportar PDF
             _buildActionButton(
               icon: Icons.picture_as_pdf,
@@ -380,6 +386,211 @@ class _ReportsPageState extends State<ReportsPage> {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencyBreakdown() {
+    // Agrupar despesas por moeda
+    final Map<String, List<Expense>> expensesByCurrency = {};
+    for (final expense in widget.expenses) {
+      if (!expensesByCurrency.containsKey(expense.currency)) {
+        expensesByCurrency[expense.currency] = [];
+      }
+      expensesByCurrency[expense.currency]!.add(expense);
+    }
+
+    // Se todas as despesas são em BRL, não mostrar o card
+    if (expensesByCurrency.length == 1 &&
+        expensesByCurrency.containsKey('BRL')) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.currency_exchange,
+                    color: Colors.blue[700], size: 28),
+                const SizedBox(width: 12),
+                const Text(
+                  'Gastos por Moeda',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            ...expensesByCurrency.entries.map((entry) {
+              final currency = entry.key;
+              final expenses = entry.value;
+              final totalInOriginal = expenses.fold<double>(
+                0.0,
+                (sum, exp) => sum + exp.originalValue,
+              );
+              final totalConverted = expenses.fold<double>(
+                0.0,
+                (sum, exp) => sum + exp.value,
+              );
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[100],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                currency,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue[900],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '${expenses.length} ${expenses.length == 1 ? 'despesa' : 'despesas'}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total original:',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          ExchangeRateService.formatCurrency(
+                            totalInOriginal,
+                            currency,
+                          ),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (currency != 'BRL') ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Convertido (BRL):',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            _currencyFormat.format(totalConverted),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Taxa média:',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            '1 $currency ≈ ${(totalConverted / totalInOriginal).toStringAsFixed(4)} BRL',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+            const Divider(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total Geral (BRL):',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    _currencyFormat.format(_totalSpent),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[900],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -481,4 +692,3 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 }
-

@@ -392,6 +392,11 @@ class TripController {
 
   Future<void> addExpense(Expense expense) async =>
       await _db.collection('expenses').add(expense.toMap());
+
+  Future<void> updateExpense(
+          String expenseId, Map<String, dynamic> data) async =>
+      await _db.collection('expenses').doc(expenseId).update(data);
+
   Future<void> deleteExpense(String expenseId) async =>
       await _db.collection('expenses').doc(expenseId).delete();
 

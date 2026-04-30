@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
+import '../services/exchangerate_service.dart';
 import 'create_expense_page.dart';
 import 'reports_page.dart';
 
@@ -190,6 +191,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
   Widget _buildExpenseCard(Expense expense) {
     final bool isPayment = expense.category == 'payment';
+    final bool isDifferentCurrency = expense.currency != 'BRL';
+
     return Semantics(
       label:
           "Gasto: ${expense.title}. Valor: R\$ ${expense.value.toStringAsFixed(2)}. Data: ${DateFormat('dd/MM').format(expense.date)}",
@@ -206,10 +209,69 @@ class _ExpensesPageState extends State<ExpensesPage> {
           ),
           title: Text(expense.title,
               style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(DateFormat('dd/MM').format(expense.date)),
-          trailing: Text("R\$ ${expense.value.toStringAsFixed(2)}",
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.redAccent)),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(DateFormat('dd/MM/yyyy').format(expense.date)),
+              if (isDifferentCurrency) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Original: ${ExchangeRateService.formatCurrency(expense.originalValue, expense.currency)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                if (expense.exchangeRateUsed != 1.0)
+                  Text(
+                    'Taxa: 1 ${expense.currency} = ${expense.exchangeRateUsed.toStringAsFixed(4)} BRL',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
+              ],
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    "R\$ ${expense.value.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.redAccent,
+                      fontSize: 16,
+                    ),
+                  ),
+                  if (isDifferentCurrency && expense.conversionDate != null)
+                    Text(
+                      DateFormat('dd/MM').format(expense.conversionDate!),
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
+                ],
+              ),
+              if (isDifferentCurrency)
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, size: 20),
+                  onSelected: (value) {
+                    if (value == 'reconvert') {
+                      _showReconvertDialog(expense);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'reconvert',
+                      child: Row(
+                        children: [
+                          Icon(Icons.refresh, size: 18),
+                          SizedBox(width: 8),
+                          Text('Reconverter'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -672,6 +734,191 @@ class _ExpensesPageState extends State<ExpensesPage> {
     }
 
     return 'Membro';
+  }
+
+  Future<void> _showReconvertDialog(Expense expense) async {
+    try {
+      final newRate = await ExchangeRateService.getExchangeRate(
+        from: expense.currency,
+        to: 'BRL',
+      );
+
+      if (newRate == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Não foi possível obter a taxa de câmbio atual'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final newValue = expense.originalValue * newRate;
+      final difference = newValue - expense.value;
+      final percentChange = ((difference / expense.value) * 100).abs();
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Reconverter Despesa'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                expense.title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildInfoRow(
+                'Valor original:',
+                ExchangeRateService.formatCurrency(
+                  expense.originalValue,
+                  expense.currency,
+                ),
+              ),
+              const Divider(height: 24),
+              _buildInfoRow(
+                'Taxa antiga:',
+                '1 ${expense.currency} = ${expense.exchangeRateUsed.toStringAsFixed(4)} BRL',
+              ),
+              _buildInfoRow(
+                'Valor convertido:',
+                _currencyFormat.format(expense.value),
+              ),
+              if (expense.conversionDate != null)
+                _buildInfoRow(
+                  'Data conversão:',
+                  DateFormat('dd/MM/yyyy HH:mm')
+                      .format(expense.conversionDate!),
+                ),
+              const Divider(height: 24),
+              _buildInfoRow(
+                'Taxa atual:',
+                '1 ${expense.currency} = ${newRate.toStringAsFixed(4)} BRL',
+                highlight: true,
+              ),
+              _buildInfoRow(
+                'Novo valor:',
+                _currencyFormat.format(newValue),
+                highlight: true,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: difference >= 0 ? Colors.red[50] : Colors.green[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      difference >= 0
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
+                      color: difference >= 0 ? Colors.red : Colors.green,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Diferença: ${_currencyFormat.format(difference.abs())} (${percentChange.toStringAsFixed(1)}%)',
+                        style: TextStyle(
+                          color: difference >= 0
+                              ? Colors.red[700]
+                              : Colors.green[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await _controller.updateExpense(expense.id, {
+                    'value': newValue,
+                    'exchangeRateUsed': newRate,
+                    'conversionDate': DateTime.now(),
+                  });
+
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Despesa reconvertida com sucesso!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao reconverter: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Reconverter'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool highlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 13,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
+              color: highlight ? Colors.blue[700] : Colors.black87,
+              fontSize: highlight ? 14 : 13,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getSplitTypeLabel(SplitType type) {
