@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // --- FUNÇÕES DE AUXÍLIO ---
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -18,7 +17,6 @@ service cloud.firestore {
         request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.members;
     }
     
-    // --- REGRAS POR COLEÇÃO ---
 
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -71,7 +69,19 @@ service cloud.firestore {
     match /services/{serviceId} {
       allow read: if isAuthenticated() || (resource != null && resource.data.isPublic == true);
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (isOwner(resource.data.ownerId));
+      // Permite update para curtidas e comentários (qualquer usuário autenticado)
+      // Mas delete apenas para o dono
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated() && isOwner(resource.data.ownerId);
+    }
+
+    // Coleção journal (registros de viagem)
+    match /journal/{entryId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // Permite update para reações (qualquer usuário autenticado)
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
 
     // Fallback de segurança

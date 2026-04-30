@@ -203,23 +203,49 @@ class _CommunityPageState extends State<CommunityPage> {
                             color: Theme.of(context).colorScheme.onSurface,
                             height: 1.4)),
                     const SizedBox(height: 20),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const CircleAvatar(
-                            radius: 12, child: Icon(Icons.person, size: 14)),
-                        const SizedBox(width: 8),
-                        Text(post.userName ?? 'Viajante',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 12)),
-                        const Spacer(),
-                        _iconStat(
-                            Icons.favorite,
-                            isLiked ? Colors.red : Colors.grey[400]!,
-                            '${post.likes.length}',
-                            "curtidas"),
-                        const SizedBox(width: 15),
-                        _iconStat(Icons.comment_outlined, Colors.grey[400]!,
-                            '${post.comments.length}', "comentários"),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              child: Icon(Icons.person,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                post.userName ?? 'Viajante',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _iconStat(
+                                Icons.favorite,
+                                isLiked ? Colors.red : Colors.grey[400]!,
+                                '${post.likes.length}',
+                                "curtidas"),
+                            const SizedBox(width: 20),
+                            _iconStat(Icons.comment_outlined, Colors.grey[400]!,
+                                '${post.comments.length}', "comentários"),
+                          ],
+                        ),
                       ],
                     ),
                   ],

@@ -1,18 +1,23 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_keys.dart';
+import 'http_client_service.dart';
 
 class OpenWeatherMapService {
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
 
- 
   static Future<Map<String, dynamic>?> getCurrentWeather(String city) async {
     try {
       final url = Uri.parse(
         '$_baseUrl/weather?q=$city&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(minutes: 30),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -48,14 +53,19 @@ class OpenWeatherMapService {
     }
   }
 
-  
   static Future<List<Map<String, dynamic>>?> getForecast(String city) async {
     try {
       final url = Uri.parse(
         '$_baseUrl/forecast?q=$city&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(hours: 1),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -73,7 +83,7 @@ class OpenWeatherMapService {
             'icon': item['weather'][0]['icon'],
             'wind_speed': item['wind']['speed'],
             'clouds': item['clouds']['all'],
-            'pop': (item['pop'] * 100).round(), 
+            'pop': (item['pop'] * 100).round(),
           };
         }).toList();
       } else {
@@ -95,7 +105,13 @@ class OpenWeatherMapService {
         '$_baseUrl/weather?lat=$lat&lon=$lon&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(minutes: 30),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -140,7 +156,13 @@ class OpenWeatherMapService {
         '$_baseUrl/forecast?lat=$lat&lon=$lon&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
       );
 
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(hours: 1),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -171,7 +193,6 @@ class OpenWeatherMapService {
     }
   }
 
-  
   static String getIconUrl(String iconCode) {
     return 'https://openweathermap.org/img/wn/$iconCode@2x.png';
   }
@@ -251,11 +272,9 @@ class OpenWeatherMapService {
         'temp_avg': (temps.reduce((a, b) => a + b) / temps.length).round(),
         'temp_min': temps.reduce((a, b) => a < b ? a : b),
         'temp_max': temps.reduce((a, b) => a > b ? a : b),
-        'description': descriptions.first, 
-        'icon': icons.first, 
+        'description': descriptions.first,
+        'icon': icons.first,
       };
     }).toList();
   }
 }
-
-

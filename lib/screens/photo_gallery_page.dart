@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models/photo_gallery.dart';
 import '../services/storage_service.dart';
+import '../services/memory_manager_service.dart';
+import '../widgets/optimized_image.dart';
 
 class PhotoGalleryPage extends StatefulWidget {
   final String tripId;
@@ -172,10 +172,13 @@ class _PhotoGalleryPageState extends State<PhotoGalleryPage> {
         // Ordenar por data (mais recentes primeiro)
         allPhotos.sort((a, b) => b.takenAt.compareTo(a.takenAt));
 
+        final memoryManager = MemoryManagerService();
+        final crossAxisCount = memoryManager.isLowEndDevice ? 2 : 3;
+
         return GridView.builder(
           padding: const EdgeInsets.all(8),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
             crossAxisSpacing: 4,
             mainAxisSpacing: 4,
           ),
@@ -196,17 +199,11 @@ class _PhotoGalleryPageState extends State<PhotoGalleryPage> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          CachedNetworkImage(
+          OptimizedImage(
             imageUrl: photo.thumbnailUrl,
             fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: Colors.grey[300],
-              child: const Center(child: CircularProgressIndicator()),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: Colors.grey[300],
-              child: const Icon(Icons.error),
-            ),
+            width: 150,
+            height: 150,
           ),
           if (photo.isPublic)
             Positioned(
@@ -544,12 +541,9 @@ class PhotoViewPage extends StatelessWidget {
         child: InteractiveViewer(
           minScale: 0.5,
           maxScale: 4.0,
-          child: CachedNetworkImage(
+          child: OptimizedImage(
             imageUrl: photo.url,
             fit: BoxFit.contain,
-            placeholder: (context, url) =>
-                const Center(child: CircularProgressIndicator()),
-            errorWidget: (context, url, error) => const Icon(Icons.error),
           ),
         ),
       ),
@@ -593,4 +587,3 @@ class PhotoViewPage extends StatelessWidget {
     );
   }
 }
-

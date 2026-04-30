@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/geoapify_service.dart';
-import '../services/foursquare_service.dart';
 import '../services/rest_countries_service.dart';
-import '../services/weather_service.dart';
+import '../services/openweathermap_service.dart';
 import '../services/exchangerate_service.dart';
 
 class SmartSuggestionsPage extends StatefulWidget {
@@ -83,10 +82,12 @@ class _SmartSuggestionsPageState extends State<SmartSuggestionsPage>
   Future<void> _loadRestaurants() async {
     if (widget.lat == null || widget.lon == null) return;
 
-    final restaurants = await FoursquareService.searchNearby(
+    // Usa GeoapifyService para buscar restaurantes (substitui FoursquareService)
+    final restaurants = await GeoapifyService.searchPlaces(
       lat: widget.lat!,
       lon: widget.lon!,
-      category: 'food',
+      categories: 'catering.restaurant,catering.cafe,catering.fast_food',
+      radius: 3000,
       limit: 20,
     );
 
@@ -107,11 +108,20 @@ class _SmartSuggestionsPageState extends State<SmartSuggestionsPage>
   }
 
   Future<void> _loadWeather() async {
-    final city =
-        RestCountriesService.extractCityFromAddress(widget.destination);
-    final weather = await WeatherService.getWeather(city);
+    try {
+      final city =
+          RestCountriesService.extractCityFromAddress(widget.destination);
+      final weather = await OpenWeatherMapService.getCurrentWeather(city);
 
-    setState(() => _weather = weather);
+      if (mounted) {
+        setState(() => _weather = weather);
+      }
+    } catch (e) {
+      print('Erro ao carregar clima: $e');
+      if (mounted) {
+        setState(() => _weather = null);
+      }
+    }
   }
 
   @override

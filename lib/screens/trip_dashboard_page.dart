@@ -4,7 +4,7 @@ import 'dart:ui';
 import '../models/trip.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
-import '../services/weather_service.dart';
+import '../services/openweathermap_service.dart';
 import 'itinerary_page.dart';
 import 'expenses_page.dart';
 import 'packing_checklist_page.dart';
@@ -51,15 +51,64 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
   Future<void> _loadWeather() async {
     try {
       final city = widget.trip.destination.split(',')[0].trim();
-      final weather = await WeatherService.getWeather(city);
-      if (mounted) {
+      final weather = await OpenWeatherMapService.getCurrentWeather(city);
+      if (mounted && weather != null) {
         setState(() {
-          _weatherData = weather;
+          _weatherData = {
+            'temp': weather['temp'],
+            'desc': weather['description'] ?? 'Sem descrição',
+            'icon_code': weather['icon'] ?? '01d',
+          };
+          _isLoadingWeather = false;
+        });
+      } else if (mounted) {
+        setState(() {
+          _weatherData = null;
           _isLoadingWeather = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoadingWeather = false);
+      print('Erro ao carregar clima: $e');
+      if (mounted) {
+        setState(() {
+          _weatherData = null;
+          _isLoadingWeather = false;
+        });
+      }
+    }
+  }
+
+  IconData _getWeatherIcon(String iconCode) {
+    switch (iconCode) {
+      case '01d':
+      case '01n':
+        return Icons.wb_sunny; // Céu limpo
+      case '02d':
+      case '02n':
+        return Icons.wb_cloudy; // Poucas nuvens
+      case '03d':
+      case '03n':
+        return Icons.cloud; // Nuvens dispersas
+      case '04d':
+      case '04n':
+        return Icons.cloud_queue; // Nublado
+      case '09d':
+      case '09n':
+        return Icons.grain; // Chuva
+      case '10d':
+      case '10n':
+        return Icons.beach_access; // Chuva leve
+      case '11d':
+      case '11n':
+        return Icons.flash_on; // Trovoada
+      case '13d':
+      case '13n':
+        return Icons.ac_unit; // Neve
+      case '50d':
+      case '50n':
+        return Icons.blur_on; // Névoa
+      default:
+        return Icons.wb_sunny;
     }
   }
 
@@ -413,8 +462,11 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                   .withOpacity(0.3),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Text(_weatherData!['icon'],
-                style: const TextStyle(fontSize: 32)),
+            child: Icon(
+              _getWeatherIcon(_weatherData!['icon_code']),
+              size: 32,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           const SizedBox(width: 20),
           Column(

@@ -1,16 +1,20 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-
+import 'http_client_service.dart';
 
 class RestCountriesService {
   static const String _baseUrl = 'https://restcountries.com/v3.1';
 
- 
   static Future<Map<String, dynamic>?> getCountryInfo(
       String countryName) async {
     try {
       final url = Uri.parse('$_baseUrl/name/$countryName');
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(days: 7),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -68,12 +72,17 @@ class RestCountriesService {
     }
   }
 
-
   static Future<Map<String, dynamic>?> getCountryByCapital(
       String capital) async {
     try {
       final url = Uri.parse('$_baseUrl/capital/$capital');
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(days: 7),
+      );
+
+      if (response == null) return null;
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -87,12 +96,17 @@ class RestCountriesService {
     }
   }
 
-  
   static Future<List<Map<String, dynamic>>> getCountriesByRegion(
       String region) async {
     try {
       final url = Uri.parse('$_baseUrl/region/$region');
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 10),
+        cacheDuration: const Duration(days: 7),
+      );
+
+      if (response == null) return [];
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -105,12 +119,17 @@ class RestCountriesService {
     }
   }
 
-
   static Future<List<Map<String, dynamic>>> getBorderingCountries(
       String countryCode) async {
     try {
       final url = Uri.parse('$_baseUrl/alpha/$countryCode');
-      final response = await http.get(url);
+      final response = await HttpClientService.get(
+        url,
+        timeout: const Duration(seconds: 8),
+        cacheDuration: const Duration(days: 7),
+      );
+
+      if (response == null) return [];
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -122,9 +141,13 @@ class RestCountriesService {
         final borderCountries = <Map<String, dynamic>>[];
         for (final borderCode in borders) {
           final borderUrl = Uri.parse('$_baseUrl/alpha/$borderCode');
-          final borderResponse = await http.get(borderUrl);
+          final borderResponse = await HttpClientService.get(
+            borderUrl,
+            timeout: const Duration(seconds: 8),
+            cacheDuration: const Duration(days: 7),
+          );
 
-          if (borderResponse.statusCode == 200) {
+          if (borderResponse != null && borderResponse.statusCode == 200) {
             final borderData = json.decode(borderResponse.body);
             if (borderData.isNotEmpty) {
               borderCountries.add(_parseCountryData(borderData[0]));
@@ -140,7 +163,6 @@ class RestCountriesService {
     }
   }
 
-  
   static String extractCountryFromAddress(String address) {
     final parts = address.split(',');
     if (parts.length >= 2) {
@@ -149,7 +171,6 @@ class RestCountriesService {
     return address.trim();
   }
 
- 
   static String extractCityFromAddress(String address) {
     final parts = address.split(',');
     return parts.first.trim();
@@ -184,7 +205,6 @@ class RestCountriesService {
     };
   }
 
-
   static List<String> getTravelTips(Map<String, dynamic> countryInfo) {
     final tips = <String>[];
 
@@ -198,7 +218,6 @@ class RestCountriesService {
       tips.add('🗣️ Idioma: ${countryInfo['language']}');
     }
 
-  
     if (countryInfo['timezone'] != null && countryInfo['timezone'].isNotEmpty) {
       tips.add('🕐 Fuso horário: ${countryInfo['timezone']}');
     }
@@ -229,4 +248,3 @@ class RestCountriesService {
     ];
   }
 }
-

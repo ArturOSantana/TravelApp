@@ -166,11 +166,42 @@ class TripController {
   }
 
   Future<void> saveService(ServiceModel service) async {
-    final user = _auth.currentUser;
-    final payload = service.toMap();
-    payload['ownerId'] = user?.uid;
-    payload['userName'] = user?.displayName ?? 'Viajante';
-    await _db.collection('services').add(payload);
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        debugPrint('[SAVE_SERVICE] Erro: Usuário não autenticado');
+        throw Exception('Usuário não autenticado');
+      }
+
+      // Busca o nome do usuário do Firestore se displayName estiver vazio
+      String userName = user.displayName ?? '';
+      if (userName.isEmpty) {
+        try {
+          final userDoc = await _db.collection('users').doc(user.uid).get();
+          if (userDoc.exists) {
+            userName = userDoc.data()?['name'] ?? 'Viajante';
+          } else {
+            userName = 'Viajante';
+          }
+        } catch (e) {
+          debugPrint('[SAVE_SERVICE] Erro ao buscar nome do usuário: $e');
+          userName = 'Viajante';
+        }
+      }
+
+      final payload = service.toMap();
+      payload['ownerId'] = user.uid;
+      payload['userName'] = userName;
+      payload['createdAt'] = FieldValue.serverTimestamp();
+
+      debugPrint('[SAVE_SERVICE] Salvando post na comunidade...');
+      debugPrint('[SAVE_SERVICE] Autor: $userName (UID: ${user.uid})');
+      final docRef = await _db.collection('services').add(payload);
+      debugPrint('[SAVE_SERVICE] Post salvo com sucesso! ID: ${docRef.id}');
+    } catch (e) {
+      debugPrint('[SAVE_SERVICE] Erro ao salvar post: $e');
+      rethrow;
+    }
   }
 
   Future<void> updateService(ServiceModel service) async =>
@@ -201,24 +232,49 @@ class TripController {
     String serviceId,
     List<String> currentLikes,
   ) async {
-    String uid = _auth.currentUser?.uid ?? '';
-    DocumentReference docRef = _db.collection('services').doc(serviceId);
-    if (currentLikes.contains(uid)) {
-      await docRef.update({
-        'likes': FieldValue.arrayRemove([uid]),
-      });
-    } else {
-      await docRef.update({
-        'likes': FieldValue.arrayUnion([uid]),
-      });
-      final doc = await docRef.get();
-      final service = ServiceModel.fromFirestore(doc);
-      await _sendInternalNotification(
-        receiverId: service.ownerId,
-        postId: serviceId,
-        postName: service.name,
-        type: NotificationType.like,
-      );
+    try {
+      String uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) {
+        debugPrint('[LIKE] Erro: Usuário não autenticado');
+        return;
+      }
+
+      DocumentReference docRef = _db.collection('services').doc(serviceId);
+
+      if (currentLikes.contains(uid)) {
+        debugPrint('[LIKE] Removendo curtida do usuário $uid');
+        await docRef.update({
+          'likes': FieldValue.arrayRemove([uid]),
+        });
+      } else {
+        debugPrint('[LIKE] Adicionando curtida do usuário $uid');
+        await docRef.update({
+          'likes': FieldValue.arrayUnion([uid]),
+        });
+
+        try {
+          final doc = await docRef.get();
+          if (doc.exists) {
+            final service = ServiceModel.fromFirestore(doc);
+            // Não envia notificação para si mesmo
+            if (service.ownerId != uid) {
+              await _sendInternalNotification(
+                receiverId: service.ownerId,
+                postId: serviceId,
+                postName: service.name,
+                type: NotificationType.like,
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('[LIKE] Erro ao enviar notificação: $e');
+          // Não falha a curtida se a notificação falhar
+        }
+      }
+      debugPrint('[LIKE] Curtida atualizada com sucesso');
+    } catch (e) {
+      debugPrint('[LIKE] Erro ao alternar curtida: $e');
+      rethrow;
     }
   }
 
@@ -348,8 +404,22 @@ class TripController {
         (snap) =>
             snap.docs.map((doc) => JournalEntry.fromFirestore(doc)).toList(),
       );
-  Future<void> addJournalEntry(JournalEntry entry) async =>
-      await _db.collection('journal').add(entry.toMap());
+  Future<void> addJournalEntry(JournalEntry entry) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        debugPrint('[JOURNAL] Erro: Usuário não autenticado');
+        throw Exception('Usuário não autenticado');
+      }
+
+      debugPrint('[JOURNAL] Salvando registro no journal...');
+      final docRef = await _db.collection('journal').add(entry.toMap());
+      debugPrint('[JOURNAL] Registro salvo com sucesso! ID: ${docRef.id}');
+    } catch (e) {
+      debugPrint('[JOURNAL] Erro ao salvar registro: $e');
+      rethrow;
+    }
+  }
 
   Stream<List<SafetyCheckIn>> getSafetyHistory(String tripId) => _db
       .collection('safety')
