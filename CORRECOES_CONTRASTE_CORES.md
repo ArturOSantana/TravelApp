@@ -33,6 +33,20 @@ Substituir todas as cores hardcoded por cores do sistema `AppColors` para garant
 
 **Impacto:** Melhor legibilidade dos posts, contraste adequado nos botões de ação.
 
+### ✅ lib/screens/insights_page.dart
+**Alterações:**
+- `Colors.deepPurple[700/400]` → `AppColors.primaryGradient` (banners)
+- `Colors.white` → `AppColors.textOnPrimary` (texto em gradientes)
+- `Colors.blue` → `AppColors.info` (estatísticas)
+- `Colors.green` → `AppColors.success` (indicadores positivos)
+- `Colors.red` → `AppColors.error` (indicadores negativos)
+- `Colors.orange` → `AppColors.warning` (estilo solo)
+- `Colors.indigo` → `AppColors.info` (estilo grupo)
+- `Colors.grey[50/200]` → `AppColors.surfaceVariant/divider`
+- `Colors.grey` → `AppColors.textSecondary` (labels)
+
+**Impacto:** Contraste adequado em todos os cards financeiros, gráficos legíveis, banners premium acessíveis.
+
 ## Próximas Correções Necessárias
 
 ### 🔄 Telas Prioritárias (Alto Uso)
@@ -93,9 +107,9 @@ Colors.purple[300] → AppColors.primaryLight
 5. **Profissionalismo**: Visual mais polido e coeso
 
 ## Status Atual
-- ✅ 2 telas corrigidas (onboarding, community)
-- 🔄 13+ telas pendentes
-- 📊 ~15% concluído
+- ✅ 3 telas corrigidas (onboarding, community, insights)
+- 🔄 12+ telas pendentes
+- 📊 ~20% concluído
 
 ## Próximos Passos
 1. Corrigir telas prioritárias (profile, expenses, reports, safety, journal)
