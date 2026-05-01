@@ -63,7 +63,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Parâmetro de Responsividade W3C (Mobile First / Desktop Friendly)
     final double screenWidth = MediaQuery.of(context).size.width;
     final double formWidth = screenWidth > 600 ? 500 : screenWidth;
 
@@ -79,10 +78,10 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(25.0),
           child: Container(
-            width: formWidth, // Limita largura seguindo padrões de design web
+            width: formWidth, 
             child: Form(
               key: _formKey,
-              child: AutofillGroup( // Agrupa campos para preenchimento automático (W3C/WCAG)
+              child: AutofillGroup( 
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -105,7 +104,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     // NOME COMPLETO
                     TextFormField(
                       controller: nameController,
-                      autofillHints: const [AutofillHints.name], // W3C Best Practice
+                      autofillHints: const [AutofillHints.name], 
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         labelText: "Nome Completo",
@@ -211,7 +210,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       label: "Finalizar cadastro e criar conta",
                       child: SizedBox(
                         width: double.infinity,
-                        height: 56, // WCAG recomendação > 48px
+                        height: 56, 
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleRegister,
                           style: ElevatedButton.styleFrom(
@@ -238,7 +237,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     // LINK VOLTAR
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(minimumSize: const Size(48, 48)), // WCAG Tap Target
+                      style: TextButton.styleFrom(minimumSize: const Size(48, 48)), 
                       child: const Text("Já tenho uma conta. Fazer Login"),
                     ),
                   ],
