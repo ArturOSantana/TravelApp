@@ -7,6 +7,7 @@ import '../models/notification_model.dart';
 import 'trips_page.dart';
 import 'insights_page.dart';
 import 'services_library_page.dart';
+import 'community_page.dart';
 import 'profile_page.dart';
 import 'flight_search_page.dart';
 import 'hotel_search_page.dart';
@@ -109,12 +110,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       );
                     }
 
-                    // Estado de carregamento
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    // Sem dados ainda
                     if (!snapshot.hasData) {
                       return Center(
                         child: Column(
@@ -163,7 +162,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       itemBuilder: (context, index) {
                         final notif = notifications[index];
 
-                        // Definir ícone e cor baseado no tipo
+                        // Def icon
                         IconData icon;
                         Color color;
                         String message;
@@ -183,7 +182,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           case NotificationType.safetyAlert:
                             icon = Icons.warning;
                             color = Colors.orange;
-                            message = "🆘 ALERTA DE SEGURANÇA";
+                            message = "ALERTA DE SEGURANÇA";
                             break;
                         }
 
@@ -444,11 +443,11 @@ class _DashboardPageState extends State<DashboardPage> {
                   "Comunidade",
                   Icons.people_alt_rounded,
                   Colors.indigo,
-                  "Ver recomendações de outros usuários",
+                  "Ver posts e recomendações da comunidade",
                   () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ServicesLibraryPage(),
+                      builder: (context) => const CommunityPage(),
                     ),
                   ),
                 ),

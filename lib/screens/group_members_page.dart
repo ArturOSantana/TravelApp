@@ -66,13 +66,12 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
           return FutureBuilder<List<UserModel>>(
             future: controller.getTripMembers(memberIds),
             builder: (context, userSnapshot) {
-              // Correção do Loading Eterno: verifica se está esperando E se não tem dados
               if (userSnapshot.connectionState == ConnectionState.waiting &&
                   !userSnapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              // Se não conseguiu carregar, mostra erro
+              // Se não co
               if (userSnapshot.hasError) {
                 return Center(
                   child: Column(
@@ -95,10 +94,9 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                 );
               }
 
-              // Usa os dados retornados pelo controller (que já tem lógica de fallback)
               final members = userSnapshot.data ?? [];
 
-              // Se não há membros, mostra mensagem
+              // Se não há membros
               if (members.isEmpty) {
                 return const Center(child: Text('Nenhum membro encontrado.'));
               }
@@ -222,14 +220,15 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Theme.of(context).colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: SelectableText(
                 widget.trip.id,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -239,9 +238,9 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
           TextButton(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: widget.trip.id));
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text("Código copiado!")));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Código copiado!")),
+              );
               Navigator.pop(context);
             },
             child: const Text("Copiar Código"),

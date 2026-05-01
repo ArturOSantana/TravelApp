@@ -125,7 +125,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "Análises com IA, relatórios PDF e muito mais!",
+                  "Análises, relatórios PDF e muito mais!",
                   style: TextStyle(
                     color: AppColors.textOnPrimary.withOpacity(0.9),
                     fontSize: 12,
@@ -171,11 +171,10 @@ class _InsightsPageState extends State<InsightsPage> {
             onSelected: (selected) {
               if (selected) setState(() => _showGeneral = true);
             },
+            // a visao geral
             selectedColor: AppColors.primary,
             labelStyle: TextStyle(
-              color: _showGeneral
-                  ? AppColors.textOnPrimary
-                  : AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(width: 8),
@@ -186,7 +185,7 @@ class _InsightsPageState extends State<InsightsPage> {
               child: ChoiceChip(
                 label: Text(
                   trip.destination,
-                ), // Usando destination em vez de title
+                ), 
                 selected: isSelected,
                 onSelected: (selected) {
                   if (selected) {
@@ -196,11 +195,10 @@ class _InsightsPageState extends State<InsightsPage> {
                     });
                   }
                 },
+                //os demais
                 selectedColor: AppColors.primary,
                 labelStyle: TextStyle(
-                  color: isSelected
-                      ? AppColors.textOnPrimary
-                      : AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             );
@@ -245,7 +243,7 @@ class _InsightsPageState extends State<InsightsPage> {
         const SizedBox(height: 12),
         _buildBudgetSummaryCard(totalInvested, trips.length),
         const SizedBox(height: 24),
-        _buildSectionTitle("Estilo de Viajante"),
+        _buildSectionTitle("Estilo de Viagem"),
         _buildTravelStyleChart(trips),
       ],
     );
@@ -259,7 +257,7 @@ class _InsightsPageState extends State<InsightsPage> {
         double spent = expenses.fold(
           0,
           (sum, e) => sum + e.value,
-        ); // Usando value em vez de amount
+        );
         double percent = trip.budget > 0 ? (spent / trip.budget) : 0;
         bool isOverBudget = spent > trip.budget;
 
@@ -269,9 +267,8 @@ class _InsightsPageState extends State<InsightsPage> {
             Text(
               trip.destination,
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ), // Usando destination
+            ),
             const SizedBox(height: 24),
-
             _buildSectionTitle("Saúde Financeira"),
             const SizedBox(height: 12),
             _buildExpenseComparisonCard(
@@ -280,7 +277,6 @@ class _InsightsPageState extends State<InsightsPage> {
               percent,
               isOverBudget,
             ),
-
             const SizedBox(height: 24),
             _buildSectionTitle("Distribuição de Gastos"),
             _buildCategoryDistribution(expenses),
@@ -299,10 +295,12 @@ class _InsightsPageState extends State<InsightsPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isOver ? AppColors.errorBackground : AppColors.successBackground,
+        color: isOver ? const Color.fromARGB(255, 232, 11, 44) : const Color.fromARGB(255, 2, 5, 2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isOver ? AppColors.errorLight : AppColors.successLight,
+          color: isOver ? 
+          Theme.of( context).colorScheme.error : Theme.of(context).colorScheme.secondary,
+          
         ),
       ),
       child: Column(
@@ -343,8 +341,7 @@ class _InsightsPageState extends State<InsightsPage> {
   Widget _buildCategoryDistribution(List<Expense> expenses) {
     Map<String, double> categories = {};
     for (var e in expenses) {
-      categories[e.category] = (categories[e.category] ?? 0) +
-          e.value; // Usando value em vez de amount
+      categories[e.category] = (categories[e.category] ?? 0) + e.value;
     }
 
     if (categories.isEmpty) return const Text("Sem gastos registrados.");
@@ -352,7 +349,7 @@ class _InsightsPageState extends State<InsightsPage> {
     double totalSpent = expenses.fold(
       0.0,
       (sum, e) => sum + e.value,
-    ); // Usando value
+    );
 
     return Column(
       children: categories.entries.map((entry) {
@@ -414,9 +411,13 @@ class _InsightsPageState extends State<InsightsPage> {
             value,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          Text(label,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -427,9 +428,9 @@ class _InsightsPageState extends State<InsightsPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -453,7 +454,7 @@ class _InsightsPageState extends State<InsightsPage> {
       children: [
         Text(label,
             style:
-                const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                 TextStyle(fontSize: 12, color:Theme.of(context).colorScheme.onSurface)),
         Text(
           value,
           style: TextStyle(
@@ -494,8 +495,9 @@ class _InsightsPageState extends State<InsightsPage> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         Text(label,
-            style:
-                const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            style:  TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurface)),
       ],
     );
   }

@@ -73,7 +73,7 @@ class _JournalPageState extends State<JournalPage> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.grey[200],
+                  fillColor: Theme.of(context).colorScheme.surface,
                   contentPadding: EdgeInsets.zero,
                 ),
                 onChanged: (value) =>

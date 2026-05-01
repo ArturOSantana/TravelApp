@@ -188,7 +188,7 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
               prefixIcon: const Icon(Icons.search, size: 20),
               isDense: true,
               filled: true,
-              fillColor: Colors.grey[100],
+              fillColor: Theme.of(context).colorScheme.surfaceVariant,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -225,7 +225,9 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
                         },
                         selectedColor: Colors.deepPurple,
                         labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
+                          color: isSelected
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     );
@@ -283,7 +285,9 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
         item.name,
         style: TextStyle(
           decoration: item.isChecked ? TextDecoration.lineThrough : null,
-          color: item.isChecked ? Colors.grey : Colors.black87,
+          color: item.isChecked
+              ? Colors.grey
+              : Theme.of(context).colorScheme.onSurface,
         ),
       ),
       trailing: IconButton(

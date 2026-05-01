@@ -38,6 +38,31 @@ class _CommunityPageState extends State<CommunityPage> {
     super.dispose();
   }
 
+  Future<String> _getUserName(String ownerId, String? currentUserName) async {
+    // Se já tem userName, retorna ele
+    if (currentUserName != null &&
+        currentUserName.isNotEmpty &&
+        currentUserName != 'Viajante') {
+      return currentUserName;
+    }
+
+    // Busca o nome do usuário no Firestore
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(ownerId)
+          .get();
+
+      if (userDoc.exists) {
+        return userDoc.data()?['name'] ?? 'Viajante';
+      }
+    } catch (e) {
+      debugPrint('Erro ao buscar nome do usuário: $e');
+    }
+
+    return 'Viajante';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,43 +232,78 @@ class _CommunityPageState extends State<CommunityPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer,
-                              child: Icon(Icons.person,
-                                  size: 18,
-                                  color: Theme.of(context).colorScheme.primary),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                post.userName ?? 'Viajante',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
+                        FutureBuilder<String>(
+                          future: _getUserName(post.ownerId, post.userName),
+                          builder: (context, snapshot) {
+                            final displayName =
+                                snapshot.data ?? post.userName ?? 'Viajante';
+                            return Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer,
+                                  child: Icon(Icons.person,
+                                      size: 18,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    displayName,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            _iconStat(
-                                Icons.favorite,
-                                isLiked
-                                    ? AppColors.error
-                                    : AppColors.textDisabled,
-                                '${post.likes.length}',
-                                "curtidas"),
+                            Semantics(
+                              button: true,
+                              label: isLiked
+                                  ? "Descurtir. ${post.likes.length} curtidas"
+                                  : "Curtir. ${post.likes.length} curtidas",
+                              child: InkWell(
+                                onTap: () => _controller.toggleLikeService(
+                                    post.id, post.likes),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                          isLiked
+                                              ? Icons.favorite
+                                              : Icons.favorite_border,
+                                          size: 18,
+                                          color: isLiked
+                                              ? AppColors.error
+                                              : AppColors.textDisabled),
+                                      const SizedBox(width: 4),
+                                      Text('${post.likes.length}',
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                             const SizedBox(width: 20),
                             _iconStat(
                                 Icons.comment_outlined,
@@ -350,6 +410,32 @@ class _CommunityPageState extends State<CommunityPage> {
                             style: TextStyle(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              child: Icon(Icons.person,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.primary),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Por ${post.userName ?? 'Viajante'}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 20),
                         if (post.photos.isNotEmpty)
                           SizedBox(
@@ -421,7 +507,8 @@ class _CommunityPageState extends State<CommunityPage> {
                               decoration: InputDecoration(
                                 hintText: "Adicione um comentário...",
                                 filled: true,
-                                fillColor: AppColors.surfaceVariant,
+                                fillColor:
+                                    Theme.of(context).colorScheme.surface,
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(25),
                                     borderSide: BorderSide.none),
