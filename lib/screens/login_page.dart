@@ -217,7 +217,10 @@ class _LoginPageState extends State<LoginPage> {
                           context,
                           color: AppColors.textSecondary,
                         ),
-                        prefixIcon: const Icon(Icons.email_outlined),
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: AppColors.primary,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -249,7 +252,10 @@ class _LoginPageState extends State<LoginPage> {
                           context,
                           color: AppColors.textSecondary,
                         ),
-                        prefixIcon: const Icon(Icons.lock_outline),
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: AppColors.primary,
+                        ),
                         suffixIcon: AccessibleIconButton(
                           icon: _obscurePassword
                               ? Icons.visibility_off
