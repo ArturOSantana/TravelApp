@@ -109,6 +109,9 @@ class _OnboardingPageState extends State<OnboardingPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -116,8 +119,8 @@ class _OnboardingPageState extends State<OnboardingPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              _pages[_currentPage].color.withOpacity(0.1),
-              AppColors.surface,
+              _pages[_currentPage].color.withOpacity(isDark ? 0.15 : 0.1),
+              theme.colorScheme.surface,
             ],
           ),
         ),
@@ -200,7 +203,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                     dotHeight: 12,
                     dotWidth: 12,
                     activeDotColor: _pages[_currentPage].color,
-                    dotColor: AppColors.divider,
+                    dotColor: theme.colorScheme.outline.withOpacity(0.3),
                     expansionFactor: 3,
                   ),
                 ),
@@ -233,7 +236,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _pages[_currentPage].color,
-                              foregroundColor: AppColors.textOnPrimary,
+                              foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -274,6 +277,8 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   Widget _buildPage(OnboardingContent content, int index) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
@@ -355,7 +360,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                     content.description,
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.textSecondary,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
                       height: 1.5,
                     ),
                     textAlign: TextAlign.center,
@@ -403,7 +408,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                 content.features[featureIndex],
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.textPrimary,
+                                  color: theme.colorScheme.onSurface,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),

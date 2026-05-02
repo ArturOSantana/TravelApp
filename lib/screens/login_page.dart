@@ -160,11 +160,12 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final double screenWidth = MediaQuery.of(context).size.width;
     final double formWidth = screenWidth > 600 ? 450 : screenWidth;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.colorScheme.surface,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -215,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
                         labelText: "E-mail",
                         labelStyle: AppTextStyles.body(
                           context,
-                          color: AppColors.textSecondary,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                         prefixIcon: Icon(
                           Icons.email_outlined,
@@ -225,7 +226,7 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: AppColors.surfaceVariant,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
                       validator: (value) => value == null || value.isEmpty
                           ? "Informe seu e-mail"
@@ -250,7 +251,7 @@ class _LoginPageState extends State<LoginPage> {
                         labelText: "Senha",
                         labelStyle: AppTextStyles.body(
                           context,
-                          color: AppColors.textSecondary,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                         prefixIcon: Icon(
                           Icons.lock_outline,
@@ -274,7 +275,7 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: AppColors.surfaceVariant,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
                       validator: (value) => value == null || value.isEmpty
                           ? "Informe sua senha"

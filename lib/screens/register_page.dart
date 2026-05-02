@@ -15,7 +15,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   final AuthController _authController = AuthController();
 
@@ -63,6 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final double screenWidth = MediaQuery.of(context).size.width;
     final double formWidth = screenWidth > 600 ? 500 : screenWidth;
 
@@ -78,42 +80,51 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(25.0),
           child: Container(
-            width: formWidth, 
+            width: formWidth,
             child: Form(
               key: _formKey,
-              child: AutofillGroup( 
+              child: AutofillGroup(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Semantics(
                       label: "Ícone de novo usuário",
-                      child: const Icon(
+                      child: Icon(
                         Icons.person_add_alt_1_rounded,
                         size: 80,
-                        color: Colors.deepPurple,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       "Cadastre-se para começar sua jornada",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
                     ),
                     const SizedBox(height: 30),
 
                     // NOME COMPLETO
                     TextFormField(
                       controller: nameController,
-                      autofillHints: const [AutofillHints.name], 
+                      autofillHints: const [AutofillHints.name],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Nome Completo",
-                        prefixIcon: Icon(Icons.person_outline),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12))),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) return "Informe seu nome";
-                        if (value.trim().split(' ').length < 2) return "Informe nome e sobrenome";
+                        if (value == null || value.trim().isEmpty)
+                          return "Informe seu nome";
+                        if (value.trim().split(' ').length < 2)
+                          return "Informe nome e sobrenome";
                         return null;
                       },
                     ),
@@ -125,15 +136,22 @@ class _RegisterPageState extends State<RegisterPage> {
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "E-mail",
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12))),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "Informe seu e-mail";
-                        final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                        if (!emailRegex.hasMatch(value)) return "E-mail inválido";
+                        if (value == null || value.isEmpty)
+                          return "Informe seu e-mail";
+                        final emailRegex =
+                            RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                        if (!emailRegex.hasMatch(value))
+                          return "E-mail inválido";
                         return null;
                       },
                     ),
@@ -145,15 +163,21 @@ class _RegisterPageState extends State<RegisterPage> {
                       keyboardType: TextInputType.phone,
                       autofillHints: const [AutofillHints.telephoneNumber],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Telefone",
                         hintText: "(00) 00000-0000",
-                        prefixIcon: Icon(Icons.phone_outlined),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        prefixIcon: const Icon(Icons.phone_outlined),
+                        border: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12))),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "Informe seu telefone";
-                        if (value.replaceAll(RegExp(r'\D'), '').length < 10) return "Telefone muito curto";
+                        if (value == null || value.isEmpty)
+                          return "Informe seu telefone";
+                        if (value.replaceAll(RegExp(r'\D'), '').length < 10)
+                          return "Telefone muito curto";
                         return null;
                       },
                     ),
@@ -169,14 +193,22 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText: "Senha",
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                          tooltip: "Mostrar/Ocultar senha", // WCAG Label
+                          icon: Icon(_obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
+                          tooltip: "Mostrar/Ocultar senha",
                         ),
-                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        border: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12))),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
-                      validator: (value) =>
-                      value == null || value.length < 6 ? "A senha deve ter pelo menos 6 caracteres" : null,
+                      validator: (value) => value == null || value.length < 6
+                          ? "A senha deve ter pelo menos 6 caracteres"
+                          : null,
                     ),
                     const SizedBox(height: 15),
 
@@ -190,15 +222,25 @@ class _RegisterPageState extends State<RegisterPage> {
                         labelText: "Confirmar Senha",
                         prefixIcon: const Icon(Icons.lock_reset_outlined),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                          icon: Icon(_obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () => setState(() =>
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword),
                           tooltip: "Mostrar/Ocultar confirmação",
                         ),
-                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        border: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(12))),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "Confirme sua senha";
-                        if (value != passwordController.text) return "As senhas não coincidem";
+                        if (value == null || value.isEmpty)
+                          return "Confirme sua senha";
+                        if (value != passwordController.text)
+                          return "As senhas não coincidem";
                         return null;
                       },
                     ),
@@ -210,23 +252,27 @@ class _RegisterPageState extends State<RegisterPage> {
                       label: "Finalizar cadastro e criar conta",
                       child: SizedBox(
                         width: double.infinity,
-                        height: 56, 
+                        height: 56,
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleRegister,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           child: _isLoading
                               ? const SizedBox(
                                   height: 25,
                                   width: 25,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
                                 )
                               : const Text(
                                   "Criar Minha Conta",
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ),
@@ -237,7 +283,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     // LINK VOLTAR
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(minimumSize: const Size(48, 48)), 
+                      style:
+                          TextButton.styleFrom(minimumSize: const Size(48, 48)),
                       child: const Text("Já tenho uma conta. Fazer Login"),
                     ),
                   ],
