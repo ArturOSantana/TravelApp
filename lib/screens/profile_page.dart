@@ -229,8 +229,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: (_imageFile == null &&
                               (_user?.photoUrl == null ||
                                   _user!.photoUrl!.isEmpty))
-                          ? const Icon(Icons.person,
-                              size: 60, color: AppColors.textDisabled)
+                          ? ClipOval(
+                              child: Image.asset(
+                                'assets/images/icone_perfil.png',
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
+                            )
                           : null,
                     ),
                     Positioned(
@@ -255,26 +261,34 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 Container(
                   decoration: BoxDecoration(
-                    color: (_user?.isPremium ?? false)
-                        ? AppColors.warningBackground
-                        : AppColors.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(
-                        color: (_user?.isPremium ?? false)
-                            ? AppColors.warningLight
-                            : AppColors.divider),
+                      color: (_user?.isPremium ?? false)
+                          ? AppColors.warning
+                          : Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   child: SwitchListTile(
-                    title: Row(
-                      children: const [
-                        Icon(Icons.star, color: AppColors.warning, size: 20),
+                    title: const Row(
+                      children: [
+                        Icon(
+                          Icons.star,
+                          color: AppColors.warning,
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
-                        Text("Usuário Premium",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          "Usuário Premium",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
-                    subtitle:
-                        const Text("Desbloqueia clima, câmbio e segurança"),
+                    subtitle: const Text(
+                      "Desbloqueia clima, câmbio e segurança",
+                    ),
                     value: _user?.isPremium ?? false,
                     activeColor: AppColors.warning,
                     onChanged: _togglePremium,
@@ -283,12 +297,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 20),
 
-                // Modo Noturno (talvaz nao funcione)
+                // Modo Noturno
                 Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Theme.of(context).dividerColor),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   child: const ThemeToggleButton(),
                 ),
@@ -369,10 +385,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 50,
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      // 1. Faz o logout no Firebase
                       await _authController.logout();
 
-                      // 2. Limpa toda a pilha de navegação e volta para a tela inicial (Login)
                       if (mounted) {
                         Navigator.of(context)
                             .pushNamedAndRemoveUntil('/', (route) => false);
