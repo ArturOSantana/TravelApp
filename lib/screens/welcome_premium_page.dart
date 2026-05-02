@@ -72,6 +72,9 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -79,8 +82,8 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              _pages[_currentPage].color.withOpacity(0.1),
-              Colors.white,
+              _pages[_currentPage].color.withOpacity(isDark ? 0.15 : 0.1),
+              theme.colorScheme.surface,
             ],
           ),
         ),
@@ -98,11 +101,12 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
                       size: 32,
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       "Travel App",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -132,7 +136,7 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
                     dotHeight: 12,
                     dotWidth: 12,
                     activeDotColor: _pages[_currentPage].color,
-                    dotColor: Colors.grey.shade300,
+                    dotColor: theme.colorScheme.outline.withOpacity(0.3),
                     expansionFactor: 3,
                   ),
                 ),
@@ -204,6 +208,8 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
   }
 
   Widget _buildPage(WelcomeContent content, int index) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
@@ -265,7 +271,7 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
             content.description,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[700],
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -277,11 +283,11 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: theme.colorScheme.shadow.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 4),
                 ),
@@ -303,9 +309,10 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
                         Expanded(
                           child: Text(
                             feature.substring(3),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                         ),
@@ -320,9 +327,10 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
                         Expanded(
                           child: Text(
                             feature,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
                         ),
@@ -339,14 +347,16 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
   }
 
   Widget _buildPremiumButton() {
+    final theme = Theme.of(context);
+
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
         onPressed: _isLoading ? null : () => _upgradeToPremium(),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.deepPurple,
-          foregroundColor: Colors.white,
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -373,14 +383,16 @@ class _WelcomePremiumPageState extends State<WelcomePremiumPage> {
   }
 
   Widget _buildFreeButton() {
+    final theme = Theme.of(context);
+
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
         onPressed: _isLoading ? null : () => _startWithFree(),
         style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.deepPurple,
-          side: const BorderSide(color: Colors.deepPurple, width: 2),
+          foregroundColor: theme.colorScheme.primary,
+          side: BorderSide(color: theme.colorScheme.primary, width: 2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -459,4 +471,3 @@ class WelcomeContent {
     required this.features,
   });
 }
-
