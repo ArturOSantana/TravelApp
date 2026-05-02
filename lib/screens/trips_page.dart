@@ -53,8 +53,10 @@ class _TripsPageState extends State<TripsPage>
             builder: (context, snapshot) {
               bool hasNewPosts = false;
               if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                final latestPostDate = snapshot.data!.first.updatedAt ?? snapshot.data!.first.lastUsed;
-                if (latestPostDate.millisecondsSinceEpoch > _lastViewedTimestamp) {
+                final latestPostDate = snapshot.data!.first.updatedAt ??
+                    snapshot.data!.first.lastUsed;
+                if (latestPostDate.millisecondsSinceEpoch >
+                    _lastViewedTimestamp) {
                   hasNewPosts = true;
                 }
               }
@@ -68,7 +70,8 @@ class _TripsPageState extends State<TripsPage>
                     onPressed: () async {
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const CommunityPage()),
+                        MaterialPageRoute(
+                            builder: (context) => const CommunityPage()),
                       );
                       _loadLastViewed(); // Atualiza o estado local ao voltar
                     },
@@ -252,14 +255,20 @@ class _TripsPageState extends State<TripsPage>
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: trip.photoUrl != null && trip.photoUrl!.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(trip.photoUrl!, fit: BoxFit.cover),
-                      )
-                    : Icon(
-                        status == 'completed' ? Icons.archive : Icons.flight,
-                        color: status == 'completed' ? Colors.grey : Colors.deepPurple,
-                      ),
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child:
+                              Image.network(trip.photoUrl!, fit: BoxFit.cover),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.asset(
+                            'assets/images/icone_aviao.png', //logo do rafa
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
                 ),
                 title: Text(
                   trip.destination,
