@@ -70,7 +70,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text("Erro ao carregar perfil: $e"),
-              backgroundColor: AppColors.error),
+              backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     }
@@ -95,7 +95,9 @@ class _ProfilePageState extends State<ProfilePage> {
         SnackBar(
           content: Text(
               value ? "Modo PREMIUM ativado!" : "Modo PREMIUM desativado."),
-          backgroundColor: value ? AppColors.warning : AppColors.textDisabled,
+          backgroundColor: value
+              ? Colors.orange
+              : Theme.of(context).colorScheme.surfaceVariant,
         ),
       );
     }
@@ -151,7 +153,9 @@ class _ProfilePageState extends State<ProfilePage> {
             _loadUserData();
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error), backgroundColor: AppColors.error),
+              SnackBar(
+                  content: Text(error),
+                  backgroundColor: Theme.of(context).colorScheme.error),
             );
           }
         }
@@ -161,7 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text("Erro ao salvar: $e"),
-                backgroundColor: AppColors.error),
+                backgroundColor: Theme.of(context).colorScheme.error),
           );
         }
       }
@@ -243,11 +247,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       bottom: 0,
                       right: 0,
                       child: CircleAvatar(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         radius: 20,
                         child: IconButton(
-                          icon: const Icon(Icons.camera_alt,
-                              size: 20, color: AppColors.textOnPrimary),
+                          icon: Icon(Icons.camera_alt,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.onPrimary),
                           onPressed: _pickImage,
                         ),
                       ),
@@ -256,7 +261,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 10),
                 Text(_user?.email ?? '',
-                    style: const TextStyle(color: AppColors.textSecondary)),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 20),
 
                 Container(
@@ -342,11 +348,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 30),
                 const Divider(),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.emergency, color: AppColors.error),
-                    SizedBox(width: 10),
-                    Text("Contato de Emergência",
+                    Icon(Icons.emergency,
+                        color: Theme.of(context).colorScheme.error),
+                    const SizedBox(width: 10),
+                    const Text("Contato de Emergência",
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold)),
                   ],
@@ -395,7 +402,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: const Icon(Icons.logout),
                     label: const Text("Sair da Conta"),
                     style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.error),
+                        foregroundColor: Theme.of(context).colorScheme.error),
                   ),
                 ),
               ],

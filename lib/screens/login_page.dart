@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Semantics(liveRegion: true, child: Text(error)),
-              backgroundColor: AppColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -115,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                             "Este e-mail não está cadastrado em nossa base. ",
                           ),
                         ),
-                        backgroundColor: AppColors.error,
+                        backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
                   } else {
@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                                 "Link enviado! Verifique seu e-mail (e a pasta de SPAM). ",
                               ),
                             ),
-                            backgroundColor: AppColors.success,
+                            backgroundColor: Colors.green,
                             duration: const Duration(seconds: 5),
                           ),
                         );
@@ -143,7 +143,8 @@ class _LoginPageState extends State<LoginPage> {
                               liveRegion: true,
                               child: Text(error),
                             ),
-                            backgroundColor: AppColors.error,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.error,
                           ),
                         );
                       }
@@ -220,7 +221,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         prefixIcon: Icon(
                           Icons.email_outlined,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -255,7 +256,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         prefixIcon: Icon(
                           Icons.lock_outline,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         suffixIcon: AccessibleIconButton(
                           icon: _obscurePassword

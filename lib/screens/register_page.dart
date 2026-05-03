@@ -40,8 +40,8 @@ class _RegisterPageState extends State<RegisterPage> {
       if (erro == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Conta criada com sucesso! ✨"),
+            SnackBar(
+              content: const Text("Conta criada com sucesso! ✨"),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
@@ -53,7 +53,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(erro),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
             ),
           );

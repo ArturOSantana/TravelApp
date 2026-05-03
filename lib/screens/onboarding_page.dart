@@ -17,57 +17,62 @@ class _OnboardingPageState extends State<OnboardingPage>
   int _currentPage = 0;
   late AnimationController _iconAnimationController;
   late AnimationController _textAnimationController;
+  late List<OnboardingContent> _pages;
 
-  final List<OnboardingContent> _pages = [
-    OnboardingContent(
-      title: "Planeje Suas Viagens",
-      description:
-          "Organize roteiros, atividades e orçamento em um só lugar. Perfeito para viagens solo ou em grupo.",
-      icon: Icons.map_outlined,
-      color: AppColors.primary,
-      features: [
-        "Crie itinerários detalhados",
-        "Gerencie viagens em grupo",
-        "Modo nômade para viagens sem data",
-      ],
-    ),
-    OnboardingContent(
-      title: "Divida Gastos Facilmente",
-      description:
-          "Registre despesas e divida automaticamente entre o grupo. Saiba quem deve para quem em tempo real.",
-      icon: Icons.payments_outlined,
-      color: AppColors.success,
-      features: [
-        "Divisão automática de custos",
-        "Múltiplas moedas suportadas",
-        "Relatórios financeiros detalhados",
-      ],
-    ),
-    OnboardingContent(
-      title: "Guarde Suas Memórias",
-      description:
-          "Crie um diário de viagem com fotos e compartilhe com amigos e família através de um álbum online.",
-      icon: Icons.photo_library_outlined,
-      color: AppColors.warning,
-      features: [
-        "Diário com mood tracking",
-        "Álbum compartilhável online",
-        "Reações e comentários",
-      ],
-    ),
-    OnboardingContent(
-      title: "Viaje com Segurança",
-      description:
-          "Botão de pânico, check-ins de segurança e compartilhamento de localização para sua tranquilidade.",
-      icon: Icons.security_outlined,
-      color: AppColors.error,
-      features: [
-        "Botão de pânico com GPS",
-        "Monitoramento de trajeto",
-        "Alertas automáticos",
-      ],
-    ),
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pages = [
+      OnboardingContent(
+        title: "Planeje Suas Viagens",
+        description:
+            "Organize roteiros, atividades e orçamento em um só lugar. Perfeito para viagens solo ou em grupo.",
+        icon: Icons.map_outlined,
+        color: Theme.of(context).colorScheme.primary,
+        features: [
+          "Crie itinerários detalhados",
+          "Gerencie viagens em grupo",
+          "Modo nômade para viagens sem data",
+        ],
+      ),
+      OnboardingContent(
+        title: "Divida Gastos Facilmente",
+        description:
+            "Registre despesas e divida automaticamente entre o grupo. Saiba quem deve para quem em tempo real.",
+        icon: Icons.payments_outlined,
+        color: Colors.green,
+        features: [
+          "Divisão automática de custos",
+          "Múltiplas moedas suportadas",
+          "Relatórios financeiros detalhados",
+        ],
+      ),
+      OnboardingContent(
+        title: "Guarde Suas Memórias",
+        description:
+            "Crie um diário de viagem com fotos e compartilhe com amigos e família através de um álbum online.",
+        icon: Icons.photo_library_outlined,
+        color: Colors.orange,
+        features: [
+          "Diário com mood tracking",
+          "Álbum compartilhável online",
+          "Reações e comentários",
+        ],
+      ),
+      OnboardingContent(
+        title: "Viaje com Segurança",
+        description:
+            "Botão de pânico, check-ins de segurança e compartilhamento de localização para sua tranquilidade.",
+        icon: Icons.security_outlined,
+        color: Theme.of(context).colorScheme.error,
+        features: [
+          "Botão de pânico com GPS",
+          "Monitoramento de trajeto",
+          "Alertas automáticos",
+        ],
+      ),
+    ];
+  }
 
   @override
   void initState() {
@@ -93,7 +98,7 @@ class _OnboardingPageState extends State<OnboardingPage>
 
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_completed', true);
+    await prefs.setBool('onboarding_completa', true);
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/');
     }
@@ -127,13 +132,11 @@ class _OnboardingPageState extends State<OnboardingPage>
         child: SafeArea(
           child: Column(
             children: [
-              // Botão Skip com animação
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Logo ou título
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: 1),
                       duration: const Duration(milliseconds: 600),

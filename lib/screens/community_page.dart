@@ -278,8 +278,11 @@ class _CommunityPageState extends State<CommunityPage> {
                                   ? "Descurtir. ${post.likes.length} curtidas"
                                   : "Curtir. ${post.likes.length} curtidas",
                               child: InkWell(
-                                onTap: () => _controller.toggleLikeService(
-                                    post.id, post.likes),
+                                onTap: () {
+                                  _controller.toggleLikeService(
+                                      post.id, post.likes);
+                                  setState(() {}); // Força atualização da UI
+                                },
                                 borderRadius: BorderRadius.circular(20),
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -292,13 +295,20 @@ class _CommunityPageState extends State<CommunityPage> {
                                               : Icons.favorite_border,
                                           size: 18,
                                           color: isLiked
-                                              ? AppColors.error
-                                              : AppColors.textDisabled),
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .error
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant),
                                       const SizedBox(width: 4),
                                       Text('${post.likes.length}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontSize: 12,
-                                              fontWeight: FontWeight.bold)),
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface)),
                                     ],
                                   ),
                                 ),
@@ -307,7 +317,7 @@ class _CommunityPageState extends State<CommunityPage> {
                             const SizedBox(width: 20),
                             _iconStat(
                                 Icons.comment_outlined,
-                                AppColors.textDisabled,
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                                 '${post.comments.length}',
                                 "comentários"),
                           ],
@@ -346,7 +356,7 @@ class _CommunityPageState extends State<CommunityPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.overlay,
+      backgroundColor: Colors.transparent,
       builder: (context) => StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection('services')
@@ -397,11 +407,15 @@ class _CommunityPageState extends State<CommunityPage> {
                                         ? Icons.favorite
                                         : Icons.favorite_border,
                                     color: isLiked
-                                        ? AppColors.error
-                                        : AppColors.textDisabled,
+                                        ? Theme.of(context).colorScheme.error
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                     size: 28),
-                                onPressed: () => _controller.toggleLikeService(
-                                    post.id, post.likes),
+                                onPressed: () {
+                                  _controller.toggleLikeService(
+                                      post.id, post.likes);
+                                },
                               ),
                             ),
                           ],
@@ -523,10 +537,13 @@ class _CommunityPageState extends State<CommunityPage> {
                           button: true,
                           label: "Enviar comentário",
                           child: CircleAvatar(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
                             child: IconButton(
-                              icon: const Icon(Icons.send,
-                                  color: AppColors.textOnPrimary, size: 20),
+                              icon: Icon(Icons.send,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  size: 20),
                               onPressed: () async {
                                 if (commentController.text.trim().isNotEmpty) {
                                   final text = commentController.text.trim();
