@@ -98,7 +98,7 @@ class _OnboardingPageState extends State<OnboardingPage>
 
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_completa', true);
+    await prefs.setBool('onboarding_completed', true);
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/');
     }
