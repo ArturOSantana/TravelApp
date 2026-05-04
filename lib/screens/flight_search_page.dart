@@ -193,7 +193,7 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Busca de Vôos"),
+        title: const Text("Busca de Voos"),
       ),
       body: Column(
         children: [
