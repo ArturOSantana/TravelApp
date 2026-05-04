@@ -464,70 +464,77 @@ class _ItineraryPageState extends State<ItineraryPage> {
                   if (value == 'cancelled')
                     _updateStatus(activity, ActivityStatus.cancelled);
                 },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 8),
-                        Text('Editar'),
-                      ],
+                itemBuilder: (context) {
+                  final isAdmin = _trip?.isAdmin(_currentUid) ?? false;
+                  return [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 20),
+                          SizedBox(width: 8),
+                          Text('Editar'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'opinion',
-                    child: Row(
-                      children: [
-                        Icon(Icons.comment, size: 20),
-                        SizedBox(width: 8),
-                        Text('Adicionar opinião'),
-                      ],
+                    const PopupMenuItem(
+                      value: 'opinion',
+                      child: Row(
+                        children: [
+                          Icon(Icons.comment, size: 20),
+                          SizedBox(width: 8),
+                          Text('Adicionar opinião'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'pending',
-                    child: Row(
-                      children: [
-                        Icon(Icons.pending, size: 20, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text('Marcar como pendente'),
-                      ],
+                    const PopupMenuDivider(),
+                    // Opções de status - apenas para admin em viagens de grupo
+                    if (isAdmin || !(_trip?.isGroup ?? false)) ...[
+                      const PopupMenuItem(
+                        value: 'pending',
+                        child: Row(
+                          children: [
+                            Icon(Icons.pending, size: 20, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text('Marcar como pendente'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'completed',
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle,
+                                size: 20, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('Marcar como concluída'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'cancelled',
+                        child: Row(
+                          children: [
+                            Icon(Icons.cancel, size: 20, color: Colors.grey),
+                            SizedBox(width: 8),
+                            Text('Marcar como cancelada'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                    ],
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Excluir', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'completed',
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 20, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Marcar como concluída'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'cancelled',
-                    child: Row(
-                      children: [
-                        Icon(Icons.cancel, size: 20, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text('Marcar como cancelada'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 20, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Excluir', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
+                  ];
+                },
               ),
             ),
 
@@ -741,6 +748,22 @@ class _ItineraryPageState extends State<ItineraryPage> {
     Activity activity,
     ActivityStatus newStatus,
   ) async {
+    // Verificar permissão: apenas admin pode alterar status em viagens de grupo
+    final isGroupTrip = _trip?.isGroup ?? false;
+    final isAdmin = _trip?.isAdmin(_currentUid) ?? false;
+
+    if (isGroupTrip && !isAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Apenas o administrador do grupo pode alterar o status das atividades',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     try {
       await _controller.updateActivity(activity.copyWith(status: newStatus));
       if (mounted) {
@@ -765,7 +788,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Erro ao atualizar status: $e"),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

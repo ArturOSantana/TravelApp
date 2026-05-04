@@ -3,11 +3,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz_lib;
 
-// Importações do projeto
 import '../lib/models/notification_model.dart';
 
 void main() {
-  // Setup global
   setUpAll(() {
     tz.initializeTimeZones();
     tz_lib.setLocalLocation(tz_lib.getLocation('America/Sao_Paulo'));
@@ -553,5 +551,3 @@ AppNotification _createTestNotification({
     isRead: isRead,
   );
 }
-
-// Made with Bob

@@ -132,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                                 "Link enviado! Verifique seu e-mail (e a pasta de SPAM). ",
                               ),
                             ),
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.green[700],
                             duration: const Duration(seconds: 5),
                           ),
                         );
@@ -194,12 +194,22 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24),
                   Semantics(
                     header: true,
-                    child: Text("Bem-vindo", style: AppTextStyles.h1(context)),
+                    child: Text(
+                      "Bem-vindo",
+                      style: AppTextStyles.h1(context).copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "Acesse sua conta para continuar",
-                    style: AppTextStyles.bodySmall(context),
+                    style: AppTextStyles.bodySmall(context).copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
+                    ),
                   ),
                   const SizedBox(height: 48),
 
@@ -212,7 +222,10 @@ class _LoginPageState extends State<LoginPage> {
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
                       textInputAction: TextInputAction.next,
-                      style: AppTextStyles.body(context),
+                      style: AppTextStyles.body(
+                        context,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         labelText: "E-mail",
                         labelStyle: AppTextStyles.body(
@@ -247,7 +260,10 @@ class _LoginPageState extends State<LoginPage> {
                       autofillHints: const [AutofillHints.password],
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _handleLogin(),
-                      style: AppTextStyles.body(context),
+                      style: AppTextStyles.body(
+                        context,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         labelText: "Senha",
                         labelStyle: AppTextStyles.body(
@@ -318,7 +334,9 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         Text(
                           "Não tem uma conta?",
-                          style: AppTextStyles.body(context),
+                          style: AppTextStyles.body(context).copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
                         AccessibleButton(
                           label: "Cadastre-se",

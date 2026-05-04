@@ -278,5 +278,3 @@ class _LineChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-
-// Made with Bob

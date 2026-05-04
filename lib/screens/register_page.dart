@@ -111,6 +111,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: nameController,
                       autofillHints: const [AutofillHints.name],
                       textInputAction: TextInputAction.next,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         labelText: "Nome Completo",
                         prefixIcon: const Icon(Icons.person_outline),
@@ -136,6 +139,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       keyboardType: TextInputType.emailAddress,
                       autofillHints: const [AutofillHints.email],
                       textInputAction: TextInputAction.next,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         labelText: "E-mail",
                         prefixIcon: const Icon(Icons.email_outlined),
@@ -163,6 +169,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       keyboardType: TextInputType.phone,
                       autofillHints: const [AutofillHints.telephoneNumber],
                       textInputAction: TextInputAction.next,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         labelText: "Telefone",
                         hintText: "(00) 00000-0000",
@@ -189,6 +198,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       obscureText: _obscurePassword,
                       autofillHints: const [AutofillHints.newPassword],
                       textInputAction: TextInputAction.next,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         labelText: "Senha",
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -218,6 +230,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       obscureText: _obscureConfirmPassword,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _handleRegister(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                       decoration: InputDecoration(
                         labelText: "Confirmar Senha",
                         prefixIcon: const Icon(Icons.lock_reset_outlined),

@@ -239,7 +239,12 @@ class _OnboardingPageState extends State<OnboardingPage>
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _pages[_currentPage].color,
-                              foregroundColor: Colors.white,
+                              foregroundColor: _pages[_currentPage]
+                                          .color
+                                          .computeLuminance() >
+                                      0.5
+                                  ? Colors.black
+                                  : Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),

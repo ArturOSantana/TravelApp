@@ -526,7 +526,8 @@ class TripController {
     );
 
     // Se o usuário já reagiu com este tipo, remove a reação
-    if (usersList.contains(user.uid)) {
+    final isRemoving = usersList.contains(user.uid);
+    if (isRemoving) {
       usersList.remove(user.uid);
     } else {
       // Remove reação anterior do usuário (se houver)
@@ -537,6 +538,27 @@ class TripController {
 
       // Adiciona nova reação
       usersList.add(user.uid);
+
+      // Envia notificação para o dono do journal entry (apenas ao adicionar reação)
+      if (entry.userId != user.uid) {
+        try {
+          // Usa locationName ou um trecho do content como nome do post
+          final postName = entry.locationName ??
+              (entry.content.length > 30
+                  ? '${entry.content.substring(0, 30)}...'
+                  : entry.content);
+
+          await _sendInternalNotification(
+            receiverId: entry.userId,
+            postId: entryId,
+            postName: postName,
+            type: NotificationType.like,
+          );
+        } catch (e) {
+          debugPrint('[REACTION] Erro ao enviar notificação: $e');
+          // Não falha a reação se a notificação falhar
+        }
+      }
     }
 
     // Atualiza no Firestore

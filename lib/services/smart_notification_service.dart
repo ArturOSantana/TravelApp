@@ -264,7 +264,6 @@ class SmartNotificationService {
     }
   }
 
-  /// Notifica sobre nova atividade no diário
   static Future<void> notifyJournalActivity({
     required String tripName,
     required String userName,
@@ -277,7 +276,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica sobre economia potencial
   static Future<void> notifySavingsOpportunity({
     required String tripName,
     required double potentialSavings,
@@ -291,7 +289,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica sobre clima no destino
   static Future<void> notifyWeatherAlert({
     required String destination,
     required String alert,
@@ -304,7 +301,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica sobre documentos pendentes
   static Future<void> notifyDocumentReminder({
     required String tripName,
     required List<String> missingDocuments,
@@ -317,7 +313,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica sobre melhor época para viajar
   static Future<void> notifyBestTimeToTravel({
     required String destination,
     required String month,
@@ -376,12 +371,10 @@ class SmartNotificationService {
     );
   }
 
-  /// Cancela todas as notificações agendadas
   static Future<void> cancelAll() async {
     await _notifications.cancelAll();
   }
 
-  /// Cancela notificação específica
   static Future<void> cancel(int id) async {
     await _notifications.cancel(id: id);
   }
