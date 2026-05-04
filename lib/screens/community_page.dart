@@ -278,10 +278,9 @@ class _CommunityPageState extends State<CommunityPage> {
                                   ? "Descurtir. ${post.likes.length} curtidas"
                                   : "Curtir. ${post.likes.length} curtidas",
                               child: InkWell(
-                                onTap: () {
-                                  _controller.toggleLikeService(
+                                onTap: () async {
+                                  await _controller.toggleLikeService(
                                       post.id, post.likes);
-                                  setState(() {}); // Força atualização da UI
                                 },
                                 borderRadius: BorderRadius.circular(20),
                                 child: Padding(

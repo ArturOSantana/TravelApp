@@ -84,6 +84,13 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
 
+    // Templates customizados de packing list
+    match /custom_packing_templates/{templateId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+
     // Fallback de segurança
     match /{document=**} {
       allow read, write: if false;
