@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/geoapify_service.dart';
-
+import '../services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ActivitySuggestionsPage extends StatefulWidget {
   final String tripId;
@@ -30,6 +31,9 @@ class _ActivitySuggestionsPageState extends State<ActivitySuggestionsPage>
   List<Map<String, dynamic>> _restaurants = [];
   List<Map<String, dynamic>> _entertainment = [];
 
+  // Localização atual do usuário
+  Position? _userLocation;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +56,9 @@ class _ActivitySuggestionsPageState extends State<ActivitySuggestionsPage>
     setState(() => _isLoading = true);
 
     try {
+      // Tentar obter localização atual do usuário
+      _userLocation = await LocationService.getCurrentLocation();
+
       await Future.wait([
         _loadAttractions(),
         _loadRestaurants(),
@@ -72,6 +79,20 @@ class _ActivitySuggestionsPageState extends State<ActivitySuggestionsPage>
       radius: 5000,
       limit: 30,
     );
+
+    // Recalcular distâncias baseadas na localização do usuário
+    if (_userLocation != null) {
+      for (var attraction in attractions) {
+        final distance = LocationService.calculateDistance(
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          attraction['lat'],
+          attraction['lon'],
+        );
+        attraction['distance'] = distance.toInt();
+      }
+    }
+
     setState(() => _attractions = attractions);
   }
 
@@ -83,6 +104,20 @@ class _ActivitySuggestionsPageState extends State<ActivitySuggestionsPage>
       radius: 5000,
       limit: 30,
     );
+
+    // Recalcular distâncias baseadas na localização do usuário
+    if (_userLocation != null) {
+      for (var restaurant in restaurants) {
+        final distance = LocationService.calculateDistance(
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          restaurant['lat'],
+          restaurant['lon'],
+        );
+        restaurant['distance'] = distance.toInt();
+      }
+    }
+
     setState(() => _restaurants = restaurants);
   }
 
@@ -94,6 +129,20 @@ class _ActivitySuggestionsPageState extends State<ActivitySuggestionsPage>
       radius: 5000,
       limit: 30,
     );
+
+    // Recalcular distâncias baseadas na localização do usuário
+    if (_userLocation != null) {
+      for (var item in entertainment) {
+        final distance = LocationService.calculateDistance(
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          item['lat'],
+          item['lon'],
+        );
+        item['distance'] = distance.toInt();
+      }
+    }
+
     setState(() => _entertainment = entertainment);
   }
 

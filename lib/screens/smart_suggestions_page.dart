@@ -3,6 +3,8 @@ import '../services/geoapify_service.dart';
 import '../services/rest_countries_service.dart';
 import '../services/openweathermap_service.dart';
 import '../services/exchangerate_service.dart';
+import '../services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class SmartSuggestionsPage extends StatefulWidget {
   final String destination;
@@ -34,6 +36,9 @@ class _SmartSuggestionsPageState extends State<SmartSuggestionsPage>
   Map<String, dynamic>? _weather;
   List<String> _travelTips = [];
 
+  // Localização atual do usuário
+  Position? _userLocation;
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +56,9 @@ class _SmartSuggestionsPageState extends State<SmartSuggestionsPage>
     setState(() => _isLoading = true);
 
     try {
+      // Tentar obter localização atual do usuário
+      _userLocation = await LocationService.getCurrentLocation();
+
       // Carregar em paralelo para ser mais rápido
       await Future.wait([
         _loadAttractions(),
@@ -76,6 +84,21 @@ class _SmartSuggestionsPageState extends State<SmartSuggestionsPage>
       limit: 50,
     );
 
+    // Recalcular distâncias baseadas na localização do usuário
+    if (_userLocation != null) {
+      for (var attraction in attractions) {
+        final distance = LocationService.calculateDistance(
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          attraction['lat'],
+          attraction['lon'],
+        );
+        attraction['distance'] = distance.toInt();
+        attraction['userDistance'] =
+            true; // Flag para indicar que é distância do usuário
+      }
+    }
+
     setState(() => _attractions = attractions);
   }
 
@@ -90,6 +113,20 @@ class _SmartSuggestionsPageState extends State<SmartSuggestionsPage>
       radius: 3000,
       limit: 20,
     );
+
+    // Recalcular distâncias baseadas na localização do usuário
+    if (_userLocation != null) {
+      for (var restaurant in restaurants) {
+        final distance = LocationService.calculateDistance(
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          restaurant['lat'],
+          restaurant['lon'],
+        );
+        restaurant['distance'] = distance.toInt();
+        restaurant['userDistance'] = true;
+      }
+    }
 
     setState(() => _restaurants = restaurants);
   }

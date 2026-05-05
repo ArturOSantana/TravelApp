@@ -166,14 +166,36 @@ class PushNotificationService {
     );
   }
 
-  static Future<void> notifyNewComment(String postName, String userName) async {
+  static Future<void> notifyNewComment(
+    String postName,
+    String userName,
+    String receiverId,
+  ) async {
+    // Só envia notificação se o receiverId for diferente do usuário atual
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.uid == receiverId) {
+      // Não envia notificação local se for para o próprio usuário
+      return;
+    }
+
     await _sendInstantNotification(
       title: 'Novo Comentário',
       body: '$userName comentou no seu post "$postName"',
     );
   }
 
-  static Future<void> notifyNewLike(String postName, String userName) async {
+  static Future<void> notifyNewLike(
+    String postName,
+    String userName,
+    String receiverId,
+  ) async {
+    // Só envia notificação se o receiverId for diferente do usuário atual
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.uid == receiverId) {
+      // Não envia notificação local se for para o próprio usuário
+      return;
+    }
+
     await _sendInstantNotification(
       title: 'Nova Curtida',
       body: '$userName curtiu sua recomendação "$postName"',

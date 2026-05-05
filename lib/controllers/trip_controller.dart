@@ -64,11 +64,13 @@ class TripController {
       await PushNotificationService.notifyNewLike(
         postName,
         user.displayName ?? 'Alguém',
+        receiverId,
       );
     } else if (type == NotificationType.comment) {
       await PushNotificationService.notifyNewComment(
         postName,
         user.displayName ?? 'Alguém',
+        receiverId,
       );
     }
   }
