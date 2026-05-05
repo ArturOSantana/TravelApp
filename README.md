@@ -360,45 +360,6 @@ dependencies:
 
 O projeto utiliza o padrão **MVC (Model-View-Controller)** adaptado para Flutter:
 
-```
-┌─────────────────────────────────────────────┐
-│              PRESENTATION                    │
-│  ┌─────────────────────────────────────┐   │
-│  │         Screens (Views)              │   │
-│  │  - dashboard_page.dart               │   │
-│  │  - trips_page.dart                   │   │
-│  │  - expenses_page.dart                │   │
-│  │  - journal_page.dart                 │   │
-│  └─────────────────────────────────────┘   │
-└─────────────────────────────────────────────┘
-                    ↕
-┌─────────────────────────────────────────────┐
-│              BUSINESS LOGIC                  │
-│  ┌─────────────────────────────────────┐   │
-│  │      Controllers (Logic)             │   │
-│  │  - auth_controller.dart              │   │
-│  │  - trip_controller.dart              │   │
-│  │  - theme_controller.dart             │   │
-│  └─────────────────────────────────────┘   │
-└─────────────────────────────────────────────┘
-                    ↕
-┌─────────────────────────────────────────────┐
-│                 DATA                         │
-│  ┌─────────────────────────────────────┐   │
-│  │      Models (Data Structure)         │   │
-│  │  - trip.dart                         │   │
-│  │  - expense.dart                      │   │
-│  │  - journal_entry.dart                │   │
-│  └─────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────┐   │
-│  │      Services (External APIs)        │   │
-│  │  - auth_service.dart                 │   │
-│  │  - trip_service.dart                 │   │
-│  │  - geoapify_service.dart             │   │
-│  │  - openweathermap_service.dart       │   │
-│  └─────────────────────────────────────┘   │
-└─────────────────────────────────────────────┘
-```
 
 ### Camadas
 
@@ -420,13 +381,6 @@ O projeto utiliza o padrão **MVC (Model-View-Controller)** adaptado para Flutte
 - Cache e persistência local
 - Tratamento de erros
 
-### Fluxo de Dados
-
-```
-User Action → Screen → Controller → Service → Firebase/API
-                ↓          ↓           ↓
-            Update UI ← State ← Response
-```
 
 ### Gerenciamento de Estado
 
@@ -816,64 +770,6 @@ void main() {
 }
 ```
 
----
-
-## Roadmap
-
-### Versão 1.0.0 (Atual) - CONCLUÍDA
-
-- [x] Sistema de autenticação completo
-- [x] Gestão de viagens individuais e em grupo
-- [x] Controle financeiro com divisão automática
-- [x] Diário de viagem com fotos
-- [x] Biblioteca de serviços
-- [x] Comunidade de recomendações
-- [x] Recursos de segurança
-- [x] Integração com APIs externas
-- [x] Modo escuro e acessibilidade
-- [x] Sugestões inteligentes de atividades
-- [x] Previsão do tempo
-- [x] Integração com Maps e Calendar
-
-### Versão 1.1.0 (Próxima) - EM PLANEJAMENTO
-
-- [ ] Sistema de gamificação
-- [ ] Conquistas e badges
-- [ ] Ranking de viajantes
-- [ ] Desafios semanais
-- [ ] Integração com redes sociais
-
-### Versão 1.2.0 - PLANEJADA
-
-- [ ] Chat em grupo para viagens
-- [ ] Videochamadas integradas
-- [ ] Compartilhamento de localização em tempo real
-- [ ] Modo colaborativo avançado
-
-### Versão 2.0.0 - FUTURO
-
-- [ ] Inteligência Artificial para recomendações
-- [ ] Realidade Aumentada para pontos turísticos
-- [ ] Marketplace de serviços turísticos
-- [ ] Programa de fidelidade
-- [ ] Integração com companhias aéreas
-- [ ] App para smartwatch
-
-Para mais detalhes, consulte: [Plano de Melhorias](docs/planejamento/PLANO_MELHORIAS_FUNCIONALIDADES.md)
-
----
-
-## Contribuindo
-
-Contribuições são bem-vindas! Este projeto foi desenvolvido como TCC, mas está aberto para melhorias e sugestões.
-
-### Como Contribuir
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'feat: adiciona MinhaFeature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
 
 ### Convenção de Commits
 
@@ -882,8 +778,6 @@ Seguimos [Conventional Commits](https://www.conventionalcommits.org/):
 - `feat`: Nova funcionalidade
 - `fix`: Correção de bug
 - `docs`: Apenas documentação
-- `style`: Formatação de código
-- `refactor`: Refatoração de código
 - `test`: Adicionar testes
 - `chore`: Manutenção
 
@@ -918,14 +812,6 @@ Este projeto foi desenvolvido como **Trabalho de Conclusão de Curso (TCC)** par
 
 ---
 
-## Contato
-
-Para dúvidas, sugestões ou reportar problemas:
-
-- Abra uma [issue](../../issues) no GitHub
-- Entre em contato através do repositório
-
----
 
 ## Estatísticas do Projeto
 
