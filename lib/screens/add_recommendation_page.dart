@@ -190,7 +190,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
                   const SizedBox(height: 15),
 
                   DropdownButtonFormField<String>(
-                    value: category,
+                    initialValue: category,
                     decoration: const InputDecoration(
                       labelText: "Categoria",
                       border: OutlineInputBorder(),
@@ -333,7 +333,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
                       "Outros usuários verão na aba Comunidade.",
                     ),
                     value: isPublic,
-                    activeColor: Colors.indigo,
+                    activeThumbColor: Colors.indigo,
                     onChanged: (v) => setState(() => isPublic = v),
                   ),
 

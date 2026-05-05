@@ -1,73 +1,79 @@
 # Travel App - Sistema de Planejamento e Gestão de Viagens
 
-## Trabalho de Conclusão de Curso
+<div align="center">
 
-**Instituição:** ETEC  
-**Curso:** Desenvolvimento de Sistemas  
-**Versão:** 1.0.0
+![Flutter](https://img.shields.io/badge/Flutter-3.5.0-02569B?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.0-0175C2?logo=dart)
+![Firebase](https://img.shields.io/badge/Firebase-Latest-FFCA28?logo=firebase)
+![License](https://img.shields.io/badge/License-Academic-green)
+
+**Trabalho de Conclusão de Curso**  
+**ETEC - Desenvolvimento de Sistemas**  
+**Versão 1.0.0 | 2026**
+
+[Documentação](docs/README.md) • [Início Rápido](#início-rápido) • [Arquitetura](#arquitetura) • [Contribuir](docs/desenvolvimento/CONTRIBUTING.md)
+
+</div>
 
 ---
 
 ## Sumário
 
-1. [Visão Geral](#visão-geral)
-2. [Justificativa](#justificativa)
-3. [Objetivos](#objetivos)
-4. [Funcionalidades](#funcionalidades)
-5. [Arquitetura e Tecnologias](#arquitetura-e-tecnologias)
-6. [Requisitos do Sistema](#requisitos-do-sistema)
-7. [Instalação e Execução](#instalação-e-execução)
-8. [Estrutura do Projeto](#estrutura-do-projeto)
-9. [Testes](#testes)
-10. [Considerações Finais](#considerações-finais)
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Problema e Solução](#problema-e-solução)
+- [Funcionalidades](#funcionalidades)
+- [Tecnologias](#tecnologias)
+- [Arquitetura](#arquitetura)
+- [Início Rápido](#início-rápido)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Documentação](#documentação)
+- [Testes](#testes)
+- [Roadmap](#roadmap)
+- [Contribuindo](#contribuindo)
+- [Licença](#licença)
 
 ---
 
-## Visão Geral
+## Sobre o Projeto
 
-O Travel App é uma aplicação multiplataforma desenvolvida para solucionar problemas comuns no planejamento e gestão de viagens, tanto individuais quanto em grupo. O sistema oferece ferramentas integradas para organização de itinerários, controle financeiro compartilhado, documentação de experiências e recursos de segurança.
+O **Travel App** é uma aplicação multiplataforma desenvolvida em Flutter que unifica todas as necessidades de planejamento e gestão de viagens em uma única plataforma. O sistema foi projetado para atender tanto viajantes individuais quanto grupos, oferecendo ferramentas robustas para organização logística, controle financeiro compartilhado, documentação de experiências e recursos de segurança.
+
+### Contexto
+
+O setor de turismo movimenta bilhões anualmente, com crescente demanda por ferramentas digitais que facilitem a experiência do viajante. A pandemia acelerou a digitalização do setor, criando oportunidades para soluções inovadoras que integrem múltiplas funcionalidades em uma única plataforma.
+
+### Diferenciais
+
+- **Integração Completa**: Todas as funcionalidades essenciais em um único aplicativo
+- **Colaboração em Tempo Real**: Sincronização instantânea entre membros do grupo via Firebase
+- **Gestão Financeira Avançada**: Algoritmo automático de divisão de despesas com suporte a múltiplas moedas
+- **Segurança**: Recursos de emergência, check-ins de segurança e compartilhamento de localização
+- **Multiplataforma**: Disponível para Android, iOS, Web e Desktop
+- **Offline-First**: Funcionamento sem conexão com sincronização automática
+
+---
+
+## Problema e Solução
 
 ### Problema Identificado
 
-Viajantes enfrentam dificuldades na coordenação de grupos, divisão de despesas, organização de informações e preservação de memórias. Aplicativos existentes geralmente focam em aspectos isolados, exigindo o uso de múltiplas ferramentas desconectadas.
+Viajantes enfrentam diversos desafios ao planejar e executar viagens:
+
+1. **Coordenação de Grupos**: Dificuldade em sincronizar planos entre múltiplos participantes
+2. **Gestão Financeira**: Complexidade na divisão de despesas e controle de orçamento
+3. **Organização de Informações**: Dados dispersos em múltiplas ferramentas (planilhas, apps, notas)
+4. **Preservação de Memórias**: Falta de uma forma estruturada de documentar experiências
+5. **Segurança**: Ausência de recursos de emergência e compartilhamento de localização
 
 ### Solução Proposta
 
-Uma plataforma unificada que integra planejamento, gestão financeira, documentação colaborativa e recursos de segurança, com sincronização em tempo real e suporte offline.
+Uma plataforma unificada que integra:
 
----
-
-## Justificativa
-
-### Contexto de Mercado
-
-O setor de turismo movimenta bilhões anualmente, com crescente demanda por ferramentas digitais que facilitem a experiência do viajante. A pandemia acelerou a digitalização do setor, criando oportunidades para soluções inovadoras.
-
-### Diferencial Competitivo
-
-- **Integração completa:** Todas as funcionalidades essenciais em um único aplicativo
-- **Colaboração em tempo real:** Sincronização instantânea entre membros do grupo
-- **Gestão financeira avançada:** Algoritmo automático de divisão de despesas
-- **Segurança:** Recursos de emergência e check-ins de segurança
-- **Multiplataforma:** Disponível para Android, iOS, Web e Desktop
-
----
-
-## Objetivos
-
-### Objetivo Geral
-
-Desenvolver um sistema multiplataforma para planejamento e gestão de viagens que integre organização logística, controle financeiro e documentação de experiências.
-
-### Objetivos Específicos
-
-1. Implementar sistema de autenticação e gerenciamento de usuários
-2. Criar módulo de planejamento de viagens com suporte a grupos
-3. Desenvolver sistema de controle financeiro com divisão automática de despesas
-4. Implementar diário de viagem digital com compartilhamento público
-5. Criar biblioteca de serviços e comunidade de recomendações
-6. Integrar recursos de segurança e emergência
-7. Garantir funcionamento offline com sincronização automática
+- **Planejamento Colaborativo**: Sistema de viagens em grupo com permissões e votação democrática
+- **Controle Financeiro Inteligente**: Divisão automática de despesas com conversão de moedas
+- **Documentação Digital**: Diário de viagem com fotos, localização e análise de humor
+- **Recursos de Segurança**: Botão de pânico, check-ins automáticos e contatos de emergência
+- **Sugestões Inteligentes**: Integração com APIs para recomendações de locais e atividades
 
 ---
 
@@ -75,351 +81,504 @@ Desenvolver um sistema multiplataforma para planejamento e gestão de viagens qu
 
 ### 1. Gestão de Viagens
 
-**Descrição:** Módulo central para criação e gerenciamento de viagens.
+**Módulo Central de Planejamento**
 
-**Recursos:**
 - Criação de viagens individuais ou em grupo (até 20 membros)
-- Suporte a viagens planejadas (com datas) ou nômades (sem data de término)
-- Definição de orçamento e acompanhamento de gastos
-- Sistema de convite por código único
+- Suporte a viagens planejadas (com datas definidas) ou nômades (sem data de término)
+- Sistema de convites por código único
 - Controle de permissões (administrador e membros)
+- Acompanhamento de orçamento em tempo real
 - Status da viagem (planejada, ativa, concluída)
+- Foto de capa personalizável
+
+**Implementação Técnica:**
+```dart
+class Trip {
+  final String id;
+  final String ownerId;
+  final String destination;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final double budget;
+  final String baseCurrency;
+  final bool isGroup;
+  final List<String> members;
+  final bool isNomad;
+  final String status;
+}
+```
 
 ### 2. Itinerário e Atividades
 
-**Descrição:** Organização cronológica de atividades da viagem.
+**Organização Cronológica de Atividades**
 
-**Recursos:**
 - Criação de atividades com data, horário e localização
-- Categorização (transporte, hospedagem, alimentação, passeio, etc.)
+- Categorização (transporte, hospedagem, alimentação, passeio, cultura, etc.)
 - Sistema de votação democrática para aprovação em grupos
-- **Sugestões Inteligentes de Atividades** (NOVO)
-  - Atrações turísticas próximas
-  - Restaurantes e cafés recomendados
-  - Opções de entretenimento
-- **Integração com Maps** (NOVO)
-  - Abrir localização no Google Maps ou Apple Maps
-  - Navegação direta para atividades
-- **Integração com Calendar** (NOVO)
-  - Adicionar atividades ao Google Calendar ou Apple Calendar
-  - Sincronização automática de horários
 - Visualização em lista ordenada por data
 - Notificações de atividades próximas
+- Integração com Google Maps e Apple Maps
+- Exportação para Google Calendar e Apple Calendar
+
+**Sugestões Inteligentes (Geoapify API):**
+- Atrações turísticas próximas ao destino
+- Restaurantes e cafés recomendados
+- Opções de entretenimento local
+- Filtros por categoria e distância
+- Avaliações e informações detalhadas
 
 ### 3. Controle Financeiro
 
-**Descrição:** Gestão completa de despesas e divisão de custos.
+**Gestão Completa de Despesas**
 
-**Recursos:**
 - Registro de despesas por categoria
 - Algoritmo automático de divisão entre membros
-- Suporte a múltiplas moedas com conversão em tempo real
+- Suporte a múltiplas moedas com conversão em tempo real (ExchangeRate API)
 - Relatório de balanço ("quem deve para quem")
 - Exportação de relatórios em PDF
 - Compartilhamento de cobranças via WhatsApp
 - Gráficos de distribuição de gastos
+- Acompanhamento de orçamento vs gastos reais
+
+**Algoritmo de Divisão:**
+```dart
+// Calcula automaticamente quanto cada membro deve pagar
+// Considera quem pagou e quem deve dividir
+// Otimiza transações para minimizar número de pagamentos
+```
 
 ### 4. Diário de Viagem
 
-**Descrição:** Documentação digital de experiências e memórias.
+**Documentação Digital de Experiências**
 
-**Recursos:**
-- Criação de entradas com texto, fotos e localização
-- Análise de humor (mood tracking)
+- Criação de entradas com texto rico, fotos e localização
+- Análise de humor (mood tracking) para cada entrada
 - Galeria de fotos organizada por viagem
-- Álbum público compartilhável via link
-- Busca por localização
+- Álbum público compartilhável via link único
+- Busca por localização e data
 - Reações e comentários de membros do grupo
-- Exportação de entradas
+- Exportação de entradas em PDF
+- Compartilhamento em redes sociais
+
+**Recursos de Privacidade:**
+- Controle de visibilidade (público/privado)
+- Senha para álbuns compartilhados
+- Expiração de links
+- Opção de desativar comentários
 
 ### 5. Biblioteca de Serviços
 
-**Descrição:** Catálogo pessoal de estabelecimentos e serviços.
+**Catálogo Pessoal de Estabelecimentos**
 
-**Recursos:**
 - Registro de hospedagens, restaurantes, transportes e atrações
-- Avaliação com estrelas e fotos
+- Avaliação com sistema de estrelas
+- Upload de fotos
 - Informações de custo médio e localização
-- Categorização e busca
+- Categorização e busca avançada
 - Importação de recomendações da comunidade
 
 ### 6. Comunidade
 
-**Descrição:** Rede social para compartilhamento de recomendações.
+**Rede Social de Viajantes**
 
-**Recursos:**
 - Feed público de recomendações
 - Sistema de curtidas e comentários
 - Busca por destino ou categoria
 - Importação para biblioteca pessoal
 - Fotos e avaliações detalhadas
+- Notificações de interações
 
-### 7. Segurança
+### 7. Recursos de Segurança
 
-**Descrição:** Recursos para garantir a segurança do viajante.
+**Proteção e Tranquilidade Durante a Viagem**
 
-**Recursos:**
-- Botão de pânico com envio automático de SMS e WhatsApp
-- Check-ins de segurança com localização
-- Histórico de registros de segurança
-- Configuração de contato de emergência
-- Compartilhamento de localização em tempo real
+- **Botão de Pânico**: Envio automático de SMS e WhatsApp para contatos de emergência
+- **Check-ins de Segurança**: Lembretes periódicos com compartilhamento de localização
+- **Histórico de Segurança**: Registro de todos os check-ins realizados
+- **Contatos de Emergência**: Configuração de contatos para situações críticas
+- **Compartilhamento de Localização**: Tempo real com membros do grupo
 
-### 8. Previsão do Tempo (NOVO)
+### 8. Previsão do Tempo
 
-**Descrição:** Informações meteorológicas detalhadas para o destino.
+**Informações Meteorológicas Detalhadas (OpenWeatherMap API)**
 
-**Recursos:**
 - Clima atual com temperatura, umidade e vento
 - Previsão de 5 dias
 - Probabilidade de chuva
 - Horário do nascer e pôr do sol
 - Alertas meteorológicos
-- Integração com OpenWeatherMap API
+- Índice UV
+- Ícones animados de clima
 
-### 9. Recursos Adicionais
+### 9. Informações de Destino
 
-- **Modo escuro:** Interface adaptável para diferentes condições de luz
-- **Acessibilidade:** Suporte a leitores de tela e navegação por teclado
-- **Notificações inteligentes:** Lembretes contextuais baseados em atividades
-- **Cache offline:** Funcionamento sem conexão com sincronização automática
-- **APIs Gratuitas Integradas:** (NOVO)
-  - Geoapify - Sugestões de locais
-  - OpenWeatherMap - Previsão do tempo
-  - REST Countries - Informações de países
-  - ExchangeRate - Conversão de moedas
-  - Nominatim - Geocoding
+**Dados Completos sobre o País (REST Countries API)**
+
+- Nome oficial e comum
+- Capital e população
+- Moeda oficial e símbolo
+- Idiomas falados
+- Fuso horário
+- Código de discagem internacional
+- Bandeira do país
+
+### 10. Recursos Adicionais
+
+- **Modo Escuro**: Interface adaptável para diferentes condições de luz
+- **Acessibilidade**: Suporte a leitores de tela e navegação por teclado
+- **Notificações Inteligentes**: Lembretes contextuais baseados em atividades
+- **Cache Offline**: Funcionamento sem conexão com sincronização automática
+- **Otimização de Memória**: Gerenciamento inteligente para dispositivos antigos
+- **Múltiplos Idiomas**: Suporte a português (pt-BR)
 
 ---
 
-## Arquitetura e Tecnologias
+## Tecnologias
 
-### Stack Tecnológico
+### Frontend
 
-**Frontend:**
-- Flutter 3.5.0 (Framework multiplataforma)
-- Dart (Linguagem de programação)
-- Material Design 3 (Design system)
+**Flutter 3.5.0**
+- Framework multiplataforma da Google
+- Hot reload para desenvolvimento rápido
+- Widgets nativos para cada plataforma
+- Performance próxima ao nativo
 
-**Backend:**
-- Firebase Authentication (Autenticação de usuários)
-- Cloud Firestore (Banco de dados NoSQL em tempo real)
-- Firebase Storage (Armazenamento de imagens)
-- Firebase Cloud Messaging (Notificações push)
+**Dart 3.0**
+- Linguagem moderna e type-safe
+- Null safety
+- Async/await para operações assíncronas
+- Strong typing
 
-**APIs Externas:**
-- **Geoapify API** - Sugestões de atrações, restaurantes e entretenimento
-- **OpenWeatherMap API** - Previsão do tempo detalhada
-- **REST Countries API** - Informações sobre países
-- **ExchangeRate API** - Conversão de moedas em tempo real
-- **Nominatim (OpenStreetMap)** - Geocoding e busca de endereços
-- Geolocator (Serviços de localização)
-- URL Launcher (Integração com SMS/WhatsApp/Maps/Calendar)
+**Material Design 3**
+- Design system moderno
+- Componentes acessíveis
+- Temas claro e escuro
+- Animações fluidas
 
-### Padrão Arquitetural
+### Backend
 
-O projeto utiliza o padrão **Controller**, separando responsabilidades em:
+**Firebase Authentication**
+- Autenticação segura de usuários
+- Suporte a email/senha
+- Recuperação de senha
+- Gerenciamento de sessões
 
-- **Models:** Representação de dados e regras de negócio
-- **Controllers:** Lógica de aplicação e gerenciamento de estado
-- **Services:** Integração com APIs e serviços externos
-- **Screens:** Interface do usuário e interação
+**Cloud Firestore**
+- Banco de dados NoSQL em tempo real
+- Sincronização automática
+- Queries complexas
+- Offline persistence
 
-### Principais Dependências
+**Firebase Storage**
+- Armazenamento de imagens
+- Upload/download otimizado
+- Compressão automática
+- URLs seguros
+
+**Firebase Cloud Messaging**
+- Push notifications
+- Notificações em background
+- Segmentação de usuários
+- Analytics integrado
+
+### APIs Externas
+
+**Geoapify**
+- Sugestões de locais (POIs)
+- Geocoding e reverse geocoding
+- Cálculo de rotas
+- 3.000 requisições/dia gratuitas
+
+**OpenWeatherMap**
+- Previsão do tempo
+- Clima atual e forecast de 5 dias
+- Alertas meteorológicos
+- 1.000 requisições/dia gratuitas
+
+**REST Countries**
+- Informações de países
+- Completamente gratuito
+- Sem limite de requisições
+- Dados atualizados
+
+**ExchangeRate API**
+- Conversão de moedas
+- Taxas em tempo real
+- 161 moedas suportadas
+- 1.500 requisições/mês gratuitas
+
+**Nominatim (OpenStreetMap)**
+- Geocoding gratuito
+- Busca de endereços
+- Reverse geocoding
+- Dados do OpenStreetMap
+
+### Bibliotecas Principais
 
 ```yaml
 dependencies:
+  # Firebase
   firebase_core: ^4.6.0
   firebase_auth: ^6.3.0
   cloud_firestore: ^6.2.0
   firebase_storage: ^13.2.0
   firebase_messaging: ^16.1.3
+  
+  # UI e Navegação
+  provider: ^6.1.2
+  intl: ^0.20.2
+  
+  # Funcionalidades
   image_picker: ^1.1.2
   share_plus: ^10.0.0
-  geolocator: ^13.0.2
   url_launcher: ^6.3.1
-  intl: ^0.20.2
-  provider: ^6.1.2
+  geolocator: ^13.0.2
+  
+  # Notificações
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+  
+  # Cache e Performance
   shared_preferences: ^2.3.3
   connectivity_plus: ^7.1.1
+  cached_network_image: ^3.4.1
+  
+  # Exportação
   pdf: ^3.11.1
+  path_provider: ^2.1.5
+  screenshot: ^3.0.0
+  
+  # HTTP
+  http: ^1.1.0
 ```
 
 ---
 
-## Requisitos do Sistema
+## Arquitetura
 
-### Requisitos de Hardware
+### Padrão Arquitetural
 
-**Mínimo:**
-- Processador: Dual-core 1.5 GHz
-- RAM: 2 GB
-- Armazenamento: 500 MB livres
-- Conexão com internet (para sincronização)
+O projeto utiliza o padrão **MVC (Model-View-Controller)** adaptado para Flutter:
 
-**Recomendado:**
-- Processador: Quad-core 2.0 GHz ou superior
-- RAM: 4 GB ou superior
-- Armazenamento: 1 GB livres
-- Conexão 4G/Wi-Fi estável
+```
+┌─────────────────────────────────────────────┐
+│              PRESENTATION                    │
+│  ┌─────────────────────────────────────┐   │
+│  │         Screens (Views)              │   │
+│  │  - dashboard_page.dart               │   │
+│  │  - trips_page.dart                   │   │
+│  │  - expenses_page.dart                │   │
+│  │  - journal_page.dart                 │   │
+│  └─────────────────────────────────────┘   │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│              BUSINESS LOGIC                  │
+│  ┌─────────────────────────────────────┐   │
+│  │      Controllers (Logic)             │   │
+│  │  - auth_controller.dart              │   │
+│  │  - trip_controller.dart              │   │
+│  │  - theme_controller.dart             │   │
+│  └─────────────────────────────────────┘   │
+└─────────────────────────────────────────────┘
+                    ↕
+┌─────────────────────────────────────────────┐
+│                 DATA                         │
+│  ┌─────────────────────────────────────┐   │
+│  │      Models (Data Structure)         │   │
+│  │  - trip.dart                         │   │
+│  │  - expense.dart                      │   │
+│  │  - journal_entry.dart                │   │
+│  └─────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────┐   │
+│  │      Services (External APIs)        │   │
+│  │  - auth_service.dart                 │   │
+│  │  - trip_service.dart                 │   │
+│  │  - geoapify_service.dart             │   │
+│  │  - openweathermap_service.dart       │   │
+│  └─────────────────────────────────────┘   │
+└─────────────────────────────────────────────┘
+```
 
-### Requisitos de Software
+### Camadas
 
-**Para Desenvolvimento:**
-- Flutter SDK 3.5.0 ou superior
-- Dart SDK (incluído no Flutter)
-- Git 2.0 ou superior
+**1. Presentation (Screens)**
+- Interface do usuário
+- Widgets Flutter
+- Interação com o usuário
+- Navegação entre telas
 
-**Plataformas Específicas:**
-- **Android:** Android Studio com Android SDK (API 21+)
-- **iOS:** Xcode 14+ (apenas macOS)
-- **Web:** Navegador moderno (Chrome, Firefox, Safari, Edge)
-- **Windows:** Visual Studio 2022 com C++ Desktop Development
-- **macOS:** Xcode Command Line Tools
-- **Linux:** Dependências GTK 3.0
+**2. Business Logic (Controllers)**
+- Lógica de aplicação
+- Gerenciamento de estado (Provider)
+- Validações de negócio
+- Orquestração de serviços
+
+**3. Data (Models + Services)**
+- **Models**: Estrutura de dados e serialização
+- **Services**: Integração com Firebase e APIs externas
+- Cache e persistência local
+- Tratamento de erros
+
+### Fluxo de Dados
+
+```
+User Action → Screen → Controller → Service → Firebase/API
+                ↓          ↓           ↓
+            Update UI ← State ← Response
+```
+
+### Gerenciamento de Estado
+
+**Provider Pattern**
+```dart
+ChangeNotifierProvider(
+  create: (_) => ThemeController(),
+  child: Consumer<ThemeController>(
+    builder: (context, controller, _) {
+      return MaterialApp(
+        themeMode: controller.themeMode,
+        // ...
+      );
+    },
+  ),
+)
+```
+
+### Segurança
+
+**Firestore Rules**
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Usuários só podem ler/escrever seus próprios dados
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+    
+    // Viagens: acesso apenas para membros
+    match /trips/{tripId} {
+      allow read: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || 
+         request.auth.uid in resource.data.members);
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && 
+        resource.data.ownerId == request.auth.uid;
+    }
+  }
+}
+```
 
 ---
 
-## Instalação e Execução
+## Início Rápido
 
-### 1. Preparação do Ambiente
-
-#### Instalar Flutter
-
-**Windows/macOS/Linux:**
-```bash
-# Baixar Flutter SDK de https://flutter.dev/docs/get-started/install
-# Adicionar Flutter ao PATH do sistema
-flutter doctor
-```
-
-#### Verificar Instalação
+### Pré-requisitos
 
 ```bash
+# Verificar instalação do Flutter
 flutter doctor -v
+
+# Versões necessárias
+Flutter SDK: 3.5.0+
+Dart SDK: 3.0.0+
 ```
 
-Este comando verifica todas as dependências necessárias.
-
-### 2. Clonar o Repositório
+### Instalação
 
 ```bash
+# 1. Clonar o repositório
 git clone <url-do-repositorio>
 cd TCC
-```
 
-### 3. Instalar Dependências
-
-```bash
+# 2. Instalar dependências
 flutter pub get
-```
 
-### 4. Executar o Aplicativo
+# 3. Configurar API Keys (opcional para desenvolvimento)
+cp lib/config/api_keys.dart.example lib/config/api_keys.dart
+# Edite api_keys.dart com suas chaves
 
-#### Android
-
-**Com dispositivo físico:**
-1. Ativar modo desenvolvedor no dispositivo
-2. Conectar via USB
-3. Executar:
-
-```bash
+# 4. Executar o aplicativo
 flutter run
 ```
 
-**Com emulador:**
-1. Criar AVD no Android Studio
-2. Iniciar emulador
-3. Executar:
+### Executar em Diferentes Plataformas
 
 ```bash
-flutter run
-```
+# Android
+flutter run -d android
 
-#### iOS (apenas macOS)
-
-```bash
-cd ios
-pod install
-cd ..
+# iOS (apenas macOS)
 flutter run -d ios
-```
 
-#### Web
-
-```bash
+# Web
 flutter run -d chrome
+
+# Desktop
+flutter run -d windows  # ou macos, linux
 ```
 
-#### Desktop
-
-**Windows:**
-```bash
-flutter run -d windows
-```
-
-**macOS:**
-```bash
-flutter run -d macos
-```
-
-**Linux:**
-```bash
-flutter run -d linux
-```
-
-### 5. Build para Produção
-
-#### Android (APK)
+### Build para Produção
 
 ```bash
+# Android APK
 flutter build apk --release
-```
 
-O arquivo será gerado em: `build/app/outputs/flutter-apk/app-release.apk`
-
-#### Android (App Bundle)
-
-```bash
+# Android App Bundle (Google Play)
 flutter build appbundle --release
-```
 
-#### iOS
-
-```bash
+# iOS
 flutter build ios --release
-```
 
-#### Web
-
-```bash
+# Web
 flutter build web --release
+
+# Desktop
+flutter build windows --release  # ou macos, linux
 ```
 
-Os arquivos serão gerados em: `build/web/`
+Para guia completo de execução, consulte: [Como Executar no Emulador](docs/desenvolvimento/COMO_EXECUTAR_NO_EMULADOR.md)
 
 ---
 
 ## Estrutura do Projeto
 
 ```
-travel_app/
+TCC/
+├── android/                    # Configurações Android
+├── ios/                        # Configurações iOS
+├── web/                        # Configurações Web
+├── windows/                    # Configurações Windows
+├── macos/                      # Configurações macOS
+├── linux/                      # Configurações Linux
 │
-├── android/                 # Configurações Android
-├── ios/                     # Configurações iOS
-├── web/                     # Configurações Web
-├── windows/                 # Configurações Windows
-├── macos/                   # Configurações macOS
-├── linux/                   # Configurações Linux
+├── docs/                       # DOCUMENTAÇÃO COMPLETA
+│   ├── README.md               # Índice de navegação
+│   ├── ORGANIZACAO_PROJETO.md  # Documentação da organização
+│   ├── desenvolvimento/        # Guias técnicos (3 docs)
+│   ├── apis/                   # Documentação de APIs (4 docs)
+│   ├── planejamento/           # Roadmap e melhorias (5 docs)
+│   └── assets/                 # Design e imagens
 │
-├── lib/
-│   ├── controllers/         # Lógica de negócio
+├── lib/                        # CÓDIGO FONTE
+│   ├── config/                 # Configurações
+│   │   └── api_keys.dart.example
+│   │
+│   ├── controllers/            # Lógica de negócio
 │   │   ├── auth_controller.dart
 │   │   ├── trip_controller.dart
 │   │   ├── theme_controller.dart
 │   │   └── packing_checklist_controller.dart
 │   │
-│   ├── models/              # Modelos de dados
+│   ├── data/                   # Dados estáticos
+│   │   ├── activity_data.dart
+│   │   ├── expense_data.dart
+│   │   ├── packing_templates.dart
+│   │   └── trip_data.dart
+│   │
+│   ├── models/                 # Modelos de dados
 │   │   ├── trip.dart
 │   │   ├── expense.dart
 │   │   ├── activity.dart
@@ -427,9 +586,11 @@ travel_app/
 │   │   ├── service_model.dart
 │   │   ├── user_model.dart
 │   │   ├── safety_checkin.dart
-│   │   └── destination_rating.dart
+│   │   ├── destination_rating.dart
+│   │   ├── notification_model.dart
+│   │   └── user_subscription.dart
 │   │
-│   ├── screens/             # Telas do aplicativo
+│   ├── screens/                # Telas do aplicativo (30+ telas)
 │   │   ├── login_page.dart
 │   │   ├── register_page.dart
 │   │   ├── dashboard_page.dart
@@ -437,146 +598,352 @@ travel_app/
 │   │   ├── trip_dashboard_page.dart
 │   │   ├── create_trip_page.dart
 │   │   ├── itinerary_page.dart
+│   │   ├── create_activity_page.dart
+│   │   ├── activity_suggestions_page.dart
 │   │   ├── expenses_page.dart
+│   │   ├── create_expense_page.dart
+│   │   ├── reports_page.dart
 │   │   ├── journal_page.dart
+│   │   ├── create_journal_entry_page.dart
+│   │   ├── photo_gallery_page.dart
+│   │   ├── services_library_page.dart
 │   │   ├── community_page.dart
+│   │   ├── add_recommendation_page.dart
 │   │   ├── safety_page.dart
 │   │   ├── insights_page.dart
-│   │   └── profile_page.dart
+│   │   ├── profile_page.dart
+│   │   ├── packing_checklist_page.dart
+│   │   ├── select_packing_template_page.dart
+│   │   ├── group_members_page.dart
+│   │   ├── rate_destination_page.dart
+│   │   ├── smart_suggestions_page.dart
+│   │   ├── flight_search_page.dart
+│   │   ├── hotel_search_page.dart
+│   │   ├── premium_upgrade_page.dart
+│   │   ├── welcome_premium_page.dart
+│   │   ├── business_panel_page.dart
+│   │   └── onboarding_page.dart
 │   │
-│   ├── services/            # Serviços externos
+│   ├── services/               # Serviços e integrações
 │   │   ├── auth_service.dart
 │   │   ├── trip_service.dart
+│   │   ├── storage_service.dart
 │   │   ├── notification_service.dart
 │   │   ├── push_notification_service.dart
+│   │   ├── smart_notification_service.dart
 │   │   ├── cache_service.dart
-│   │   ├── currency_service.dart
-│   │   ├── location_service.dart
-│   │   ├── storage_service.dart
-│   │   └── pdf_export_service.dart
+│   │   ├── memory_manager_service.dart
+│   │   ├── analytics_service.dart
+│   │   ├── subscription_service.dart
+│   │   ├── packing_checklist_service.dart
+│   │   ├── social_share_service.dart
+│   │   ├── pdf_export_service.dart
+│   │   ├── geoapify_service.dart
+│   │   ├── openweathermap_service.dart
+│   │   ├── rest_countries_service.dart
+│   │   ├── exchangerate_service.dart
+│   │   ├── external_apps_service.dart
+│   │   └── http_client_service.dart
 │   │
-│   ├── theme/               # Temas e estilos
+│   ├── theme/                  # Temas e estilos
 │   │   ├── app_theme.dart
 │   │   ├── app_colors.dart
 │   │   └── app_text_styles.dart
 │   │
-│   ├── widgets/             # Componentes reutilizáveis
+│   ├── widgets/                # Componentes reutilizáveis
 │   │   ├── accessible_button.dart
 │   │   ├── accessible_card.dart
-│   │   └── theme_toggle_button.dart
+│   │   ├── optimized_image.dart
+│   │   ├── theme_toggle_button.dart
+│   │   └── charts/
+│   │       ├── gauge_chart_widget.dart
+│   │       ├── heatmap_widget.dart
+│   │       ├── line_chart_widget.dart
+│   │       └── waterfall_chart_widget.dart
 │   │
-│   ├── firebase_options.dart
-│   └── main.dart            # Ponto de entrada
+│   ├── firebase_options.dart   # Configuração Firebase
+│   └── main.dart               # Ponto de entrada
 │
-├── test/                    # Testes automatizados
+├── test/                       # Testes automatizados
 │   ├── widget_test.dart
 │   ├── use_cases_test.dart
+│   ├── trip_model_test.dart
 │   ├── security_test.dart
+│   ├── security_logic_test.dart
+│   ├── security_functional_test.dart
 │   ├── profile_validation_test.dart
-│   └── apis_integration_test.dart  # NOVO: Testes das APIs
+│   ├── auth_validation_test.dart
+│   ├── accessibility_test.dart
+│   ├── notifications_test.dart
+│   └── apis_integration_test.dart
 │
-├── assets/                  # Recursos estáticos
+├── assets/                     # Assets do aplicativo
 │   └── images/
+│       ├── app_logo.png
+│       ├── icone_aviao.png
+│       ├── icone_perfil.png
+│       ├── imagi03.jpg
+│       ├── imagi04.jpg
+│       └── imagi05.jpg
 │
-├── pubspec.yaml             # Dependências do projeto
-├── firebase.json            # Configuração Firebase
-├── firestore.rules          # Regras de segurança Firestore
-└── README.md
+├── .gitignore                  # Arquivos ignorados pelo Git
+├── pubspec.yaml                # Dependências do projeto
+├── firebase.json               # Configuração Firebase Hosting
+├── firestore.rules             # Regras de segurança Firestore
+├── firestore.indexes.json      # Índices do Firestore
+└── README.md                   # Este arquivo
 ```
+
+### Destaques da Organização
+
+- **Documentação Centralizada**: Toda documentação em `docs/`
+- **Código Organizado**: Separação clara de responsabilidades (MVC)
+- **30+ Telas**: Interface completa e intuitiva
+- **20+ Serviços**: Integrações robustas
+- **10+ Testes**: Cobertura de funcionalidades críticas
+- **Assets Separados**: Design e documentação organizados
+- **Configurações Isoladas**: API keys em arquivo separado
+
+---
+
+## Documentação
+
+### Documentação Completa
+
+Acesse o [Índice de Documentação](docs/README.md) para navegação completa.
+
+### Guias de Desenvolvimento
+
+- [Como Executar no Emulador](docs/desenvolvimento/COMO_EXECUTAR_NO_EMULADOR.md) - Guia completo de setup e execução
+- [Configuração do Firebase](docs/desenvolvimento/CONFIGURACAO_FIREBASE_HOSTING.md) - Deploy e configuração
+- [Guia de Contribuição](docs/desenvolvimento/CONTRIBUTING.md) - Como contribuir com o projeto
+
+### Documentação de APIs
+
+- [APIs Gratuitas Integradas](docs/apis/APIS_GRATUITAS_ROTEIRO_INTELIGENTE.md) - Visão geral das APIs
+- [Implementação das APIs](docs/apis/IMPLEMENTACAO_APIS_FINAL.md) - Detalhes técnicos
+- [Comparação Google Maps vs Alternativas](docs/apis/COMPARACAO_GOOGLE_MAPS_VS_ALTERNATIVAS.md) - Análise
+- [Alternativa OpenTripMap](docs/apis/ALTERNATIVA_OPENTRIPMAP.md) - API complementar
+
+### Planejamento e Roadmap
+
+- [Novas Funcionalidades](docs/planejamento/NOVAS_FUNCIONALIDADES.md) - Features implementadas
+- [Plano de Melhorias](docs/planejamento/PLANO_MELHORIAS_FUNCIONALIDADES.md) - Roadmap futuro
+- [Melhorias de Segurança](docs/planejamento/MELHORIAS_SEGURANCA.md) - Recursos de segurança
+- [Melhorias do Journal](docs/planejamento/MELHORIAS_JOURNAL_PLANEJADAS.md) - Evolução do diário
+- [Guia de Compartilhamento](docs/planejamento/GUIA_COMPARTILHAMENTO_JOURNAL.md) - Como usar
+
+### Design e Assets
+
+- [Documentação de Design](docs/assets/AppTravel.pdf) - Guia visual completo
+- [Estrutura do Banco](docs/planejamento/banco.json) - Schema do Firestore
 
 ---
 
 ## Testes
 
-### Executar Todos os Testes
+### Executar Testes
 
 ```bash
+# Todos os testes
 flutter test
-```
 
-### Executar Teste Específico
-
-```bash
+# Teste específico
 flutter test test/use_cases_test.dart
+
+# Com cobertura
+flutter test --coverage
+
+# Gerar relatório HTML
+genhtml coverage/lcov.info -o coverage/html
 ```
 
 ### Cobertura de Testes
 
-O projeto inclui testes para:
+O projeto inclui testes abrangentes para:
 
-1. **Modelos de Dados**
-   - Validação de campos obrigatórios
-   - Serialização/deserialização JSON
-   - Regras de negócio
+**1. Modelos de Dados**
+- Validação de campos obrigatórios
+- Serialização/deserialização JSON
+- Regras de negócio
 
-2. **Lógica Financeira**
-   - Algoritmo de divisão de despesas
-   - Conversão de moedas
-   - Cálculo de balanços
+**2. Lógica Financeira**
+- Algoritmo de divisão de despesas
+- Conversão de moedas
+- Cálculo de balanços
 
-3. **Segurança**
-   - Validação de permissões
-   - Regras de acesso a dados
-   - Autenticação e autorização
+**3. Segurança**
+- Validação de permissões
+- Regras de acesso a dados
+- Autenticação e autorização
+- Testes funcionais de segurança
 
-4. **Casos de Uso**
-   - Fluxos completos de funcionalidades
-   - Integração entre componentes
-   - Validação de estados
+**4. Casos de Uso**
+- Fluxos completos de funcionalidades
+- Integração entre componentes
+- Validação de estados
 
-### Relatório de Cobertura
+**5. Acessibilidade**
+- Suporte a leitores de tela
+- Navegação por teclado
+- Contraste de cores
 
-```bash
-flutter test --coverage
-genhtml coverage/lcov.info -o coverage/html
+**6. Integrações**
+- APIs externas
+- Firebase services
+- Notificações
+
+### Exemplo de Teste
+
+```dart
+void main() {
+  group('Trip Model Tests', () {
+    test('deve criar viagem válida', () {
+      final trip = Trip(
+        id: '123',
+        ownerId: 'user1',
+        destination: 'Paris',
+        budget: 5000.0,
+        objective: 'Lazer',
+        createdAt: DateTime.now(),
+      );
+      
+      expect(trip.destination, 'Paris');
+      expect(trip.budget, 5000.0);
+      expect(trip.isAdmin('user1'), true);
+    });
+  });
+}
 ```
 
 ---
 
-## Considerações Finais
+## Roadmap
 
-### Resultados Alcançados
+### Versão 1.0.0 (Atual) - CONCLUÍDA
 
-O Travel App atende aos objetivos propostos, oferecendo uma solução completa e integrada para planejamento e gestão de viagens. A aplicação demonstra:
+- [x] Sistema de autenticação completo
+- [x] Gestão de viagens individuais e em grupo
+- [x] Controle financeiro com divisão automática
+- [x] Diário de viagem com fotos
+- [x] Biblioteca de serviços
+- [x] Comunidade de recomendações
+- [x] Recursos de segurança
+- [x] Integração com APIs externas
+- [x] Modo escuro e acessibilidade
+- [x] Sugestões inteligentes de atividades
+- [x] Previsão do tempo
+- [x] Integração com Maps e Calendar
 
-- Domínio de desenvolvimento multiplataforma com Flutter
-- Integração eficiente com serviços Firebase
-- Implementação de padrões de arquitetura escaláveis
-- Preocupação com experiência do usuário e acessibilidade
-- Aplicação de boas práticas de desenvolvimento
+### Versão 1.1.0 (Próxima) - EM PLANEJAMENTO
 
-### Trabalhos Futuros
+- [ ] Sistema de gamificação
+- [ ] Conquistas e badges
+- [ ] Ranking de viajantes
+- [ ] Desafios semanais
+- [ ] Integração com redes sociais
 
-Possíveis melhorias e expansões:
+### Versão 1.2.0 - PLANEJADA
 
-1. ~~Integração com APIs de serviços de viagem~~ ✓ IMPLEMENTADO
-2. ~~Sugestões inteligentes de atividades~~ ✓ IMPLEMENTADO
-3. ~~Previsão do tempo detalhada~~ ✓ IMPLEMENTADO
-4. ~~Integração com Maps e Calendar~~ ✓ IMPLEMENTADO
-5. Sistema de gamificação para engajamento
-6. Suporte a mais idiomas
-7. Integração com assistentes virtuais
-8. Modo offline completo com sincronização otimizada
-9. Cache de dados das APIs para reduzir requisições
-10. Integração do OpenWeatherMap nas telas (dashboard e roteiro)
+- [ ] Chat em grupo para viagens
+- [ ] Videochamadas integradas
+- [ ] Compartilhamento de localização em tempo real
+- [ ] Modo colaborativo avançado
 
-### Limitações Conhecidas
+### Versão 2.0.0 - FUTURO
 
-- Dependência de conexão para algumas funcionalidades
-- Limite de 20 membros por grupo na versão gratuita
-- Conversão de moedas depende de API externa
+- [ ] Inteligência Artificial para recomendações
+- [ ] Realidade Aumentada para pontos turísticos
+- [ ] Marketplace de serviços turísticos
+- [ ] Programa de fidelidade
+- [ ] Integração com companhias aéreas
+- [ ] App para smartwatch
+
+Para mais detalhes, consulte: [Plano de Melhorias](docs/planejamento/PLANO_MELHORIAS_FUNCIONALIDADES.md)
+
+---
+
+## Contribuindo
+
+Contribuições são bem-vindas! Este projeto foi desenvolvido como TCC, mas está aberto para melhorias e sugestões.
+
+### Como Contribuir
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'feat: adiciona MinhaFeature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
+
+### Convenção de Commits
+
+Seguimos [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat`: Nova funcionalidade
+- `fix`: Correção de bug
+- `docs`: Apenas documentação
+- `style`: Formatação de código
+- `refactor`: Refatoração de código
+- `test`: Adicionar testes
+- `chore`: Manutenção
+
+### Guia Completo
+
+Leia o [Guia de Contribuição](docs/desenvolvimento/CONTRIBUTING.md) para detalhes sobre:
+- Código de conduta
+- Processo de desenvolvimento
+- Style guide
+- Testes
+- Code review
 
 ---
 
 ## Licença
 
-Este projeto foi desenvolvido como Trabalho de Conclusão de Curso (TCC) para fins acadêmicos.
+Este projeto foi desenvolvido como **Trabalho de Conclusão de Curso (TCC)** para fins acadêmicos.
 
 **Instituição:** ETEC  
+**Curso:** Desenvolvimento de Sistemas  
 **Ano:** 2026
+
+---
+
+## Reconhecimentos
+
+- **Orientadores** - Pela orientação e suporte durante o desenvolvimento
+- **ETEC** - Pela infraestrutura e ensino de qualidade
+- **Comunidade Flutter** - Pelas bibliotecas e recursos disponibilizados
+- **APIs Gratuitas** - Por possibilitar as integrações sem custo
+- **Firebase** - Pela plataforma robusta e gratuita para desenvolvimento
 
 ---
 
 ## Contato
 
-Para dúvidas ou sugestões sobre o projeto, entre em contato através do repositório.
+Para dúvidas, sugestões ou reportar problemas:
+
+- Abra uma [issue](../../issues) no GitHub
+- Entre em contato através do repositório
+
+---
+
+## Estatísticas do Projeto
+
+- **Linhas de Código**: ~15.000+
+- **Telas**: 30+
+- **Modelos**: 12
+- **Serviços**: 20+
+- **Testes**: 10+
+- **Documentação**: 17 arquivos
+- **APIs Integradas**: 5
+- **Plataformas Suportadas**: 6 (Android, iOS, Web, Windows, macOS, Linux)
+
+---
+
+<div align="center">
+
+**Desenvolvido com Flutter**
+
+[Voltar ao topo](#travel-app---sistema-de-planejamento-e-gestão-de-viagens)
+
+</div>

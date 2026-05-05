@@ -262,7 +262,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         SizedBox(
                           width: 100,
                           child: DropdownButtonFormField<String>(
-                            value: _baseCurrency,
+                            initialValue: _baseCurrency,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
                               contentPadding: EdgeInsets.symmetric(
@@ -307,7 +307,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: _selectedObjective,
+                      initialValue: _selectedObjective,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.flag),

@@ -85,7 +85,7 @@ class _CommunityPageState extends State<CommunityPage> {
                   prefixIcon: Icon(Icons.search,
                       color: Theme.of(context).colorScheme.primary),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                       borderSide: BorderSide.none),
@@ -381,7 +381,7 @@ class _CommunityPageState extends State<CommunityPage> {
                       height: 5,
                       margin: const EdgeInsets.symmetric(vertical: 15),
                       decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(10))),
                   Expanded(
                     child: ListView(
@@ -584,7 +584,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(15)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

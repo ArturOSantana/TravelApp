@@ -269,7 +269,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     PopupMenuItem(
                       value: 'reconvert',
                       child: Row(
-                        children: [
+                        children: const [
                           Icon(Icons.refresh, size: 18),
                           SizedBox(width: 8),
                           Text('Reconverter'),
@@ -302,10 +302,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                children: const [
                   Icon(Icons.receipt_long,
                       size: 64, color: AppColors.textDisabled),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     'Nenhum gasto registrado ainda',
                     style: TextStyle(
@@ -314,7 +314,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     'Adicione gastos para ver a divisão entre os membros',
                     textAlign: TextAlign.center,
@@ -381,10 +381,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
+              children: const [
                 Icon(Icons.account_balance_wallet, color: AppColors.success),
-                const SizedBox(width: 10),
-                const Text(
+                SizedBox(width: 10),
+                Text(
                   'Balanço dos Membros',
                   style: TextStyle(
                     fontSize: 18,
@@ -491,10 +491,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
+              children: const [
                 Icon(Icons.swap_horiz, color: AppColors.info),
-                const SizedBox(width: 10),
-                const Text(
+                SizedBox(width: 10),
+                Text(
                   'Sugestões de Acerto',
                   style: TextStyle(
                     fontSize: 18,
@@ -633,10 +633,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
+              children: const [
                 Icon(Icons.list_alt, color: AppColors.warning),
-                const SizedBox(width: 10),
-                const Text(
+                SizedBox(width: 10),
+                Text(
                   'Detalhamento dos Gastos',
                   style: TextStyle(
                     fontSize: 18,
