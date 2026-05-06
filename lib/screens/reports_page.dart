@@ -7,6 +7,7 @@ import '../services/pdf_export_service.dart';
 import '../services/social_share_service.dart';
 import '../services/exchangerate_service.dart';
 import 'premium_upgrade_page.dart';
+import '../theme/app_colors.dart';
 
 class ReportsPage extends StatefulWidget {
   final Trip trip;
@@ -329,7 +330,6 @@ class _ReportsPageState extends State<ReportsPage> {
 
             const SizedBox(height: 24),
 
-            // Relatório por Moeda
             _buildCurrencyBreakdown(),
 
             const SizedBox(height: 24),
@@ -349,7 +349,7 @@ class _ReportsPageState extends State<ReportsPage> {
             // Informações sobre os relatórios
             Card(
               elevation: 1,
-              color: Colors.blue[50],
+              color: Theme.of(context).colorScheme.onInverseSurface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -377,11 +377,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       '• Resumo completo da viagem\n'
                       '• Análise financeira detalhada\n'
                       '• Tabela de todas as despesas\n'
-                      '• Gráficos de gastos por categoria\n\n'
-                      'A imagem para redes sociais:\n'
-                      '• Formato otimizado para Instagram Stories\n'
-                      '• Design profissional e atraente\n'
-                      '• Estatísticas da sua viagemgit',
+                      '• Gráficos de gastos por categoria',
                       style: TextStyle(fontSize: 14, height: 1.5),
                     ),
                   ],
@@ -453,9 +449,9 @@ class _ReportsPageState extends State<ReportsPage> {
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,7 +483,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             Text(
                               '${expenses.length} ${expenses.length == 1 ? 'despesa' : 'despesas'}',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.secondary,
                                 fontSize: 13,
                               ),
                             ),
@@ -502,7 +498,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         Text(
                           'Total original:',
                           style: TextStyle(
-                            color: Colors.grey[700],
+                            color: Theme.of(context).hintColor,
                             fontSize: 14,
                           ),
                         ),
@@ -526,7 +522,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           Text(
                             'Convertido (BRL):',
                             style: TextStyle(
-                              color: Colors.grey[700],
+                              color: Theme.of(context).hintColor,
                               fontSize: 14,
                             ),
                           ),
@@ -547,7 +543,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           Text(
                             'Taxa média:',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Theme.of(context).hintColor,
                               fontSize: 13,
                             ),
                           ),
@@ -569,7 +565,7 @@ class _ReportsPageState extends State<ReportsPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -691,4 +687,4 @@ class _ReportsPageState extends State<ReportsPage> {
       ),
     );
   }
-}
+} 

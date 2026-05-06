@@ -12,10 +12,10 @@ class SelectPackingTemplatePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('Escolher Template'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 135, 92, 210),
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
@@ -91,6 +91,9 @@ class SelectPackingTemplatePage extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Theme.of( context).colorScheme.onPrimaryContainer,
+          width: 0.5)
+          
       ),
       child: InkWell(
         onTap: () => _showTemplatePreview(context, template),
@@ -103,7 +106,7 @@ class SelectPackingTemplatePage extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.deepPurple.shade50,
+                  color: Theme.of(context).colorScheme.onSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -129,7 +132,7 @@ class SelectPackingTemplatePage extends StatelessWidget {
                       template.description,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -190,7 +193,7 @@ class _TemplatePreviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Agrupar itens por categoria
+ 
     final groupedItems = <String, List<TemplateItem>>{};
     for (final item in template.items) {
       groupedItems.putIfAbsent(item.category, () => []).add(item);
@@ -449,4 +452,3 @@ class _TemplatePreviewSheet extends StatelessWidget {
     }
   }
 }
-
