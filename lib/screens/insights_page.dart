@@ -7,11 +7,10 @@ import '../models/expense.dart';
 import '../models/user_model.dart';
 import '../controllers/trip_controller.dart';
 import '../services/analytics_service.dart';
+import '../services/pdf_export_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/charts/line_chart_widget.dart';
 import '../widgets/charts/gauge_chart_widget.dart';
-import '../widgets/charts/waterfall_chart_widget.dart';
-import '../widgets/charts/heatmap_widget.dart';
 import 'premium_upgrade_page.dart';
 
 class InsightsPage extends StatefulWidget {
@@ -48,6 +47,56 @@ class _InsightsPageState extends State<InsightsPage> {
       if (doc.exists) {
         final userData = UserModel.fromMap(doc.data()!);
         setState(() => _isPremium = userData.isPremium);
+      }
+    }
+  }
+
+  Future<void> _generatePdfReport(Trip trip, List<Expense> expenses) async {
+    try {
+      // Mostra loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Gera o PDF
+      final pdfFile = await PdfExportService.exportTripReport(
+        trip: trip,
+        expenses: expenses,
+      );
+
+      // Fecha loading
+      if (mounted) Navigator.of(context).pop();
+
+      // Compartilha o PDF
+      await PdfExportService.shareReport(pdfFile, trip.destination);
+
+      // Mostra mensagem de sucesso
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Relatório gerado com sucesso!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Fecha loading se ainda estiver aberto
+      if (mounted) Navigator.of(context).pop();
+
+      // Mostra erro
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerar relatório: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     }
   }
@@ -246,7 +295,12 @@ class _InsightsPageState extends State<InsightsPage> {
         const SizedBox(height: 24),
         _buildSectionTitle("Investimento Total"),
         const SizedBox(height: 12),
-        _buildBudgetSummaryCard(totalInvested, trips.length),
+        _buildStatCard(
+          "Total Investido",
+          _currencyFormat.format(totalInvested),
+          Icons.attach_money,
+          AppColors.primary,
+        ),
         const SizedBox(height: 24),
         _buildSectionTitle("Estilo de Viagem"),
         _buildTravelStyleChart(trips),
@@ -295,65 +349,92 @@ class _InsightsPageState extends State<InsightsPage> {
 
         return DefaultTabController(
           length: 4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Text(
-                trip.destination,
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              // Tabs de navegação
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TabBar(
-                  labelColor: Theme.of(context).colorScheme.primary,
-                  unselectedLabelColor:
-                      Theme.of(context).colorScheme.onSurfaceVariant,
-                  indicator: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          trip.destination,
+                          style: const TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      // Botão de Gerar Relatório
+                      ElevatedButton.icon(
+                        onPressed: () => _generatePdfReport(trip, expenses),
+                        icon: const Icon(Icons.picture_as_pdf, size: 20),
+                        label: const Text('Relatório'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  tabs: const [
-                    Tab(icon: Icon(Icons.dashboard), text: 'Resumo'),
-                    Tab(icon: Icon(Icons.show_chart), text: 'Gráficos'),
-                    Tab(icon: Icon(Icons.analytics), text: 'Análise'),
-                    Tab(icon: Icon(Icons.calendar_view_month), text: 'Calor'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-              // Conteúdo das tabs
-              SizedBox(
-                height: MediaQuery.of(context).size.height - 300,
-                child: TabBarView(
-                  children: [
-                    // Tab 1: Resumo
-                    _buildSummaryTab(trip, stats, expenses),
+                  // Tabs de navegação
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TabBar(
+                      labelColor: Theme.of(context).colorScheme.primary,
+                      unselectedLabelColor:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                      indicator: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      tabs: const [
+                        Tab(icon: Icon(Icons.dashboard), text: 'Resumo'),
+                        Tab(icon: Icon(Icons.show_chart), text: 'Gráficos'),
+                        Tab(icon: Icon(Icons.analytics), text: 'Análise'),
+                        Tab(
+                            icon: Icon(Icons.calendar_view_month),
+                            text: 'Calor'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-                    // Tab 2: Gráficos (Premium)
-                    _isPremium
-                        ? _buildChartsTab(
-                            trip, stats, dailySpending, dailyBudget)
-                        : _buildPremiumLockedContent('Gráficos Avançados'),
+                  // Conteúdo das tabs
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height - 300,
+                    child: TabBarView(
+                      children: [
+                        // Tab 1: Resumo
+                        _buildSummaryTab(trip, stats, expenses),
 
-                    // Tab 3: Análise Detalhada (Premium)
-                    _isPremium
-                        ? _buildAnalysisTab(stats, expenses)
-                        : _buildPremiumLockedContent('Análise Detalhada'),
+                        // Tab 2: Gráficos (Premium)
+                        _isPremium
+                            ? _buildChartsTab(
+                                trip, stats, dailySpending, dailyBudget)
+                            : _buildPremiumLockedContent('Gráficos Avançados'),
 
-                    // Tab 4: Mapa de Calor (Premium)
-                    _isPremium
-                        ? _buildHeatmapTab(dailySpending)
-                        : _buildPremiumLockedContent('Mapa de Calor'),
-                  ],
-                ),
+                        // Tab 3: Análise Detalhada (Premium)
+                        _isPremium
+                            ? _buildAnalysisTab(stats, expenses)
+                            : _buildPremiumLockedContent('Análise Detalhada'),
+
+                        // Tab 4: Mapa de Calor (Premium)
+                        _isPremium
+                            ? _buildHeatmapTab(dailySpending)
+                            : _buildPremiumLockedContent('Mapa de Calor'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -418,11 +499,51 @@ class _InsightsPageState extends State<InsightsPage> {
           ),
           const SizedBox(height: 24),
 
-          // Gráfico de Cascata
-          WaterfallChartWidget(
-            initialBudget: trip.budget,
-            categories: stats.categoryBreakdown,
-            title: 'Consumo do Orçamento por Categoria',
+          // Resumo Simplificado de Categorias
+          _buildSectionTitle("Resumo por Categoria"),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: stats.categoryBreakdown.entries.map((entry) {
+                final percentage = (entry.value / stats.totalSpent * 100);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          entry.key,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        _currencyFormat.format(entry.value),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '(${percentage.toStringAsFixed(1)}%)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ],
       ),
@@ -434,26 +555,20 @@ class _InsightsPageState extends State<InsightsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Distribuição de Gastos
-          _buildSectionTitle("Distribuição por Categoria"),
+          // Distribuição de Gastos por Categoria
+          _buildSectionTitle("Gastos por Categoria"),
           const SizedBox(height: 12),
           _buildCategoryDistribution(expenses),
           const SizedBox(height: 24),
 
-          // Gastos por Dia da Semana
-          _buildSectionTitle("Gastos por Dia da Semana"),
-          const SizedBox(height: 12),
-          _buildWeekdayDistribution(stats.weekdayBreakdown),
-          const SizedBox(height: 24),
-
-          // Outliers
+          // Outliers (Gastos Atípicos)
           if (stats.outliers.isNotEmpty) ...[
-            _buildSectionTitle("Gastos Atípicos"),
+            _buildSectionTitle("Gastos Fora do Padrão"),
             const SizedBox(height: 12),
             _buildOutliersCard(stats.outliers),
             const SizedBox(height: 16),
             Text(
-              'Estes gastos estão muito acima ou abaixo da sua média, indicando eventos especiais ou oportunidades de economia.',
+              'Estes gastos estão muito acima ou abaixo da sua média.',
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -467,13 +582,54 @@ class _InsightsPageState extends State<InsightsPage> {
   }
 
   Widget _buildHeatmapTab(Map<DateTime, double> dailySpending) {
+    // Simplificado: mostra apenas resumo dos dias com mais gastos
+    final sortedDays = dailySpending.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final topDays = sortedDays.take(5).toList();
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HeatmapWidget(
-            data: dailySpending,
-            title: 'Mapa de Calor - Intensidade de Gastos',
+          _buildSectionTitle("Dias com Maiores Gastos"),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: topDays.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          DateFormat('dd/MM/yyyy - EEEE', 'pt_BR')
+                              .format(entry.key),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      Text(
+                        _currencyFormat.format(entry.value),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
           const SizedBox(height: 16),
           Container(
@@ -485,36 +641,21 @@ class _InsightsPageState extends State<InsightsPage> {
                   .withOpacity(0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Como interpretar',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ],
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '• Cores mais quentes (vermelho) = dias com mais gastos\n'
-                  '• Cores mais frias (verde) = dias com menos gastos\n'
-                  '• Identifique padrões: fins de semana, eventos especiais\n'
-                  '• Use para planejar melhor suas próximas viagens',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.5,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Identifique padrões nos seus dias de maior gasto para planejar melhor suas próximas viagens.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -704,102 +845,81 @@ class _InsightsPageState extends State<InsightsPage> {
   }
 
   Widget _buildDetailedStats(TripStatistics stats) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          _buildStatRow(
-              'Média por Dia', _currencyFormat.format(stats.averagePerDay)),
-          const Divider(height: 24),
-          _buildStatRow('Média por Despesa',
-              _currencyFormat.format(stats.averagePerExpense)),
-          const Divider(height: 24),
-          _buildStatRow('Mediana', _currencyFormat.format(stats.median)),
-          const Divider(height: 24),
-          _buildStatRow('Desvio Padrão', _currencyFormat.format(stats.stdDev)),
-          const Divider(height: 24),
-          _buildStatRow(
-              'Menor Gasto', _currencyFormat.format(stats.minExpense)),
-          const Divider(height: 24),
-          _buildStatRow(
-              'Maior Gasto', _currencyFormat.format(stats.maxExpense)),
-          const Divider(height: 24),
-          _buildStatRow(
-              'Taxa de Queima/Dia', _currencyFormat.format(stats.burnRate)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+        Expanded(
+          child: _buildStatCard(
+            'Média/Dia',
+            _currencyFormat.format(stats.averagePerDay),
+            Icons.calendar_today,
+            AppColors.primary,
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            'Menor',
+            _currencyFormat.format(stats.minExpense),
+            Icons.arrow_downward,
+            Colors.green,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            'Maior',
+            _currencyFormat.format(stats.maxExpense),
+            Icons.arrow_upward,
+            Colors.red,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildWeekdayDistribution(Map<String, double> weekdayBreakdown) {
-    double maxValue = weekdayBreakdown.values.isEmpty
-        ? 1
-        : weekdayBreakdown.values.reduce((a, b) => a > b ? a : b);
-
-    return Column(
-      children: weekdayBreakdown.entries.map((entry) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 80,
-                child: Text(
-                  entry.key,
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ),
-              Expanded(
-                child: LinearProgressIndicator(
-                  value: maxValue > 0 ? entry.value / maxValue : 0,
-                  color: AppColors.primary,
-                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                  minHeight: 20,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 80,
-                child: Text(
-                  _currencyFormat.format(entry.value),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.right,
-                ),
-              ),
-            ],
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 32,
           ),
-        );
-      }).toList(),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -957,64 +1077,6 @@ class _InsightsPageState extends State<InsightsPage> {
     return Text(
       title,
       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    );
-  }
-
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBudgetSummaryCard(double total, int count) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildSimpleInfo(
-            "Total Planejado",
-            _currencyFormat.format(total),
-          ),
-          _buildSimpleInfo(
-            "Média/Viagem",
-            _currencyFormat.format(count > 0 ? total / count : 0),
-          ),
-        ],
-      ),
     );
   }
 
