@@ -528,7 +528,6 @@ void main() {
   });
 }
 
-// Helper function para criar notificações de teste
 AppNotification _createTestNotification({
   String? id,
   NotificationType type = NotificationType.like,

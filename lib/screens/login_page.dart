@@ -61,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "Insira seu e-mail abaixo. Verificaremos se você tem uma conta e enviaremos o link.",
+              "Insira seu e-mail abaixo e enviaremos um link de recuperação se a conta existir.",
               style: AppTextStyles.bodySmall(context),
             ),
             const SizedBox(height: 20),
@@ -84,9 +84,9 @@ class _LoginPageState extends State<LoginPage> {
             semanticLabel: "Cancelar recuperação de senha",
           ),
           AccessibleButton(
-            label: "Verificar e Enviar",
+            label: "Enviar Link",
             type: ButtonType.primary,
-            semanticLabel: "Verificar e-mail e enviar link de recuperação",
+            semanticLabel: "Enviar link de recuperação de senha",
             onPressed: () async {
               final email = resetEmailController.text.trim();
               if (email.isNotEmpty) {
@@ -95,60 +95,41 @@ class _LoginPageState extends State<LoginPage> {
                   SnackBar(
                     content: Semantics(
                       liveRegion: true,
-                      child: const Text("Verificando cadastro..."),
+                      child: const Text("Enviando link de recuperação..."),
                     ),
                     duration: const Duration(seconds: 1),
                   ),
                 );
 
-                final bool exists = await _authController.isEmailRegistered(
+                // Envia email diretamente - Firebase Auth lida com verificação
+                final String? error = await _authController.resetPassword(
                   email,
                 );
 
                 if (mounted) {
-                  if (!exists) {
+                  if (error == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Semantics(
                           liveRegion: true,
                           child: const Text(
-                            "Este e-mail não está cadastrado em nossa base. ",
+                            "Se este e-mail estiver cadastrado, você receberá um link de recuperação. Verifique sua caixa de entrada e a pasta de SPAM.",
                           ),
+                        ),
+                        backgroundColor: Colors.green[700],
+                        duration: const Duration(seconds: 6),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Semantics(
+                          liveRegion: true,
+                          child: Text(error),
                         ),
                         backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
-                  } else {
-                    final String? error = await _authController.resetPassword(
-                      email,
-                    );
-                    if (mounted) {
-                      if (error == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Semantics(
-                              liveRegion: true,
-                              child: const Text(
-                                "Link enviado! Verifique seu e-mail (e a pasta de SPAM). ",
-                              ),
-                            ),
-                            backgroundColor: Colors.green[700],
-                            duration: const Duration(seconds: 5),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Semantics(
-                              liveRegion: true,
-                              child: Text(error),
-                            ),
-                            backgroundColor:
-                                Theme.of(context).colorScheme.error,
-                          ),
-                        );
-                      }
-                    }
                   }
                 }
               }

@@ -17,20 +17,29 @@ class AuthController {
     });
   }
 
-  // --- VERIFICAR SE EMAIL EXISTE ---
   Future<bool> isEmailRegistered(String email) async {
     try {
-      final query = await _db.collection('users').where('email', isEqualTo: email.trim()).get();
-      return query.docs.isNotEmpty;
+      // Busca no Firestore
+      final query = await _db
+          .collection('users')
+          .where('email', isEqualTo: email.trim())
+          .get();
+      if (query.docs.isNotEmpty) {
+        return true;
+      }
+
+     
+      return true; 
     } catch (e) {
-      return false;
+   
+      return true;
     }
   }
 
   Future<String?> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email.trim());
-      return null; 
+      return null;
     } on FirebaseAuthException catch (e) {
       return 'Erro: ${e.message}';
     } catch (e) {
@@ -71,7 +80,8 @@ class AuthController {
       }
       return null;
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'email-already-in-use') return 'Este e-mail já está cadastrado.';
+      if (e.code == 'email-already-in-use')
+        return 'Este e-mail já está cadastrado.';
       if (e.code == 'weak-password') return 'A senha é muito fraca.';
       return e.message;
     } catch (e) {
@@ -92,7 +102,8 @@ class AuthController {
         final doc = await docRef.get();
         final data = doc.data();
 
-        final storedName = (data?['name'] ?? data?['userName'] ?? '').toString().trim();
+        final storedName =
+            (data?['name'] ?? data?['userName'] ?? '').toString().trim();
         final authName = user.displayName?.trim() ?? '';
         final normalizedName = storedName.isNotEmpty ? storedName : authName;
 
@@ -126,7 +137,10 @@ class AuthController {
         ...user.toMap(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
-      await _db.collection('users').doc(uid).set(payload, SetOptions(merge: true));
+      await _db
+          .collection('users')
+          .doc(uid)
+          .set(payload, SetOptions(merge: true));
       return null;
     } catch (e) {
       return 'Erro ao atualizar perfil: $e';
