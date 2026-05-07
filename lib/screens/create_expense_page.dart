@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/expense.dart';
@@ -9,7 +10,13 @@ import '../services/exchangerate_service.dart';
 
 class CreateExpensePage extends StatefulWidget {
   final String tripId;
-  const CreateExpensePage({super.key, required this.tripId});
+  final Expense? expenseToEdit;
+
+  const CreateExpensePage({
+    super.key,
+    required this.tripId,
+    this.expenseToEdit,
+  });
 
   @override
   State<CreateExpensePage> createState() => _CreateExpensePageState();
@@ -47,10 +54,26 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
   final List<String> _currencies = ['BRL', 'USD', 'EUR', 'GBP', 'ARS'];
 
+  bool get _isEditing => widget.expenseToEdit != null;
+
   @override
   void initState() {
     super.initState();
+    _initializeFields();
     _loadData();
+  }
+
+  void _initializeFields() {
+    if (_isEditing) {
+      final expense = widget.expenseToEdit!;
+      titleController.text = expense.title;
+      valueController.text = expense.originalValue.toStringAsFixed(2);
+      _selectedCategory = expense.category;
+      _selectedCurrency = expense.currency;
+      _selectedSplitType = expense.splitType;
+      _payerId = expense.payerId;
+      _customSplits.addAll(expense.splits);
+    }
   }
 
   Future<void> _loadData() async {
@@ -229,24 +252,42 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       final Map<String, double> finalSplits = _buildFinalSplits(finalVal);
       if (finalSplits.isEmpty) return;
 
-      final expense = Expense(
-        id: '',
-        tripId: widget.tripId,
-        title: titleController.text.trim(),
-        value: finalVal,
-        originalValue: originalVal,
-        currency: _selectedCurrency,
-        category: _selectedCategory,
-        payerId: _payerId!,
-        date: DateTime.now(),
-        splitType: _selectedSplitType,
-        splits: finalSplits,
-        exchangeRateUsed: exchangeRate,
-        conversionDate: conversionDate,
-      );
+      if (_isEditing) {
+        // Atualizar gasto existente
+        await _controller.updateExpense(widget.expenseToEdit!.id, {
+          'title': titleController.text.trim(),
+          'value': finalVal,
+          'originalValue': originalVal,
+          'currency': _selectedCurrency,
+          'category': _selectedCategory,
+          'payerId': _payerId!,
+          'splitType': _selectedSplitType.name,
+          'splits': finalSplits,
+          'exchangeRateUsed': exchangeRate,
+          'conversionDate': conversionDate,
+        });
+        if (mounted) Navigator.pop(context, true);
+      } else {
+        // Criar novo gasto
+        final expense = Expense(
+          id: '',
+          tripId: widget.tripId,
+          title: titleController.text.trim(),
+          value: finalVal,
+          originalValue: originalVal,
+          currency: _selectedCurrency,
+          category: _selectedCategory,
+          payerId: _payerId!,
+          date: DateTime.now(),
+          splitType: _selectedSplitType,
+          splits: finalSplits,
+          exchangeRateUsed: exchangeRate,
+          conversionDate: conversionDate,
+        );
 
-      await _controller.addExpense(expense);
-      if (mounted) Navigator.pop(context);
+        await _controller.addExpense(expense);
+        if (mounted) Navigator.pop(context);
+      }
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -396,7 +437,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     if (_members.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text("Novo Gasto"),
+          title: Text(_isEditing ? "Editar Gasto" : "Novo Gasto"),
         ),
         body: const Center(
           child: Padding(
@@ -412,7 +453,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Novo Gasto"),
+        title: Text(_isEditing ? "Editar Gasto" : "Novo Gasto"),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -465,11 +506,17 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   flex: 3,
                   child: TextField(
                     controller: valueController,
-                    keyboardType: TextInputType.number,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}')),
+                    ],
                     decoration: const InputDecoration(
                       labelText: "Quanto?",
                       prefixIcon: Icon(Icons.attach_money),
                       border: OutlineInputBorder(),
+                      helperText: 'Apenas números',
                     ),
                     onChanged: (v) => setState(() {}),
                   ),
@@ -547,7 +594,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                           ),
                         ),
                       )
-                    : const Text("REGISTRAR GASTO"),
+                    : Text(_isEditing ? "ATUALIZAR GASTO" : "REGISTRAR GASTO"),
               ),
             ),
           ],

@@ -802,6 +802,169 @@ Este projeto foi desenvolvido como **Trabalho de Conclusão de Curso (TCC)** par
 
 ---
 
+## Limites e Limitações
+
+### Limitações Técnicas
+
+#### 1. **APIs Externas - Limites de Requisições**
+
+**Geoapify (Sugestões de Locais)**
+- Gratuito: 3.000 requisições/dia
+- Limite: ~125 requisições/hora
+- Recomendação: Cache local de 24h para locais já consultados
+
+**OpenWeatherMap (Previsão do Tempo)**
+- Gratuito: 1.000 requisições/dia
+- Limite: ~42 requisições/hora
+- Recomendação: Atualização a cada 3 horas
+
+**ExchangeRate API (Conversão de Moedas)**
+- Gratuito: 1.500 requisições/mês
+- Limite: ~50 requisições/dia
+- Recomendação: Cache de taxas por 24h
+
+**REST Countries (Informações de Países)**
+- Sem limites
+- Completamente gratuito
+
+**Nominatim/OpenStreetMap (Geocoding)**
+- Gratuito com fair use
+- Limite: 1 requisição/segundo
+- Recomendação: Debounce em buscas
+
+#### 2. **Firebase - Plano Gratuito (Spark)**
+
+**Cloud Firestore**
+- 50.000 leituras/dia
+- 20.000 escritas/dia
+- 20.000 exclusões/dia
+- 1 GB armazenamento
+- Limite: Pode ser atingido com uso intenso em grupos grandes
+
+**Firebase Storage**
+- 5 GB armazenamento
+- 1 GB download/dia
+- Limite: Fotos de alta resolução consomem rapidamente
+
+**Firebase Authentication**
+- Ilimitado (plano gratuito)
+
+**Cloud Messaging (Notificações)**
+- Ilimitado (plano gratuito)
+
+#### 3. **Limitações de Funcionalidades**
+
+**Viagens em Grupo**
+- Máximo: 20 membros por viagem
+- Motivo: Performance e sincronização em tempo real
+
+**Upload de Fotos**
+- Tamanho máximo: 10 MB por foto
+- Compressão automática para 1920x1080
+- Motivo: Limites do Firebase Storage gratuito
+
+**Diário de Viagem**
+- Máximo: 10 fotos por entrada
+- Texto: 5.000 caracteres por entrada
+- Motivo: Performance e experiência do usuário
+
+**Histórico de Gastos**
+- Sem limite de gastos por viagem
+- Sincronização em tempo real
+- Recomendação: Arquivar viagens antigas
+
+**Cache Offline**
+- Limitado pela capacidade do dispositivo
+- Sincronização automática ao reconectar
+- Recomendação: Limpar cache periodicamente
+
+#### 4. **Limitações de Plataforma**
+
+**Notificações Push**
+- iOS: Requer certificado Apple Developer ($99/ano)
+- Android: Funciona sem custo adicional
+- Web: Suporte limitado em alguns navegadores
+
+**Localização em Tempo Real**
+- Requer permissões do usuário
+- Consome bateria em uso contínuo
+- Recomendação: Usar apenas quando necessário
+
+**Compartilhamento de Arquivos**
+- Depende de apps instalados (WhatsApp, Email, etc.)
+- Fallback para compartilhamento nativo
+
+#### 5. **Limitações de Performance**
+
+**Dispositivos Antigos**
+- Android < 6.0: Funcionalidades limitadas
+- iOS < 12.0: Funcionalidades limitadas
+- Otimizações automáticas para dispositivos lentos
+
+**Conexão de Internet**
+- Algumas funcionalidades requerem internet
+- Modo offline para visualização de dados
+- Sincronização pendente até reconectar
+
+**Memória RAM**
+- Dispositivos com < 2GB RAM: Performance reduzida
+- Gerenciamento automático de memória
+- Recomendação: Fechar apps em segundo plano
+
+### Limitações de Negócio
+
+#### 1. **Monetização**
+- ⚠️ Versão atual: Completamente gratuita
+- 💡 Futuro: Plano Premium planejado para recursos avançados
+
+#### 2. **Suporte**
+- Projeto acadêmico: Suporte limitado
+- Documentação completa disponível
+- Comunidade: Issues no GitHub
+
+#### 3. **Idiomas**
+- Atualmente: Apenas Português (pt-BR)
+- Futuro: Internacionalização planejada
+
+#### 4. **Integrações**
+- Sem integração direta com agências de viagem
+- Sem reserva de hotéis/voos no app
+- Redirecionamento para apps externos
+
+### Recomendações de Uso
+
+**Para Melhor Experiência:**
+
+1. **Conexão**: Use Wi-Fi para uploads de fotos
+2. **Bateria**: Desative localização contínua quando não necessário
+3. **Armazenamento**: Mantenha pelo menos 500MB livres
+4. **Atualizações**: Mantenha o app sempre atualizado
+5. **Backup**: Exporte dados importantes periodicamente
+6. **Grupos**: Limite a 10-15 membros para melhor performance
+7. **Fotos**: Comprima fotos grandes antes do upload
+8. **Cache**: Limpe cache mensalmente em "Configurações"
+
+### Escalabilidade Futura
+
+**Para Superar Limitações:**
+
+1. **Upgrade Firebase**: Plano Blaze (pague conforme uso)
+2. **CDN**: Para distribuição de imagens
+3. **Backend Próprio**: Para lógica complexa
+4. **APIs Premium**: Mais requisições e recursos
+5. **Otimizações**: Lazy loading e paginação
+6. **Caching Avançado**: Redis ou similar
+
+### Monitoramento
+
+**Acompanhe o Uso:**
+- Firebase Console: Quotas e limites
+- Analytics: Uso de funcionalidades
+- Crash Reports: Erros e problemas
+- Performance Monitoring: Tempos de resposta
+
+---
+
 ## Reconhecimentos
 
 - **Orientadores** - Pela orientação e suporte durante o desenvolvimento

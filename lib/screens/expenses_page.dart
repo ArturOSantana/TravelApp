@@ -202,6 +202,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
       label:
           "Gasto: ${expense.title}. Valor: R\$ ${expense.value.toStringAsFixed(2)}. Data: ${DateFormat('dd/MM').format(expense.date)}",
       child: Card(
+        key: ValueKey('card_${expense.id}'),
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: ListTile(
@@ -217,68 +218,114 @@ class _ExpensesPageState extends State<ExpensesPage> {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(DateFormat('dd/MM/yyyy').format(expense.date)),
+              Text(
+                DateFormat('dd/MM/yyyy').format(expense.date),
+                style: const TextStyle(inherit: true),
+              ),
               if (isDifferentCurrency) ...[
                 const SizedBox(height: 4),
                 Text(
                   'Original: ${ExchangeRateService.formatCurrency(expense.originalValue, expense.currency)}',
-                  style:
-                      TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    inherit: true,
+                  ),
                 ),
                 if (expense.exchangeRateUsed != 1.0)
                   Text(
                     'Taxa: 1 ${expense.currency} = ${expense.exchangeRateUsed.toStringAsFixed(4)} BRL',
-                    style:
-                        TextStyle(fontSize: 11, color: AppColors.textDisabled),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textDisabled,
+                      inherit: true,
+                    ),
                   ),
               ],
             ],
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "R\$ ${expense.value.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.error,
-                      fontSize: 16,
-                    ),
+          trailing: SizedBox(
+            width: 120,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        "R\$ ${expense.value.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.error,
+                          fontSize: 16,
+                          inherit: true,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (isDifferentCurrency && expense.conversionDate != null)
+                        Text(
+                          DateFormat('dd/MM').format(expense.conversionDate!),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textDisabled,
+                            inherit: true,
+                          ),
+                        ),
+                    ],
                   ),
-                  if (isDifferentCurrency && expense.conversionDate != null)
-                    Text(
-                      DateFormat('dd/MM').format(expense.conversionDate!),
-                      style: TextStyle(
-                          fontSize: 10, color: AppColors.textDisabled),
-                    ),
-                ],
-              ),
-              if (isDifferentCurrency)
+                ),
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, size: 20),
+                  key: ValueKey('menu_${expense.id}'),
+                  icon: const Icon(Icons.more_vert, size: 20),
                   onSelected: (value) {
                     if (value == 'reconvert') {
                       _showReconvertDialog(expense);
+                    } else if (value == 'edit') {
+                      _editExpense(expense);
+                    } else if (value == 'delete') {
+                      _deleteExpense(expense);
                     }
                   },
                   itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'reconvert',
+                    const PopupMenuItem(
+                      value: 'edit',
                       child: Row(
-                        children: const [
-                          Icon(Icons.refresh, size: 18),
+                        children: [
+                          Icon(Icons.edit, size: 18),
                           SizedBox(width: 8),
-                          Text('Reconverter'),
+                          Text('Editar'),
+                        ],
+                      ),
+                    ),
+                    if (isDifferentCurrency)
+                      const PopupMenuItem(
+                        value: 'reconvert',
+                        child: Row(
+                          children: [
+                            Icon(Icons.refresh, size: 18),
+                            SizedBox(width: 8),
+                            Text('Reconverter'),
+                          ],
+                        ),
+                      ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 18, color: AppColors.error),
+                          SizedBox(width: 8),
+                          Text('Apagar',
+                              style: TextStyle(color: AppColors.error)),
                         ],
                       ),
                     ),
                   ],
                 ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -932,6 +979,116 @@ class _ExpensesPageState extends State<ExpensesPage> {
         ],
       ),
     );
+  }
+
+  void _editExpense(Expense expense) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateExpensePage(
+          tripId: widget.tripId,
+          expenseToEdit: expense,
+        ),
+      ),
+    );
+
+    if (result == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gasto atualizado com sucesso!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
+  void _deleteExpense(Expense expense) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Tem certeza que deseja apagar este gasto?'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.errorBackground,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expense.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Valor: ${_currencyFormat.format(expense.value)}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    'Data: ${DateFormat('dd/MM/yyyy').format(expense.date)}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Esta ação não pode ser desfeita.',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Apagar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _controller.deleteExpense(expense.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gasto apagado com sucesso!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao apagar gasto: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
   }
 
   String _getSplitTypeLabel(SplitType type) {
