@@ -86,24 +86,20 @@ class _PremiumUpgradePageState extends State<PremiumUpgradePage> {
 
             const SizedBox(height: 30),
 
-            // Planos
             _buildPlanCard(SubscriptionTier.free),
             const SizedBox(height: 16),
             _buildPlanCard(SubscriptionTier.premium),
 
             const SizedBox(height: 30),
 
-            // Comparação de features
             _buildComparisonSection(),
 
             const SizedBox(height: 30),
-
-            // Botão de upgrade
             if (_selectedTier != SubscriptionTier.free) _buildUpgradeButton(),
 
             const SizedBox(height: 20),
 
-            // Termos
+            
             Text(
               "Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade. "
               "A assinatura será renovada automaticamente.",

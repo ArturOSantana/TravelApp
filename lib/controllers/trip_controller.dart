@@ -9,13 +9,14 @@ import '../models/journal_entry.dart';
 import '../models/safety_checkin.dart';
 import '../models/user_model.dart';
 import '../models/notification_model.dart';
+import '../models/place_rating.dart';
+import '../models/destination_rating.dart';
 import '../services/push_notification_service.dart';
 
 class TripController {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  //notificationn
   Stream<List<AppNotification>> getNotifications() {
     String uid = _auth.currentUser?.uid ?? '';
     return _db
@@ -75,7 +76,6 @@ class TripController {
     }
   }
 
-  // --- VIAGENS ---
   Stream<List<Trip>> getTrips({String? status}) {
     String uid = _auth.currentUser?.uid ?? '';
     var query = _db.collection('trips').where('members', arrayContains: uid);
@@ -100,6 +100,15 @@ class TripController {
 
   Future<void> updateTripStatus(String tripId, String newStatus) async {
     await _db.collection('trips').doc(tripId).update({'status': newStatus});
+  }
+
+  /// Atualiza o orçamento e moeda base de uma viagem
+  Future<void> updateTripBudget(
+      String tripId, double newBudget, String newCurrency) async {
+    await _db.collection('trips').doc(tripId).update({
+      'budget': newBudget,
+      'baseCurrency': newCurrency,
+    });
   }
 
   Future<void> joinTrip(String tripId) async {
@@ -131,15 +140,44 @@ class TripController {
     return users;
   }
 
-  // --- COMUNIDADE / SERVIÇOS ---
   Stream<List<ServiceModel>> getCommunityServices() {
     return _db
         .collection('services')
         .where('isPublic', isEqualTo: true)
         .snapshots()
+        .map((snap) {
+      final services =
+          snap.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList();
+      services.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
+      return services;
+    });
+  }
+
+  /// Busca avaliações de destino públicas para a comunidade
+  Stream<List<DestinationRating>> getCommunityDestinationRatings() {
+    return _db
+        .collection('destination_ratings')
+        .where('isPublic', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((doc) => ServiceModel.fromFirestore(doc)).toList(),
+          (snap) => snap.docs
+              .map((doc) => DestinationRating.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  Stream<List<DestinationRating>> getPersonalDestinationRatings() {
+    String uid = _auth.currentUser?.uid ?? '';
+    return _db
+        .collection('destination_ratings')
+        .where('userId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => DestinationRating.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -208,8 +246,27 @@ class TripController {
 
   Future<void> updateService(ServiceModel service) async =>
       await _db.collection('services').doc(service.id).update(service.toMap());
-  Future<void> deleteService(String serviceId, String ownerId) async =>
-      await _db.collection('services').doc(serviceId).delete();
+
+  Future<void> deleteService(String serviceId, String ownerId) async {
+    final uid = _auth.currentUser?.uid ?? '';
+    if (uid.isEmpty || uid != ownerId) {
+      throw Exception('Somente o autor pode excluir esta postagem.');
+    }
+
+    await _db.collection('services').doc(serviceId).delete();
+  }
+
+  Future<void> deleteDestinationRating(
+    String ratingId,
+    String ownerId,
+  ) async {
+    final uid = _auth.currentUser?.uid ?? '';
+    if (uid.isEmpty || uid != ownerId) {
+      throw Exception('Somente o autor pode excluir esta avaliação.');
+    }
+
+    await _db.collection('destination_ratings').doc(ratingId).delete();
+  }
 
   Future<void> toggleSaveService(
     String serviceId,
@@ -445,11 +502,12 @@ class TripController {
     double? longitude,
   }) async {
     final user = _auth.currentUser;
+    final now = DateTime.now();
     final checkIn = SafetyCheckIn(
       id: '',
       tripId: tripId,
       userId: user?.uid ?? '',
-      timestamp: DateTime.now(),
+      timestamp: now,
       locationName: location,
       isPanic: isPanic,
       latitude: latitude,
@@ -457,16 +515,16 @@ class TripController {
       userName: user?.displayName ?? 'Viajante',
     );
 
-    await _db.collection('safety').add(checkIn.toMap());
+    final checkInRef = await _db.collection('safety').add(checkIn.toMap());
+
+    final tripDoc = await _db.collection('trips').doc(tripId).get();
+    final trip = Trip.fromFirestore(tripDoc);
 
     if (isPanic) {
-      final tripDoc = await _db.collection('trips').doc(tripId).get();
-      final trip = Trip.fromFirestore(tripDoc);
+      final recipientIds =
+          trip.members.where((memberId) => memberId != user?.uid);
 
-      // Enviar notificações para todos os membros do grupo
-      for (final memberId in trip.members) {
-        if (memberId == user?.uid) continue;
-
+      for (final memberId in recipientIds) {
         await _db.collection('notifications').add(
               AppNotification(
                 id: '',
@@ -478,14 +536,47 @@ class TripController {
                 type: NotificationType.safetyAlert,
                 commentText:
                     "ALERTA SOS: Estou em $location e preciso de ajuda!",
-                createdAt: DateTime.now(),
+                createdAt: now,
               ).toMap(),
             );
       }
 
-      // TODO: Implementar notificação push quando o serviço estiver configurado
+      await _db.collection('trips').doc(tripId).set({
+        'activeSafetyAlert': {
+          'checkInId': checkInRef.id,
+          'tripId': tripId,
+          'userId': user?.uid ?? '',
+          'userName': user?.displayName ?? 'Viajante',
+          'tripDestination': trip.destination,
+          'locationName': location,
+          'latitude': latitude,
+          'longitude': longitude,
+          'createdAt': now,
+          'isActive': true,
+        },
+      }, SetOptions(merge: true));
+
       debugPrint("Alerta de segurança registrado para $tripId");
+      return;
     }
+
+    await _db.collection('trips').doc(tripId).set({
+      'activeSafetyAlert': FieldValue.delete(),
+    }, SetOptions(merge: true));
+  }
+
+  Stream<Map<String, dynamic>?> watchActiveSafetyAlert(String tripId) {
+    return _db.collection('trips').doc(tripId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      final data = doc.data();
+      if (data == null) return null;
+
+      final alert = data['activeSafetyAlert'];
+      if (alert is Map<String, dynamic> && alert['isActive'] == true) {
+        return alert;
+      }
+      return null;
+    });
   }
 
   Future<void> acknowledgeSafetyAlert(String checkInId, String userId) async {
@@ -620,5 +711,349 @@ class TripController {
         .doc(entryId)
         .snapshots()
         .map((doc) => JournalEntry.fromFirestore(doc));
+  }
+
+  // ==================== PLACE RATINGS ====================
+
+  /// Busca todas as avaliações públicas de um lugar específico
+  Stream<List<PlaceRating>> getPlaceRatings(String placeId) {
+    return _db
+        .collection('place_ratings')
+        .where('placeId', isEqualTo: placeId)
+        .where('isPublic', isEqualTo: true)
+        .snapshots()
+        .map((snap) {
+      final ratings =
+          snap.docs.map((doc) => PlaceRating.fromFirestore(doc)).toList();
+      ratings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return ratings;
+    });
+  }
+
+  /// Busca estatísticas agregadas de um lugar
+  Future<PlaceStats?> getPlaceStats(String placeId) async {
+    try {
+      final snapshot = await _db
+          .collection('place_ratings')
+          .where('placeId', isEqualTo: placeId)
+          .where('isPublic', isEqualTo: true)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+
+      final ratings =
+          snapshot.docs.map((doc) => PlaceRating.fromFirestore(doc)).toList();
+      return PlaceStats.fromRatings(ratings);
+    } catch (e) {
+      debugPrint('Erro ao buscar estatísticas do lugar: $e');
+      return null;
+    }
+  }
+
+  /// Adiciona uma nova avaliação de lugar
+  Future<void> addPlaceRating(PlaceRating rating) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        debugPrint('[PLACE_RATING] Erro: Usuário não autenticado');
+        throw Exception('Usuário não autenticado');
+      }
+
+      debugPrint(
+          '[PLACE_RATING] Salvando avaliação do lugar ${rating.placeName}...');
+      final docRef = await _db.collection('place_ratings').add(rating.toMap());
+      debugPrint(
+          '[PLACE_RATING] Avaliação salva com sucesso! ID: ${docRef.id}');
+    } catch (e) {
+      debugPrint('[PLACE_RATING] Erro ao salvar avaliação: $e');
+      rethrow;
+    }
+  }
+
+  /// Atualiza uma avaliação existente
+  Future<void> updatePlaceRating(PlaceRating rating) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.uid != rating.userId) {
+        throw Exception('Sem permissão para editar esta avaliação');
+      }
+
+      await _db
+          .collection('place_ratings')
+          .doc(rating.id)
+          .update(rating.toMap());
+      debugPrint('[PLACE_RATING] Avaliação atualizada com sucesso!');
+    } catch (e) {
+      debugPrint('[PLACE_RATING] Erro ao atualizar avaliação: $e');
+      rethrow;
+    }
+  }
+
+  /// Deleta uma avaliação
+  Future<void> deletePlaceRating(String ratingId, String userId) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.uid != userId) {
+        throw Exception('Sem permissão para deletar esta avaliação');
+      }
+
+      await _db.collection('place_ratings').doc(ratingId).delete();
+      debugPrint('[PLACE_RATING] Avaliação deletada com sucesso!');
+    } catch (e) {
+      debugPrint('[PLACE_RATING] Erro ao deletar avaliação: $e');
+      rethrow;
+    }
+  }
+
+  /// Adiciona/remove curtida em uma avaliação de lugar
+  Future<void> toggleLikePlaceRating(
+      String ratingId, List<String> currentLikes) async {
+    try {
+      final uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) {
+        debugPrint('[LIKE_RATING] Erro: Usuário não autenticado');
+        return;
+      }
+
+      DocumentReference docRef = _db.collection('place_ratings').doc(ratingId);
+
+      if (currentLikes.contains(uid)) {
+        debugPrint('[LIKE_RATING] Removendo curtida do usuário $uid');
+        await docRef.update({
+          'likes': FieldValue.arrayRemove([uid]),
+        });
+      } else {
+        debugPrint('[LIKE_RATING] Adicionando curtida do usuário $uid');
+        await docRef.update({
+          'likes': FieldValue.arrayUnion([uid]),
+        });
+      }
+      debugPrint('[LIKE_RATING] Curtida atualizada com sucesso');
+    } catch (e) {
+      debugPrint('[LIKE_RATING] Erro ao alternar curtida: $e');
+      rethrow;
+    }
+  }
+
+  /// Marca uma avaliação como útil
+  Future<void> markPlaceRatingAsHelpful(String ratingId) async {
+    try {
+      await _db.collection('place_ratings').doc(ratingId).update({
+        'helpfulCount': FieldValue.increment(1),
+      });
+      debugPrint('[HELPFUL_RATING] Avaliação marcada como útil');
+    } catch (e) {
+      debugPrint('[HELPFUL_RATING] Erro ao marcar como útil: $e');
+      rethrow;
+    }
+  }
+
+  /// Busca avaliações do usuário atual
+  Stream<List<PlaceRating>> getUserPlaceRatings() {
+    final uid = _auth.currentUser?.uid ?? '';
+    return _db
+        .collection('place_ratings')
+        .where('userId', isEqualTo: uid)
+        .snapshots()
+        .map((snap) {
+      final ratings =
+          snap.docs.map((doc) => PlaceRating.fromFirestore(doc)).toList();
+      ratings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return ratings;
+    });
+  }
+
+  /// Verifica se o usuário já avaliou um lugar específico
+  Future<PlaceRating?> getUserRatingForPlace(String placeId) async {
+    try {
+      final uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) return null;
+
+      final snapshot = await _db
+          .collection('place_ratings')
+          .where('placeId', isEqualTo: placeId)
+          .where('userId', isEqualTo: uid)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+      return PlaceRating.fromFirestore(snapshot.docs.first);
+    } catch (e) {
+      debugPrint('Erro ao buscar avaliação do usuário: $e');
+      return null;
+    }
+  }
+
+  /// Busca avaliações por categoria
+  Stream<List<PlaceRating>> getPlaceRatingsByCategory(String category) {
+    return _db
+        .collection('place_ratings')
+        .where('placeCategory', isEqualTo: category)
+        .where('isPublic', isEqualTo: true)
+        .snapshots()
+        .map((snap) {
+      final ratings =
+          snap.docs.map((doc) => PlaceRating.fromFirestore(doc)).toList();
+      ratings.sort((a, b) => b.overallRating.compareTo(a.overallRating));
+      return ratings;
+    });
+  }
+
+  /// Busca top avaliações (melhores notas)
+  Future<List<PlaceRating>> getTopRatedPlaces({int limit = 10}) async {
+    try {
+      final snapshot = await _db
+          .collection('place_ratings')
+          .where('isPublic', isEqualTo: true)
+          .orderBy('overallRating', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => PlaceRating.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      debugPrint('Erro ao buscar top avaliações: $e');
+      return [];
+    }
+  }
+
+  // ==================== SAVED POSTS ====================
+
+  /// Salva um post (serviço ou avaliação de destino) na lista do usuário
+  Future<void> savePost(String postId, String postType) async {
+    try {
+      final uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) {
+        debugPrint('[SAVE_POST] Erro: Usuário não autenticado');
+        throw Exception('Usuário não autenticado');
+      }
+
+      // Cria um identificador único combinando tipo e ID
+      final savedPostId = '${postType}_$postId';
+
+      await _db.collection('users').doc(uid).update({
+        'savedPosts': FieldValue.arrayUnion([savedPostId]),
+      });
+
+      debugPrint('[SAVE_POST] Post $savedPostId salvo com sucesso');
+    } catch (e) {
+      debugPrint('[SAVE_POST] Erro ao salvar post: $e');
+      rethrow;
+    }
+  }
+
+  /// Remove um post da lista de salvos do usuário
+  Future<void> unsavePost(String postId, String postType) async {
+    try {
+      final uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) {
+        debugPrint('[UNSAVE_POST] Erro: Usuário não autenticado');
+        throw Exception('Usuário não autenticado');
+      }
+
+      final savedPostId = '${postType}_$postId';
+
+      await _db.collection('users').doc(uid).update({
+        'savedPosts': FieldValue.arrayRemove([savedPostId]),
+      });
+
+      debugPrint('[UNSAVE_POST] Post $savedPostId removido com sucesso');
+    } catch (e) {
+      debugPrint('[UNSAVE_POST] Erro ao remover post: $e');
+      rethrow;
+    }
+  }
+
+  /// Verifica se um post está salvo pelo usuário
+  Future<bool> isPostSaved(String postId, String postType) async {
+    try {
+      final uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) return false;
+
+      final userDoc = await _db.collection('users').doc(uid).get();
+      if (!userDoc.exists) return false;
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final savedPosts = List<String>.from(userData['savedPosts'] ?? []);
+      final savedPostId = '${postType}_$postId';
+
+      return savedPosts.contains(savedPostId);
+    } catch (e) {
+      debugPrint('[IS_POST_SAVED] Erro ao verificar post salvo: $e');
+      return false;
+    }
+  }
+
+  /// Busca todos os posts salvos do usuário (serviços e avaliações)
+  Future<Map<String, List<dynamic>>> getSavedPosts() async {
+    try {
+      final uid = _auth.currentUser?.uid ?? '';
+      if (uid.isEmpty) {
+        return {'services': [], 'ratings': []};
+      }
+
+      final userDoc = await _db.collection('users').doc(uid).get();
+      if (!userDoc.exists) {
+        return {'services': [], 'ratings': []};
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final savedPosts = List<String>.from(userData['savedPosts'] ?? []);
+
+      final List<ServiceModel> services = [];
+      final List<DestinationRating> ratings = [];
+
+      for (final savedPostId in savedPosts) {
+        final parts = savedPostId.split('_');
+        if (parts.length < 2) continue;
+
+        final type = parts[0];
+        final postId = parts.sublist(1).join('_');
+
+        if (type == 'service') {
+          try {
+            final doc = await _db.collection('services').doc(postId).get();
+            if (doc.exists) {
+              services.add(ServiceModel.fromFirestore(doc));
+            }
+          } catch (e) {
+            debugPrint('[GET_SAVED_POSTS] Erro ao buscar serviço $postId: $e');
+          }
+        } else if (type == 'rating') {
+          try {
+            final doc =
+                await _db.collection('destination_ratings').doc(postId).get();
+            if (doc.exists) {
+              ratings.add(DestinationRating.fromFirestore(doc));
+            }
+          } catch (e) {
+            debugPrint(
+                '[GET_SAVED_POSTS] Erro ao buscar avaliação $postId: $e');
+          }
+        }
+      }
+
+      debugPrint(
+          '[GET_SAVED_POSTS] ${services.length} serviços e ${ratings.length} avaliações salvos');
+      return {'services': services, 'ratings': ratings};
+    } catch (e) {
+      debugPrint('[GET_SAVED_POSTS] Erro ao buscar posts salvos: $e');
+      return {'services': [], 'ratings': []};
+    }
+  }
+
+  /// Stream para acompanhar posts salvos em tempo real
+  Stream<List<String>> watchSavedPosts() {
+    final uid = _auth.currentUser?.uid ?? '';
+    if (uid.isEmpty) {
+      return Stream.value([]);
+    }
+
+    return _db.collection('users').doc(uid).snapshots().map((doc) {
+      if (!doc.exists) return [];
+      final userData = doc.data() as Map<String, dynamic>;
+      return List<String>.from(userData['savedPosts'] ?? []);
+    });
   }
 }

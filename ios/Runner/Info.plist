@@ -71,5 +71,11 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Este app precisa acessar sua localização para sugerir destinos próximos, mostrar clima local e criar roteiros personalizados.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Este app precisa acessar sua localização para funcionalidades de segurança e sugestões de viagem, mesmo quando o app está em segundo plano.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Este app precisa acessar sua localização continuamente para funcionalidades de segurança durante suas viagens.</string>
 </dict>
 </plist>

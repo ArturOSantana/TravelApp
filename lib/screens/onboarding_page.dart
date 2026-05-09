@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
-import '../theme/app_colors.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});

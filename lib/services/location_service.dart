@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'http_client_service.dart';
+import 'permission_service.dart';
 
 /// - Nominatim (OpenStreetMap) para geocoding
 /// - Geolocator para localização em tempo real
@@ -76,27 +78,32 @@ class LocationService {
   }
 
   /// Obtém localização atual do dispositivo em tempo real
-  static Future<Position?> getCurrentLocation() async {
+  /// Requer BuildContext para mostrar diálogos de permissão
+  static Future<Position?> getCurrentLocation({BuildContext? context}) async {
     try {
-      // Verifica se o serviço de localização está habilitado
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        print('Serviço de localização desabilitado');
-        return null;
-      }
-
-      // Verifica permissões
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          print('Permissão de localização negada');
+      // Se o contexto foi fornecido, verifica permissão com UI
+      if (context != null) {
+        final hasPermission = await PermissionService.hasLocationPermission();
+        if (!hasPermission) {
+          final granted =
+              await PermissionService.requestLocationPermission(context);
+          if (!granted) {
+            return null;
+          }
+        }
+      } else {
+        // Fallback: verifica permissão sem UI
+        final hasPermission = await PermissionService.hasLocationPermission();
+        if (!hasPermission) {
+          print('Permissão de localização não concedida');
           return null;
         }
       }
 
-      if (permission == LocationPermission.deniedForever) {
-        print('Permissão de localização negada permanentemente');
+      // Verifica se o serviço de localização está habilitado
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print('Serviço de localização desabilitado');
         return null;
       }
 

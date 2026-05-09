@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
@@ -25,7 +24,6 @@ class _SafetyPageState extends State<SafetyPage> {
   final TripController _controller = TripController();
   final AuthController _authController = AuthController();
 
-  // Nosso canal de comunicação com o Android nativo
   static const platform = MethodChannel('com.example.travel_app/sms');
 
   bool _isLoading = false;
@@ -112,7 +110,7 @@ class _SafetyPageState extends State<SafetyPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Destino definido: $addr"),
-            backgroundColor: Colors.blue,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -121,6 +119,109 @@ class _SafetyPageState extends State<SafetyPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String _buildMapsUrl({
+    required double latitude,
+    required double longitude,
+  }) {
+    return "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude";
+  }
+
+  String _buildSafetyAlertMessage({
+    required String location,
+    double? latitude,
+    double? longitude,
+  }) {
+    final mapLink = latitude != null && longitude != null
+        ? _buildMapsUrl(latitude: latitude, longitude: longitude)
+        : "Localização indisponível";
+
+    return "🆘 SOS TRAVEL APP: ${_user?.name ?? 'Viajante'} precisa de ajuda urgente!\n"
+        "Viagem: ${_trip?.destination ?? 'Viagem'}\n"
+        "Localização: $location\n"
+        "Mapa: $mapLink\n"
+        "Horário: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}";
+  }
+
+  Future<void> _openEmergencyEmail({
+    required String message,
+  }) async {
+    final recipients = <String>{};
+
+    if (_user?.email.trim().isNotEmpty ?? false) {
+      recipients.add(_user!.email.trim());
+    }
+
+    final mailto = Uri(
+      scheme: 'mailto',
+      path: recipients.join(','),
+      queryParameters: {
+        'subject': 'ALERTA SOS - ${_trip?.destination ?? 'Travel App'}',
+        'body': message,
+      },
+    );
+
+    if (await canLaunchUrl(mailto)) {
+      await launchUrl(mailto);
+    }
+  }
+
+  Future<void> _openLocationShareOptions({
+    required String location,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final message = _buildSafetyAlertMessage(
+      location: location,
+      latitude: latitude,
+      longitude: longitude,
+    );
+    final mapUrl = latitude != null && longitude != null
+        ? Uri.parse(_buildMapsUrl(latitude: latitude, longitude: longitude))
+        : null;
+
+    if (!mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
+              runSpacing: 12,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.mail_outline, color: colorScheme.primary),
+                  title: const Text("Abrir e-mail de emergência"),
+                  subtitle: const Text(
+                      "Preenche assunto e mensagem com sua localização"),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _openEmergencyEmail(message: message);
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.map_outlined, color: colorScheme.primary),
+                  title: const Text("Abrir localização no mapa"),
+                  subtitle: const Text(
+                      "Permite mostrar sua posição para outra pessoa"),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (mapUrl != null && await canLaunchUrl(mapUrl)) {
+                      await launchUrl(mapUrl,
+                          mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _startSafetyTimer(int minutes) {
@@ -207,8 +308,8 @@ class _SafetyPageState extends State<SafetyPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("⚠️ Grupo notificado sobre desvio de rota"),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -246,40 +347,49 @@ class _SafetyPageState extends State<SafetyPage> {
   Future<void> _triggerFullSOS() async {
     if (_user == null) return;
 
-    // Mostrar diálogo de confirmação
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
-            SizedBox(width: 12),
-            Text("ALERTA SOS", style: TextStyle(color: Colors.red)),
-          ],
-        ),
-        content: Text(
-          "Você está prestes a enviar um alerta de emergência para:\n\n"
-          "• Todos os membros do grupo\n"
-          "• Seu contato de emergência\n\n"
-          "Confirma que precisa de ajuda?",
-          style: TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text("CANCELAR"),
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: colorScheme.error,
+                size: 32,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                "ALERTA SOS",
+                style: TextStyle(color: colorScheme.error),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text(
-              "SIM, PRECISO DE AJUDA",
-              style: TextStyle(color: Colors.white),
+          content: const Text(
+            "Você está prestes a enviar um alerta de emergência para:\n\n"
+            "• Todos os membros do grupo\n"
+            "• Seu contato de emergência\n\n"
+            "Confirma que precisa de ajuda?",
+            style: TextStyle(fontSize: 15),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("CANCELAR"),
             ),
-          ),
-        ],
-      ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+              ),
+              child: const Text("SIM, PRECISO DE AJUDA"),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed != true) return;
@@ -298,35 +408,29 @@ class _SafetyPageState extends State<SafetyPage> {
         pos = await Geolocator.getLastKnownPosition();
       }
 
-      String loc = pos != null
+      final loc = pos != null
           ? await _getAddressFromCoords(pos.latitude, pos.longitude)
           : "Localização não obtida (verifique o sinal)";
 
       debugPrint("[SEGURANÇA] Localização obtida: $loc");
 
-      bool inGroup = (_trip?.members.length ?? 0) > 1;
-      final message =
-          "🆘 SOS TRAVEL APP: ${_user!.name} precisa de ajuda urgente!\n"
-          "Localização: $loc\n"
-          "Horário: ${DateTime.now().toString().substring(0, 16)}";
-      final cleanPhone = _user!.emergencyPhone.replaceAll(
-        RegExp(r'[^0-9]'),
-        '',
+      final inGroup = (_trip?.members.length ?? 0) > 1;
+      final message = _buildSafetyAlertMessage(
+        location: loc,
+        latitude: pos?.latitude,
+        longitude: pos?.longitude,
+      );
+      final cleanPhone =
+          _user!.emergencyPhone.replaceAll(RegExp(r'[^0-9]'), '');
+
+      await _controller.performSafetyCheckIn(
+        widget.tripId,
+        loc,
+        true,
+        latitude: pos?.latitude,
+        longitude: pos?.longitude,
       );
 
-      // 1. FIREBASE (GRUPO) - Com coordenadas GPS
-      if (inGroup) {
-        debugPrint("[SEGURANÇA] Enviando alerta para o grupo via Firebase...");
-        await _controller.performSafetyCheckIn(
-          widget.tripId,
-          loc,
-          true,
-          latitude: pos?.latitude,
-          longitude: pos?.longitude,
-        );
-      }
-
-      // 2. SMS REAL
       if (cleanPhone.isNotEmpty) {
         debugPrint("[SEGURANÇA] Enviando SMS Real para $cleanPhone...");
         await _sendRealSMS(cleanPhone, message);
@@ -339,18 +443,29 @@ class _SafetyPageState extends State<SafetyPage> {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    "🆘 ALERTA ENVIADO!\n${inGroup ? 'Grupo notificado' : ''}${cleanPhone.isNotEmpty ? '\nSMS enviado' : ''}",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    "🆘 ALERTA ENVIADO!\n"
+                    "${inGroup ? 'Grupo notificado no app' : 'Alerta salvo no app'}"
+                    "${cleanPhone.isNotEmpty ? '\nSMS preparado/enviado ao contato' : ''}",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
-            backgroundColor: Colors.red.shade700,
-            duration: Duration(seconds: 5),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: "COMPARTILHAR",
+              textColor: Colors.white,
+              onPressed: () => _openLocationShareOptions(
+                location: loc,
+                latitude: pos?.latitude,
+                longitude: pos?.longitude,
+              ),
+            ),
           ),
         );
       }
@@ -359,8 +474,8 @@ class _SafetyPageState extends State<SafetyPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Erro ao enviar alerta. Tente novamente."),
-            backgroundColor: Colors.red,
+            content: const Text("Erro ao enviar alerta. Tente novamente."),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -455,6 +570,8 @@ class _SafetyPageState extends State<SafetyPage> {
                 children: [
                   _buildEmergencyContactCard(),
                   const SizedBox(height: 20),
+                  _buildActiveAlertCard(),
+                  const SizedBox(height: 20),
                   _buildDestinationCard(),
                   const SizedBox(height: 20),
                   if (_timerActive)
@@ -462,14 +579,14 @@ class _SafetyPageState extends State<SafetyPage> {
                   else
                     _buildStartMonitoringUI(),
                   const SizedBox(height: 30),
-                  const Text(
+                  Text(
                     "AÇÕES RÁPIDAS",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueGrey,
-                      fontSize: 13,
-                      letterSpacing: 0.8,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                          letterSpacing: 0.8,
+                        ),
                   ),
                   const SizedBox(height: 12),
                   _buildPanicButton(),
@@ -477,19 +594,21 @@ class _SafetyPageState extends State<SafetyPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "HISTÓRICO",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey,
-                          fontSize: 13,
-                          letterSpacing: 0.8,
-                        ),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontSize: 13,
+                              letterSpacing: 0.8,
+                            ),
                       ),
                       Icon(
                         Icons.history,
                         size: 16,
-                        color: Colors.blueGrey.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ],
                   ),
@@ -502,15 +621,18 @@ class _SafetyPageState extends State<SafetyPage> {
   }
 
   Widget _buildEmergencyContactCard() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     bool hasContact = _user?.emergencyPhone.isNotEmpty ?? false;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: colorScheme.shadow.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -520,11 +642,13 @@ class _SafetyPageState extends State<SafetyPage> {
         children: [
           CircleAvatar(
             backgroundColor: hasContact
-                ? Colors.green.withOpacity(0.1)
-                : Colors.orange.withOpacity(0.1),
+                ? colorScheme.tertiaryContainer
+                : colorScheme.secondaryContainer,
             child: Icon(
               hasContact ? Icons.contact_phone : Icons.person_add,
-              color: hasContact ? Colors.green : Colors.orange,
+              color: hasContact
+                  ? colorScheme.onTertiaryContainer
+                  : colorScheme.onSecondaryContainer,
             ),
           ),
           const SizedBox(width: 16),
@@ -532,11 +656,11 @@ class _SafetyPageState extends State<SafetyPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "Contato de Emergência",
-                  style: TextStyle(
+                  style: textTheme.bodySmall?.copyWith(
                     fontSize: 12,
-                    color: Colors.grey,
+                    color: colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -544,9 +668,10 @@ class _SafetyPageState extends State<SafetyPage> {
                   hasContact
                       ? "${_user!.emergencyContact} (${_user!.emergencyPhone})"
                       : "Não configurado",
-                  style: const TextStyle(
+                  style: textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -554,10 +679,10 @@ class _SafetyPageState extends State<SafetyPage> {
           ),
           IconButton(
             key: const Key('edit_contact_btn'),
-            icon: const Icon(
+            icon: Icon(
               Icons.edit_outlined,
               size: 20,
-              color: Colors.blueAccent,
+              color: colorScheme.primary,
             ),
             onPressed: _showSetupContactDialog,
           ),
@@ -566,21 +691,124 @@ class _SafetyPageState extends State<SafetyPage> {
     );
   }
 
+  Widget _buildActiveAlertCard() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: _controller.watchActiveSafetyAlert(widget.tripId),
+      builder: (context, snapshot) {
+        final alert = snapshot.data;
+        if (alert == null) {
+          return const SizedBox.shrink();
+        }
+
+        final locationName =
+            (alert['locationName'] ?? 'Localização não informada').toString();
+        final userName = (alert['userName'] ?? 'Viajante').toString();
+        final latitude = (alert['latitude'] as num?)?.toDouble();
+        final longitude = (alert['longitude'] as num?)?.toDouble();
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.errorContainer,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colorScheme.error.withOpacity(0.25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.sos, color: colorScheme.error),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "ALERTA ATIVO DE SEGURANÇA",
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "$userName compartilhou uma localização de emergência.",
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onErrorContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                locationName,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onErrorContainer,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _openLocationShareOptions(
+                      location: locationName,
+                      latitude: latitude,
+                      longitude: longitude,
+                    ),
+                    icon: const Icon(Icons.location_on_outlined),
+                    label: const Text("Ver/Compartilhar localização"),
+                  ),
+                  if ((_user?.emergencyPhone.trim().isNotEmpty ?? false))
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final message = _buildSafetyAlertMessage(
+                          location: locationName,
+                          latitude: latitude,
+                          longitude: longitude,
+                        );
+                        final cleanPhone = _user!.emergencyPhone.replaceAll(
+                          RegExp(r'[^0-9]'),
+                          '',
+                        );
+                        if (cleanPhone.isNotEmpty) {
+                          await _sendRealSMS(cleanPhone, message);
+                        }
+                      },
+                      icon: const Icon(Icons.sms_outlined),
+                      label: const Text("Reenviar SMS"),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildDestinationCard() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final hasDestination = _safeDestinationName != null;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color:
-            _safeDestinationName != null ? Colors.blue.shade50 : Colors.white,
+            hasDestination ? colorScheme.primaryContainer : colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _safeDestinationName != null
-              ? Colors.blue.shade100
-              : Colors.transparent,
+          color:
+              hasDestination ? colorScheme.outlineVariant : Colors.transparent,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: colorScheme.shadow.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -592,29 +820,31 @@ class _SafetyPageState extends State<SafetyPage> {
             children: [
               Icon(
                 Icons.location_on,
-                color: _safeDestinationName != null ? Colors.blue : Colors.grey,
+                color: hasDestination
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       "Destino de Segurança",
-                      style: TextStyle(
+                      style: textTheme.bodySmall?.copyWith(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       _safeDestinationName ?? "Marque seu local de chegada",
-                      style: TextStyle(
+                      style: textTheme.bodyMedium?.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: _safeDestinationName != null
-                            ? Colors.blue.shade900
-                            : Colors.black87,
+                        color: hasDestination
+                            ? colorScheme.onPrimaryContainer
+                            : colorScheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -622,7 +852,7 @@ class _SafetyPageState extends State<SafetyPage> {
                   ],
                 ),
               ),
-              if (_safeDestinationName == null)
+              if (!hasDestination)
                 TextButton.icon(
                   key: const Key('set_destination_btn'),
                   onPressed: _setDestination,
@@ -631,17 +861,24 @@ class _SafetyPageState extends State<SafetyPage> {
                 )
               else
                 IconButton(
-                  icon: const Icon(Icons.close, size: 18, color: Colors.blue),
+                  icon: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
                   onPressed: () => setState(() => _safeDestinationName = null),
                 ),
             ],
           ),
-          if (_safeDestinationName != null)
-            const Padding(
-              padding: EdgeInsets.only(top: 8.0, left: 36),
+          if (hasDestination)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 36),
               child: Text(
                 "Parada automática ao chegar aqui.",
-                style: TextStyle(fontSize: 10, color: Colors.blueAccent),
+                style: textTheme.bodySmall?.copyWith(
+                  fontSize: 10,
+                  color: colorScheme.primary,
+                ),
               ),
             ),
         ],
@@ -650,25 +887,38 @@ class _SafetyPageState extends State<SafetyPage> {
   }
 
   Widget _buildStartMonitoringUI() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.06),
+            blurRadius: 10,
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "Duração do Trajeto",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: colorScheme.onSurface,
+            ),
           ),
-          const Text(
+          Text(
             "Defina quanto tempo você levará.",
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -688,17 +938,20 @@ class _SafetyPageState extends State<SafetyPage> {
   }
 
   Widget _buildActiveTimerUI() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final minutes = (_secondsRemaining / 60).floor();
     final seconds = _secondsRemaining % 60;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.orange.shade200, width: 1.5),
+        border: Border.all(color: colorScheme.secondaryContainer, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.1),
+            color: colorScheme.secondary.withOpacity(0.12),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -706,16 +959,16 @@ class _SafetyPageState extends State<SafetyPage> {
       ),
       child: Column(
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.radar, color: Colors.orange, size: 18),
-              SizedBox(width: 8),
+              Icon(Icons.radar, color: colorScheme.secondary, size: 18),
+              const SizedBox(width: 8),
               Text(
                 "MONITORAMENTO ATIVO",
-                style: TextStyle(
+                style: textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.orange,
+                  color: colorScheme.secondary,
                   letterSpacing: 1,
                   fontSize: 12,
                 ),
@@ -725,11 +978,11 @@ class _SafetyPageState extends State<SafetyPage> {
           const SizedBox(height: 20),
           Text(
             "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}",
-            style: const TextStyle(
+            style: textTheme.displaySmall?.copyWith(
               fontSize: 56,
               fontWeight: FontWeight.bold,
-              color: Colors.orange,
-              fontFeatures: [FontFeature.tabularFigures()],
+              color: colorScheme.secondary,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           const SizedBox(height: 20),
@@ -738,7 +991,8 @@ class _SafetyPageState extends State<SafetyPage> {
             child: ElevatedButton(
               onPressed: _stopMonitoring,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -756,8 +1010,11 @@ class _SafetyPageState extends State<SafetyPage> {
   }
 
   Widget _buildPanicButton() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Material(
-      color: Colors.red.shade50,
+      color: colorScheme.errorContainer,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         key: const Key('panic_btn'),
@@ -767,43 +1024,51 @@ class _SafetyPageState extends State<SafetyPage> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.red.withOpacity(0.3), width: 1.5),
+            border: Border.all(
+                color: colorScheme.error.withOpacity(0.3), width: 1.5),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: colorScheme.error,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.warning_amber_rounded,
-                  color: Colors.white,
+                  color: colorScheme.onError,
                   size: 28,
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "BOTÃO DE PÂNICO",
-                      style: TextStyle(
+                      style: textTheme.titleMedium?.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: colorScheme.error,
                       ),
                     ),
                     Text(
                       "Alertar grupo e contatos agora",
-                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                      style: textTheme.bodySmall?.copyWith(
+                        fontSize: 12,
+                        color: colorScheme.onErrorContainer,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: colorScheme.error,
+              ),
             ],
           ),
         ),
@@ -812,25 +1077,35 @@ class _SafetyPageState extends State<SafetyPage> {
   }
 
   Widget _buildTimelineHistory() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return StreamBuilder<List<SafetyCheckIn>>(
       stream: _controller.getSafetyHistory(widget.tripId),
       builder: (context, snapshot) {
         final list = snapshot.data ?? [];
-        if (list.isEmpty)
-          return const Center(
+        if (list.isEmpty) {
+          return Center(
             child: Text(
               "Sem registros recentes.",
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
             ),
           );
+        }
 
         return Column(
           children: list.take(5).map((item) {
+            final accentColor =
+                item.isPanic ? colorScheme.error : colorScheme.tertiary;
+
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Row(
@@ -839,7 +1114,7 @@ class _SafetyPageState extends State<SafetyPage> {
                     width: 4,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: item.isPanic ? Colors.red : Colors.green,
+                      color: accentColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -852,17 +1127,19 @@ class _SafetyPageState extends State<SafetyPage> {
                           item.isPanic
                               ? "ALERTA DE SEGURANÇA"
                               : "Check-in Seguro",
-                          style: TextStyle(
+                          style: textTheme.labelLarge?.copyWith(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: item.isPanic ? Colors.red : Colors.black87,
+                            color: item.isPanic
+                                ? colorScheme.error
+                                : colorScheme.onSurface,
                           ),
                         ),
                         Text(
                           item.locationName,
-                          style: const TextStyle(
+                          style: textTheme.bodySmall?.copyWith(
                             fontSize: 11,
-                            color: Colors.grey,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -872,9 +1149,9 @@ class _SafetyPageState extends State<SafetyPage> {
                   ),
                   Text(
                     DateFormat('HH:mm').format(item.timestamp),
-                    style: const TextStyle(
+                    style: textTheme.bodySmall?.copyWith(
                       fontSize: 11,
-                      color: Colors.blueGrey,
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -888,18 +1165,23 @@ class _SafetyPageState extends State<SafetyPage> {
   }
 
   Widget _timeChip(int min, String label, Key key) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Expanded(
       child: ActionChip(
         key: key,
         label: Center(
           child: Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
           ),
         ),
         onPressed: () => _startSafetyTimer(min),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        side: BorderSide(color: Colors.blueAccent.withOpacity(0.2)),
+        backgroundColor: colorScheme.surface,
+        side: BorderSide(color: colorScheme.outlineVariant),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );

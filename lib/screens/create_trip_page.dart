@@ -49,10 +49,6 @@ class _CreateTripPageState extends State<CreateTripPage> {
     'Cancún, México',
   ];
 
-  int get _tripDuration {
-    if (_startDate == null || _endDate == null || _isNomad) return 0;
-    return _endDate!.difference(_startDate!).inDays + 1;
-  }
 
   Future<void> _showConfirmationDialog() async {
     if (!formKey.currentState!.validate()) return;
@@ -328,7 +324,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Column(

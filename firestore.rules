@@ -20,7 +20,11 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isOwner(userId);
+      allow create, delete: if isOwner(userId);
+      // Permite update completo para o dono, ou apenas savedPosts para qualquer usuário autenticado
+      allow update: if isOwner(userId) ||
+                      (isAuthenticated() &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['savedPosts']));
     }
     
     match /trips/{tripId} {
@@ -84,7 +88,30 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
 
-    // Fallback de segurança
+    // Avaliações de lugares
+    match /place_ratings/{ratingId} {
+      // Leitura: pública para avaliações públicas, privada para o dono
+      allow read: if true; // Permite leitura para todos (simplificado)
+      
+      allow create: if isAuthenticated();
+      
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.userId ||
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'helpfulCount']));
+      
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    match /destination_ratings/{ratingId} {
+      allow read: if true;
+      
+      allow create: if isAuthenticated();
+      
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

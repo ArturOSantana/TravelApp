@@ -275,13 +275,12 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: Semantics(header: true, child: const Text("Travel Planner")),
         actions: [
-          // Ícone do SINO (W3C: Nome descritivo e contador acessível)
+          //TINKER BELL
           StreamBuilder<List<AppNotification>>(
             stream: _tripController.getNotifications(),
             builder: (context, snapshot) {
               int unreadCount = 0;
 
-              // Só conta se tiver dados válidos
               if (snapshot.hasData && snapshot.data != null) {
                 unreadCount = snapshot.data!.where((n) => !n.isRead).length;
               }

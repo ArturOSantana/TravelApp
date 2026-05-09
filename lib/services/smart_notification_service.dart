@@ -9,7 +9,7 @@ import '../controllers/trip_controller.dart';
 class SmartNotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
-  static final TripController _tripController = TripController();
+  // static final TripController _tripController = TripController(); // Unused
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   static Future<void> initialize() async {

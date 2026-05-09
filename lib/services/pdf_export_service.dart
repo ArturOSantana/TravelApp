@@ -47,9 +47,8 @@ class PdfExportService {
                 (spendingByPerson[personId] ?? 0) + amount;
           });
         } else {
-        
           final perPerson = expense.value /
-              (trip.members.length + 1); // +1 para o organizador
+              (trip.members.length + 1); // +1 
           spendingByPerson[expense.payerId] =
               (spendingByPerson[expense.payerId] ?? 0) + perPerson;
         }
@@ -144,7 +143,7 @@ class PdfExportService {
 
               pw.SizedBox(height: 30),
 
-              // Gráfico de Pizza - Despesas por Categoria
+              // Gráfico dpiza 
               pw.Text(
                 'Despesas por Categoria',
                 style: pw.TextStyle(
@@ -157,7 +156,7 @@ class PdfExportService {
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  // Gráfico de Pizza
+                  // pizza
                   pw.Expanded(
                     flex: 2,
                     child: pw.Container(
@@ -610,6 +609,7 @@ class PdfExportService {
     );
   }
 
+  // TODO: Use this method when adding emoji support to PDF exports
   static String _getCategoryEmoji(String category) {
     switch (category.toLowerCase()) {
       case 'alimentação':

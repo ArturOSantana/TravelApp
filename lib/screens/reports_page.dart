@@ -7,7 +7,6 @@ import '../services/pdf_export_service.dart';
 import '../services/social_share_service.dart';
 import '../services/exchangerate_service.dart';
 import 'premium_upgrade_page.dart';
-import '../theme/app_colors.dart';
 
 class ReportsPage extends StatefulWidget {
   final Trip trip;
@@ -31,12 +30,12 @@ class _ReportsPageState extends State<ReportsPage> {
   );
 
   bool _isExporting = false;
-  bool _isSharing = false;
 
   double get _totalSpent {
     return widget.expenses.fold(0.0, (sum, expense) => sum + expense.value);
   }
 
+  // int get _photosCount { // Unused - can be implemented when photo gallery is added
   int get _photosCount {
     // Aqui você pode buscar do PhotoGallery se necessário
     return 0;
@@ -80,48 +79,6 @@ class _ReportsPageState extends State<ReportsPage> {
     } finally {
       if (mounted) {
         setState(() => _isExporting = false);
-      }
-    }
-  }
-
-  Future<void> _shareToSocial() async {
-    final hasPremium = await SubscriptionService.hasAdvancedInsights();
-
-    if (!hasPremium) {
-      _showUpgradeDialog();
-      return;
-    }
-
-    setState(() => _isSharing = true);
-
-    try {
-      await SocialShareService.shareTripCard(
-        context: context,
-        trip: widget.trip,
-        photosCount: _photosCount,
-        totalSpent: _totalSpent,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Imagem compartilhada com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao compartilhar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSharing = false);
       }
     }
   }
@@ -451,7 +408,8 @@ class _ReportsPageState extends State<ReportsPage> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.outline),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,4 +645,4 @@ class _ReportsPageState extends State<ReportsPage> {
       ),
     );
   }
-} 
+}

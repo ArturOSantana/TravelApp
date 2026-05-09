@@ -184,7 +184,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               )
               .toList();
         } catch (_) {
-          // Mantém fallback local para a tela abrir mesmo sem buscar perfis completos.
         }
 
         if (_members.isEmpty && currentUid.isNotEmpty) {
@@ -562,7 +561,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
             ] else ...[
               const SizedBox(height: 25),
               Card(
-                color: Colors.green[50],
+                color: Theme.of(context).colorScheme.surface,
                 child: const Padding(
                   padding: EdgeInsets.all(16),
                   child: Text(
@@ -607,17 +606,19 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.green[50],
+        color: Theme.of(context).colorScheme.onSurface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: Colors.green),
+          Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               "Moeda da viagem: ${_trip?.baseCurrency}. Conversão automática ativa.",
-              style: const TextStyle(fontSize: 12),
+              
+              style:  TextStyle(fontSize: 12,color: Theme.of( context).colorScheme.secondary),
+              
             ),
           ),
         ],

@@ -148,7 +148,7 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
       if (scheduledTime.isAfter(DateTime.now())) {
         await NotificationService.scheduleNotification(
           id: combinedDateTime.millisecondsSinceEpoch.remainder(100000),
-          title: "Sua atividade começa em breve! ✈️",
+          title: "Sua atividade começa em breve! ",
           body:
               "Prepare as coisas, '${activity.title}' em ${activity.location} começa em 15 minutos.",
           scheduledDate: scheduledTime,
@@ -237,9 +237,10 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 30),
-            const Text("Quando?",
-                style:
-                    TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            Text("Quando?",
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.secondary)),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -284,32 +285,47 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     );
   }
 
-  Widget _buildPickerCard(
-      {required String label,
-      required String value,
-      required IconData icon,
-      required VoidCallback onTap}) {
+  Widget _buildPickerCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Semantics(
       button: true,
       label: "Selecionar $label. Valor atual: $value",
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: colorScheme.outlineVariant),
           ),
           child: Column(
             children: [
-              Icon(icon, color: Colors.deepPurple, size: 20),
+              Icon(icon, color: colorScheme.secondary, size: 20),
               const SizedBox(height: 8),
-              Text(label,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey)),
-              Text(value,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(
+                label,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 10,
+                ),
+              ),
+              Text(
+                value,
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: colorScheme.onSurface,
+                ),
+              ),
             ],
           ),
         ),

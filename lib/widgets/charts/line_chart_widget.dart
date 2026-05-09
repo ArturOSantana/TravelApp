@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class LineChartWidget extends StatelessWidget {
   final Map<DateTime, double> data;
@@ -28,7 +27,7 @@ class LineChartWidget extends StatelessWidget {
 
     final maxValue = data.values.reduce((a, b) => a > b ? a : b);
     final minValue = data.values.reduce((a, b) => a < b ? a : b);
-    final range = maxValue - minValue;
+    // final range = maxValue - minValue; // Unused but may be useful
 
     // Calcula média móvel de 3 dias se solicitado
     List<double>? movingAvg;

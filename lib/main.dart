@@ -16,6 +16,7 @@ import 'services/notification_service.dart';
 import 'services/push_notification_service.dart';
 import 'services/cache_service.dart';
 import 'services/memory_manager_service.dart';
+import 'services/permission_service.dart';
 import 'theme/app_theme.dart';
 import 'controllers/theme_controller.dart';
 
@@ -123,8 +124,27 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AppInitializer extends StatelessWidget {
+class AppInitializer extends StatefulWidget {
   const AppInitializer({super.key});
+
+  @override
+  State<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  bool _permissionRequested = false;
+
+  Future<void> _requestLocationPermission() async {
+    if (!_permissionRequested && mounted) {
+      _permissionRequested = true;
+      // Aguarda um frame para garantir que o contexto está disponível
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (mounted) {
+          await PermissionService.requestLocationPermission(context);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,8 +165,9 @@ class AppInitializer extends StatelessWidget {
           return const OnboardingPage();
         }
 
-        // 2. Se tem usuário logado, manda pra Home
+        // 2. Se tem usuário logado, solicita permissão e manda pra Home
         if (snapshot.hasData && snapshot.data != null) {
+          _requestLocationPermission();
           return const DashboardPage();
         }
 

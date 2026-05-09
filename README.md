@@ -192,11 +192,28 @@ class Trip {
 
 **Proteção e Tranquilidade Durante a Viagem**
 
-- **Botão de Pânico**: Envio automático de SMS e WhatsApp para contatos de emergência
-- **Check-ins de Segurança**: Lembretes periódicos com compartilhamento de localização
-- **Histórico de Segurança**: Registro de todos os check-ins realizados
-- **Contatos de Emergência**: Configuração de contatos para situações críticas
-- **Compartilhamento de Localização**: Tempo real com membros do grupo
+- **Botão de Pânico**: registra um alerta SOS no Firestore, notifica os membros da viagem no app, tenta enviar SMS/WhatsApp ao contato de emergência e oferece compartilhamento rápido da localização
+- **Check-ins de Segurança**: monitoramento com destino seguro, parada automática ao chegar e alerta de desvio de rota
+- **Histórico de Segurança**: registro de todos os check-ins e alertas realizados
+- **Contatos de Emergência**: configuração de nome e telefone para situações críticas
+- **Compartilhamento de Localização**: abertura de localização no mapa e geração de mensagem pronta para compartilhar
+- **Alerta Ativo do Grupo**: exibição na tela de segurança de um alerta em andamento com ações para visualizar/compartilhar a localização e reenviar SMS
+
+**Como funciona na prática:**
+1. O usuário configura um contato de emergência na tela de segurança.
+2. Ao acionar o **Botão de Pânico**, o app tenta obter a localização atual.
+3. O alerta é salvo na coleção `safety` e também no campo `activeSafetyAlert` da viagem.
+4. Os membros do grupo recebem notificação interna no app via Firestore.
+5. O app tenta enviar SMS nativo e, em fallback, abrir o WhatsApp para o contato de emergência.
+6. Após o envio, o usuário pode abrir ações rápidas para:
+   - compartilhar a localização,
+   - abrir a posição no mapa,
+   - preparar um e-mail de emergência com assunto e mensagem preenchidos.
+7. Se existir alerta ativo na viagem, ele aparece em destaque na página de segurança para consulta rápida.
+
+**Observações técnicas:**
+- O envio de e-mail foi implementado via cliente de e-mail do aparelho (`mailto:`), pois o projeto atual não possui serviço backend de envio automático configurado.
+- O compartilhamento em tempo real completo para terceiros externos ainda não usa backend dedicado de rastreamento contínuo; a implementação atual compartilha a última localização de emergência registrada e o link do mapa.
 
 ### 8. Previsão do Tempo
 

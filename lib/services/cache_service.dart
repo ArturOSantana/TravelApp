@@ -6,7 +6,6 @@ class CacheService {
   static SharedPreferences? _prefs;
   static Timer? _cleanupTimer;
   static const int _maxCacheSize = 50; // Máximo de 50 entradas no cache
-  static const Duration _cacheExpiration = Duration(hours: 24);
 
   static Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();

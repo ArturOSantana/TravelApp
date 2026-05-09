@@ -21,7 +21,6 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
   DateTime _checkInDate = DateTime.now().add(const Duration(days: 7));
   DateTime _checkOutDate = DateTime.now().add(const Duration(days: 10));
   int _guests = 2;
-  int _rooms = 1;
 
   bool _isSearching = false;
   List<Map<String, dynamic>> _results = [];

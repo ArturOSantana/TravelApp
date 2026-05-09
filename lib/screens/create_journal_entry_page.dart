@@ -96,11 +96,11 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Nova Memória"),
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Colors.black,
       ),
       body: Stack(
@@ -197,12 +197,12 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Como você está se sentindo?",
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
@@ -218,7 +218,7 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.deepPurple.withOpacity(0.1)
-                      : Colors.grey.shade100,
+                      : Colors.deepPurple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
                     color: isSelected ? Colors.deepPurple : Colors.transparent,
@@ -230,7 +230,7 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                     Icon(
                       _getMoodIconData(mood.iconName),
                       size: isSelected ? 40 : 32,
-                      color: isSelected ? Colors.deepPurple : Colors.grey,
+                      color: isSelected ? Colors.deepPurple : const Color.fromARGB(255, 235, 232, 38),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -238,9 +238,8 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                       style: TextStyle(
                         fontSize: 10,
                         color: isSelected ? Colors.deepPurple : Colors.grey,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                   ],

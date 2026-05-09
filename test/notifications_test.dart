@@ -12,10 +12,8 @@ void main() {
   });
 
   group('NotificationModel Tests', () {
-    late DateTime testDate;
-
     setUp(() {
-      testDate = DateTime(2024, 6, 15, 10, 30);
+      // testDate variable was unused and removed
     });
 
     test('Deve criar notificação de curtida com todos os campos', () {

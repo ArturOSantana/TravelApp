@@ -404,6 +404,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
     );
   }
 
+  // TODO: Implement drag-and-drop reordering in the UI
   void _onReorder(List<Activity> activities, int oldIndex, int newIndex) async {
     if (oldIndex < newIndex) newIndex -= 1;
 

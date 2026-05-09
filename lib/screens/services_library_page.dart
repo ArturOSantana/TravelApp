@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -113,12 +112,15 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
               hintText: "Buscar por local ou categoria...",
               prefixIcon: const Icon(Icons.search, size: 20),
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               filled: true,
               fillColor: Colors.grey[100],
             ),
-            onChanged: (value) => setState(() => _searchQuery = value.toLowerCase().trim()),
+            onChanged: (value) =>
+                setState(() => _searchQuery = value.toLowerCase().trim()),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -193,7 +195,8 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
         children: [
           Icon(Icons.post_add_outlined, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          const Text("Nenhum post encontrado.", style: TextStyle(fontSize: 16, color: Colors.grey)),
+          const Text("Nenhum post encontrado.",
+              style: TextStyle(fontSize: 16, color: Colors.grey)),
         ],
       ),
     );
@@ -216,8 +219,10 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
           children: [
             if (post.photos.isNotEmpty)
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.network(post.photos.first, height: 180, width: double.infinity, fit: BoxFit.cover),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+                child: Image.network(post.photos.first,
+                    height: 180, width: double.infinity, fit: BoxFit.cover),
               ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -226,26 +231,40 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
                 children: [
                   Row(
                     children: [
-                      Expanded(child: Text(post.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
-                      if (isOwner) 
+                      Expanded(
+                          child: Text(post.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18))),
+                      if (isOwner)
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                          icon: const Icon(Icons.delete_outline,
+                              color: Colors.red, size: 20),
                           onPressed: () => _confirmDeletePost(post),
                         ),
                     ],
                   ),
-                  Text('${post.category} • ${post.location}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('${post.category} • ${post.location}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   const SizedBox(height: 10),
-                  Text(post.comment, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(post.comment,
+                      maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 15),
                   Row(
                     children: [
-                      _iconStat(Icons.favorite, isLiked ? Colors.red : Colors.grey, '${post.likes.length}'),
+                      _iconStat(
+                          Icons.favorite,
+                          isLiked ? Colors.red : Colors.grey,
+                          '${post.likes.length}'),
                       const SizedBox(width: 15),
-                      _iconStat(Icons.comment_outlined, Colors.grey, '${post.comments.length}'),
+                      _iconStat(Icons.comment_outlined, Colors.grey,
+                          '${post.comments.length}'),
                       const Spacer(),
-                      IconButton(icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_border, color: isSaved ? Colors.amber : Colors.grey), 
-                        onPressed: () => _controller.toggleSaveService(post.id, post.savedBy)),
+                      IconButton(
+                          icon: Icon(
+                              isSaved ? Icons.bookmark : Icons.bookmark_border,
+                              color: isSaved ? Colors.amber : Colors.grey),
+                          onPressed: () => _controller.toggleSaveService(
+                              post.id, post.savedBy)),
                     ],
                   ),
                 ],
@@ -262,7 +281,8 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -274,87 +294,119 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('services').doc(initialPost.id).snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final post = ServiceModel.fromFirestore(snapshot.data!);
+          stream: FirebaseFirestore.instance
+              .collection('services')
+              .doc(initialPost.id)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData)
+              return const Center(child: CircularProgressIndicator());
+            final post = ServiceModel.fromFirestore(snapshot.data!);
 
-          return Container(
-            height: MediaQuery.of(context).size.height * 0.9,
-            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-            child: Column(
-              children: [
-                Container(width: 50, height: 5, margin: const EdgeInsets.symmetric(vertical: 15), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(24),
-                    children: [
-                      Text(post.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                      Text("${post.category} • ${post.location}", style: TextStyle(color: Colors.indigo[700], fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 15),
-                      if (post.photos.isNotEmpty)
-                        SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: post.photos.length,
-                            itemBuilder: (context, i) => Padding(
-                              padding: const EdgeInsets.only(right: 10),
-                              child: ClipRRect(borderRadius: BorderRadius.circular(15), child: Image.network(post.photos[i], width: 280, fit: BoxFit.cover)),
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.9,
+              decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(30))),
+              child: Column(
+                children: [
+                  Container(
+                      width: 50,
+                      height: 5,
+                      margin: const EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10))),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(24),
+                      children: [
+                        Text(post.name,
+                            style: const TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold)),
+                        Text("${post.category} • ${post.location}",
+                            style: TextStyle(
+                                color: Colors.indigo[700],
+                                fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 15),
+                        if (post.photos.isNotEmpty)
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: post.photos.length,
+                              itemBuilder: (context, i) => Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: Image.network(post.photos[i],
+                                        width: 280, fit: BoxFit.cover)),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                        Text(post.comment,
+                            style: const TextStyle(fontSize: 16, height: 1.5)),
+                        const Divider(height: 40),
+                        Text("Comentários (${post.comments.length})",
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 15),
+                        if (post.comments.isEmpty)
+                          const Text("Ainda não há comentários.",
+                              style: TextStyle(color: Colors.grey))
+                        else
+                          ...post.comments.reversed
+                              .map((c) => _buildCommentBalloon(c)),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16,
+                        20 + MediaQuery.of(context).viewInsets.bottom),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        border:
+                            Border(top: BorderSide(color: Colors.grey[200]!))),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: commentController,
+                            decoration: InputDecoration(
+                              hintText: "Diga algo legal...",
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                  borderSide: BorderSide.none),
                             ),
                           ),
                         ),
-                      const SizedBox(height: 20),
-                      Text(post.comment, style: const TextStyle(fontSize: 16, height: 1.5)),
-                      const Divider(height: 40),
-                      Text("Comentários (${post.comments.length})", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 15),
-                      if (post.comments.isEmpty)
-                        const Text("Ainda não há comentários.", style: TextStyle(color: Colors.grey))
-                      else
-                        ...post.comments.reversed.map((c) => _buildCommentBalloon(c)),
-                      const SizedBox(height: 80),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 20 + MediaQuery.of(context).viewInsets.bottom),
-                  decoration: BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Colors.grey[200]!))),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: commentController,
-                          decoration: InputDecoration(
-                            hintText: "Diga algo legal...",
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide.none),
+                        const SizedBox(width: 10),
+                        CircleAvatar(
+                          backgroundColor: Colors.indigo,
+                          child: IconButton(
+                            icon: const Icon(Icons.send, color: Colors.white),
+                            onPressed: () async {
+                              if (commentController.text.trim().isNotEmpty) {
+                                final text = commentController.text.trim();
+                                commentController.clear();
+                                await _controller.addServiceComment(
+                                    post.id, post.comments, text);
+                              }
+                            },
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      CircleAvatar(
-                        backgroundColor: Colors.indigo,
-                        child: IconButton(
-                          icon: const Icon(Icons.send, color: Colors.white),
-                          onPressed: () async {
-                            if (commentController.text.trim().isNotEmpty) {
-                              final text = commentController.text.trim();
-                              commentController.clear();
-                              await _controller.addServiceComment(post.id, post.comments, text);
-                            }
-                          },
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
-        }
-      ),
+                ],
+              ),
+            );
+          }),
     );
   }
 
@@ -367,16 +419,29 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(radius: 15, backgroundColor: Colors.indigo[50], child: Text(c.userName.isNotEmpty ? c.userName[0].toUpperCase() : 'V', style: const TextStyle(fontSize: 10, color: Colors.indigo))),
+              CircleAvatar(
+                  radius: 15,
+                  backgroundColor: Colors.indigo[50],
+                  child: Text(
+                      c.userName.isNotEmpty ? c.userName[0].toUpperCase() : 'V',
+                      style:
+                          const TextStyle(fontSize: 10, color: Colors.indigo))),
               const SizedBox(width: 10),
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: const BorderRadius.only(topRight: Radius.circular(15), bottomRight: Radius.circular(15), bottomLeft: Radius.circular(15))),
+                  decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(15),
+                          bottomRight: Radius.circular(15),
+                          bottomLeft: Radius.circular(15))),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(c.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text(c.userName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 12)),
                       const SizedBox(height: 4),
                       Text(c.text),
                     ],
@@ -387,7 +452,8 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
           ),
           Padding(
             padding: const EdgeInsets.only(left: 45, top: 4),
-            child: Text(DateFormat('dd/MM HH:mm').format(c.createdAt), style: TextStyle(fontSize: 9, color: Colors.grey[500])),
+            child: Text(DateFormat('dd/MM HH:mm').format(c.createdAt),
+                style: TextStyle(fontSize: 9, color: Colors.grey[500])),
           ),
         ],
       ),
@@ -401,8 +467,13 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
         title: const Text("Excluir Post"),
         content: const Text("Tem certeza?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Excluir", style: TextStyle(color: Colors.red))),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancelar")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child:
+                  const Text("Excluir", style: TextStyle(color: Colors.red))),
         ],
       ),
     );

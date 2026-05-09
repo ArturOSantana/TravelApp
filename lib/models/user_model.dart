@@ -8,6 +8,7 @@ class UserModel {
   final String bio;
   final String? photoUrl;
   final bool isPremium; // Campo para diferenciar usuários
+  final List<String> savedPosts; // IDs dos posts salvos (serviços e avaliações)
 
   UserModel({
     required this.uid,
@@ -19,6 +20,7 @@ class UserModel {
     this.bio = '',
     this.photoUrl,
     this.isPremium = false,
+    this.savedPosts = const [],
   });
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
@@ -32,6 +34,9 @@ class UserModel {
       bio: data['bio'] ?? '',
       photoUrl: data['photoUrl'],
       isPremium: data['isPremium'] ?? false,
+      savedPosts: data['savedPosts'] != null
+          ? List<String>.from(data['savedPosts'])
+          : [],
     );
   }
 
@@ -46,6 +51,7 @@ class UserModel {
       'bio': bio,
       'photoUrl': photoUrl,
       'isPremium': isPremium,
+      'savedPosts': savedPosts,
     };
   }
 

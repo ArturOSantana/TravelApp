@@ -90,11 +90,10 @@ class SelectPackingTemplatePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Theme.of( context).colorScheme.onPrimaryContainer,
-          width: 0.5)
-          
-      ),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+              width: 0.5)),
       child: InkWell(
         onTap: () => _showTemplatePreview(context, template),
         borderRadius: BorderRadius.circular(16),
@@ -193,7 +192,6 @@ class _TemplatePreviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
- 
     final groupedItems = <String, List<TemplateItem>>{};
     for (final item in template.items) {
       groupedItems.putIfAbsent(item.category, () => []).add(item);
@@ -205,19 +203,19 @@ class _TemplatePreviewSheet extends StatelessWidget {
       maxChildSize: 0.95,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            color: Theme.of(context).colorScheme.surface,
           ),
           child: Column(
             children: [
               // Handle
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
+                margin: EdgeInsets.symmetric(vertical: 12),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -280,7 +278,7 @@ class _TemplatePreviewSheet extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final category = groupedItems.keys.elementAt(index);
                     final items = groupedItems[category]!;
-                    return _buildCategorySection(category, items);
+                    return _buildCategorySection(context, category, items);
                   },
                 ),
               ),
@@ -288,7 +286,7 @@ class _TemplatePreviewSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -333,7 +331,8 @@ class _TemplatePreviewSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildCategorySection(String category, List<TemplateItem> items) {
+  Widget _buildCategorySection(
+      BuildContext context, String category, List<TemplateItem> items) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -381,7 +380,7 @@ class _TemplatePreviewSheet extends StatelessWidget {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Theme.of(context).colorScheme.surfaceDim,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey[200]!),
             ),
@@ -414,9 +413,9 @@ class _TemplatePreviewSheet extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.name,
-                          style: const TextStyle(
+                          style:  TextStyle(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: Theme.of(context).hintColor,
                           ),
                         ),
                       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/accessible_button.dart';
 

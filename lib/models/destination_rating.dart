@@ -8,13 +8,13 @@ class DestinationRating {
   final String userId;
   final String userName;
   final String destinationName;
-  final double overallRating; // Nota geral (1-5)
-  final double? valueForMoney; // Custo-benefício (1-5)
-  final double? accessibility; // Acessibilidade (1-5)
-  final double? crowdLevel; // Nível de lotação (1-5, onde 5 = muito lotado)
-  final double? safety; // Segurança (1-5)
+  final double overallRating; // Nota geral (
+  final double? valueForMoney; // Custo-benefício (
+  final double? accessibility; // Acessibilidade (
+  final double? crowdLevel; // Nível de lotação 
+  final double? safety; // Segurança (1) 
   final String? review; // Comentário escrito
-  final List<String> tags; // Tags: "Família", "Romântico", "Aventura", etc
+  final List<String> tags; // Tags: Família, Romântico", "Aventura
   final List<String> photos; // URLs das fotos
   final DateTime visitDate;
   final DateTime createdAt;
@@ -40,7 +40,6 @@ class DestinationRating {
     this.isPublic = false,
   });
 
-  /// Calcula a média de todas as avaliações detalhadas
   double get averageDetailedRating {
     List<double> ratings = [overallRating];
     if (valueForMoney != null) ratings.add(valueForMoney!);
@@ -51,16 +50,7 @@ class DestinationRating {
     return ratings.reduce((a, b) => a + b) / ratings.length;
   }
 
-  /// Retorna emoji baseado na nota
-  String get ratingEmoji {
-    if (overallRating >= 4.5) return '😍';
-    if (overallRating >= 4.0) return '😊';
-    if (overallRating >= 3.0) return '😐';
-    if (overallRating >= 2.0) return '😕';
-    return '😞';
-  }
-
-  /// Retorna descrição textual da nota
+  
   String get ratingDescription {
     if (overallRating >= 4.5) return 'Excelente';
     if (overallRating >= 4.0) return 'Muito Bom';
@@ -151,7 +141,7 @@ class DestinationStats {
     final name = ratings.first.destinationName;
     final avgRating =
         ratings.map((r) => r.overallRating).reduce((a, b) => a + b) /
-        ratings.length;
+            ratings.length;
 
     // Calcular médias dos critérios detalhados
     final valueRatings = ratings
@@ -166,10 +156,8 @@ class DestinationStats {
         .where((r) => r.crowdLevel != null)
         .map((r) => r.crowdLevel!)
         .toList();
-    final safetyRatings = ratings
-        .where((r) => r.safety != null)
-        .map((r) => r.safety!)
-        .toList();
+    final safetyRatings =
+        ratings.where((r) => r.safety != null).map((r) => r.safety!).toList();
 
     // Contar tags
     Map<String, int> tagCounts = {};
@@ -241,4 +229,3 @@ class RatingTags {
     }
   }
 }
-

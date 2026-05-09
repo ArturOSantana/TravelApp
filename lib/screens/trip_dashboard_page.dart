@@ -11,6 +11,7 @@ import 'packing_checklist_page.dart';
 import 'journal_page.dart';
 import 'safety_page.dart';
 import 'group_members_page.dart';
+import 'rate_destination_page.dart';
 
 class TripDashboardPage extends StatefulWidget {
   final Trip trip;
@@ -22,30 +23,13 @@ class TripDashboardPage extends StatefulWidget {
 
 class _TripDashboardPageState extends State<TripDashboardPage> {
   final TripController _controller = TripController();
-  List<UserModel> _members = [];
-  bool _isLoadingMembers = true;
   Map<String, dynamic>? _weatherData;
   bool _isLoadingWeather = true;
 
   @override
   void initState() {
     super.initState();
-    _loadMembers();
     _loadWeather();
-  }
-
-  Future<void> _loadMembers() async {
-    try {
-      final members = await _controller.getTripMembers(widget.trip.members);
-      if (mounted) {
-        setState(() {
-          _members = members;
-          _isLoadingMembers = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoadingMembers = false);
-    }
   }
 
   Future<void> _loadWeather() async {
@@ -166,6 +150,126 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     );
   }
 
+  void _showRateDestinationDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RateDestinationPage(
+          tripId: widget.trip.id,
+          activityId: widget
+              .trip.id, // Usando trip ID como activity ID para avaliação geral
+          destinationName: widget.trip.destination,
+        ),
+      ),
+    );
+  }
+
+  void _showEditBudgetDialog() {
+    final TextEditingController budgetController = TextEditingController(
+      text: widget.trip.budget.toStringAsFixed(2),
+    );
+    String selectedCurrency = widget.trip.baseCurrency;
+    final List<String> currencies = ['BRL', 'USD', 'EUR', 'GBP', 'ARS'];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.edit_outlined, color: Colors.blue),
+              SizedBox(width: 10),
+              Text("Editar Orçamento"),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: budgetController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: "Novo Orçamento",
+                  prefixIcon: const Icon(Icons.attach_money),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedCurrency,
+                decoration: InputDecoration(
+                  labelText: "Moeda",
+                  prefixIcon: const Icon(Icons.currency_exchange),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                items: currencies.map((currency) {
+                  return DropdownMenuItem(
+                    value: currency,
+                    child: Text(currency),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => selectedCurrency = value);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final newBudget = double.tryParse(budgetController.text);
+                if (newBudget != null && newBudget > 0) {
+                  await _controller.updateTripBudget(
+                    widget.trip.id,
+                    newBudget,
+                    selectedCurrency,
+                  );
+                  if (mounted) {
+                    Navigator.pop(context);
+                    // Força atualização imediata da tela
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Orçamento atualizado com sucesso!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    setState(() {});
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Por favor, insira um valor válido'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text("Salvar"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isPlanned = widget.trip.status == 'planned';
@@ -173,9 +277,6 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
     final bool isCompleted = widget.trip.status == 'completed';
 
     // URL estável para imagem de destino usando Unsplash Source
-    final String cityImageUrl =
-        "https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1200&auto=format&fit=crop";
-
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -204,7 +305,7 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Base: Gradiente de segurança (W3C Acessibilidade)
+// W3C
                   Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
@@ -214,13 +315,13 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                       ),
                     ),
                   ),
-                  // Imagem Real (Carregamento com Fade)
+
                   Image.network(
                     "https://source.unsplash.com/featured/1200x800?${Uri.encodeComponent(widget.trip.destination)}",
                     fit: BoxFit.cover,
                     errorBuilder: (context, e, s) => const SizedBox(),
                   ),
-                  // Gradientes de Contraste para o Texto (WCAG)
+                  // W3C
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -325,11 +426,11 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                 _buildActionCircle(Icons.delete_outline, Colors.redAccent,
                     "Apagar planejamento", _showDeleteDialog)
               else if (isActive)
-                _buildActionCircle(
-                    Icons.check_circle_outline,
-                    Colors.greenAccent,
-                    "Finalizar viagem",
-                    _showFinalizeDialog),
+                _buildActionCircle(Icons.check_circle_outline,
+                    Colors.greenAccent, "Finalizar viagem", _showFinalizeDialog)
+              else if (isCompleted)
+                _buildActionCircle(Icons.star_rate_rounded, Colors.amber,
+                    "Avaliar destino", _showRateDestinationDialog),
               _buildActionCircle(
                   Icons.group_outlined, Colors.white, "Ver membros do grupo",
                   () {
@@ -362,6 +463,8 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
                   ),
                   const SizedBox(height: 12),
                   _buildWeatherCard(),
+                  const SizedBox(height: 16),
+                  _buildBudgetCard(),
                   const SizedBox(height: 20),
                   _buildStatusSection(isActive, isCompleted),
                   const SizedBox(height: 40),
@@ -499,6 +602,94 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBudgetCard() {
+    final currencySymbols = {
+      'BRL': 'R\$',
+      'USD': '\$',
+      'EUR': '€',
+      'GBP': '£',
+      'ARS': '\$',
+    };
+
+    return FutureBuilder<Trip>(
+      future: _controller.getTripById(widget.trip.id),
+      builder: (context, snapshot) {
+        // Usa dados atualizados se disponíveis, senão usa os dados iniciais
+        final trip = snapshot.data ?? widget.trip;
+        final symbol = currencySymbols[trip.baseCurrency] ?? trip.baseCurrency;
+
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.06),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              )
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  size: 32,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ORÇAMENTO',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$symbol ${trip.budget.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Semantics(
+                button: true,
+                label: 'Editar orçamento',
+                child: IconButton(
+                  onPressed: _showEditBudgetDialog,
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  tooltip: 'Editar orçamento',
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

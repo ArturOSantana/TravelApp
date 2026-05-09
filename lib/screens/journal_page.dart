@@ -157,7 +157,7 @@ class _JournalPageState extends State<JournalPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -226,8 +226,8 @@ class _JournalPageState extends State<JournalPage> {
                       const SizedBox(width: 4),
                       Text(
                         entry.locationName ?? "Localização não informada",
-                        style: const TextStyle(
-                          color: Colors.black54,
+                        style:  TextStyle(
+                          color: Theme.of(  context).colorScheme.onSurface,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -237,10 +237,10 @@ class _JournalPageState extends State<JournalPage> {
                   const SizedBox(height: 12),
                   Text(
                     entry.content,
-                    style: const TextStyle(
+                    style:  TextStyle(
                       fontSize: 15,
                       height: 1.5,
-                      color: Colors.black87,
+                      color: Theme.of(  context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 16),

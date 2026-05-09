@@ -974,6 +974,7 @@ class _InsightsPageState extends State<InsightsPage> {
     );
   }
 
+  // TODO: Implement this widget when expense comparison feature is added
   Widget _buildExpenseComparisonCard(
     double budget,
     double spent,
@@ -1133,6 +1134,7 @@ class _InsightsPageState extends State<InsightsPage> {
     );
   }
 
+  // TODO: Implement AI predictions when ML model is integrated
   Widget _buildAIPredictionCard(String message) {
     return Container(
       padding: const EdgeInsets.all(20),
