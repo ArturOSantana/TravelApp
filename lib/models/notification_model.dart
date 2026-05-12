@@ -7,10 +7,10 @@ class AppNotification {
   final String receiverId;
   final String senderId;
   final String senderName;
-  final String postId; // Pode ser tripId no caso de segurança
-  final String postName; // Pode ser o nome da viagem ou localização
+  final String postId; // ser tripId no caso de segurança
+  final String postName; //o nome da viagem ou localização
   final NotificationType type;
-  final String? commentText; // Pode ser a mensagem de alerta
+  final String? commentText; //  mensagem de alerta
   final DateTime createdAt;
   final bool isRead;
 

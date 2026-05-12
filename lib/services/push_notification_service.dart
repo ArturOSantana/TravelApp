@@ -171,10 +171,12 @@ class PushNotificationService {
     String userName,
     String receiverId,
   ) async {
-    // Só envia notificação se o receiverId for diferente do usuário atual
     final currentUser = _auth.currentUser;
-    if (currentUser == null || currentUser.uid == receiverId) {
-      // Não envia notificação local se for para o próprio usuário
+    if (currentUser == null) {
+      return;
+    }
+
+    if (currentUser.uid != receiverId) {
       return;
     }
 
@@ -189,10 +191,12 @@ class PushNotificationService {
     String userName,
     String receiverId,
   ) async {
-    // Só envia notificação se o receiverId for diferente do usuário atual
     final currentUser = _auth.currentUser;
-    if (currentUser == null || currentUser.uid == receiverId) {
-      // Não envia notificação local se for para o próprio usuário
+    if (currentUser == null) {
+      return;
+    }
+
+    if (currentUser.uid != receiverId) {
       return;
     }
 
