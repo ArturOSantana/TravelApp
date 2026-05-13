@@ -708,6 +708,16 @@ Acesse o [Índice de Documentação](docs/README.md) para navegação completa.
 
 - [Documentação de Design](docs/assets/AppTravel.pdf) - Guia visual completo
 - [Estrutura do Banco](docs/planejamento/banco.json) - Schema do Firestore
+- [Modelagem do Banco de Dados](docs/assets/Modelagem_Banco.png) - Diagrama visual da estrutura do banco
+- [Modelagem de Classes](docs/assets/Modelagem%20de%20classes.png) - Diagrama das principais classes do sistema
+
+#### Diagramas do Projeto
+
+**Modelagem do Banco de Dados**
+![Modelagem do Banco de Dados](docs/assets/Modelagem_Banco.png)
+
+**Modelagem de Classes**
+![Modelagem de Classes](docs/assets/Modelagem%20de%20classes.png)
 
 ---
 

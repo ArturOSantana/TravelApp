@@ -37,6 +37,8 @@ Bem-vindo à documentação completa do Travel App - Sistema de Planejamento e G
   - Documentação de design (AppTravel.pdf)
   - Screenshots do aplicativo
   - Estrutura do banco de dados
+  - [Modelagem do Banco de Dados](assets/Modelagem_Banco.png)
+  - [Modelagem de Classes](assets/Modelagem%20de%20classes.png)
 
  Estrutura do Projeto
 

@@ -1,66 +1,66 @@
-name: Firebase App Distribution
+# name: Firebase App Distribution
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+#       - name: Setup Java
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: 'zulu'
+#           java-version: '17'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
+#       - name: Setup Flutter
+#         uses: subosito/flutter-action@v2
+#         with:
+#           channel: 'stable'
+#           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+#       - name: Install dependencies
+#         run: flutter pub get
 
-      - name: Create API Keys file
-        run: |
-          cat > lib/config/api_keys.dart << 'EOF'
-          class ApiKeys {
-            static const String geoapify = '${{ secrets.GEOAPIFY_API_KEY }}';
-            static const String openWeatherMap = '${{ secrets.OPENWEATHERMAP_API_KEY }}';
-          }
-          EOF
+#       - name: Create API Keys file
+#         run: |
+#           cat > lib/config/api_keys.dart << 'EOF'
+#           class ApiKeys {
+#             static const String geoapify = '${{ secrets.GEOAPIFY_API_KEY }}';
+#             static const String openWeatherMap = '${{ secrets.OPENWEATHERMAP_API_KEY }}';
+#           }
+#           EOF
 
-      - name: Run Tests
-        run: flutter test
+#       - name: Run Tests
+#         run: flutter test
 
-      - name: Resolve Version
-        id: versioning
-        run: |
-          BASE_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//' | cut -d+ -f1)
-          BUILD_NUMBER=${GITHUB_RUN_NUMBER}
-          FULL_VERSION="${BASE_VERSION}+${BUILD_NUMBER}"
+#       - name: Resolve Version
+#         id: versioning
+#         run: |
+#           BASE_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//' | cut -d+ -f1)
+#           BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+#           FULL_VERSION="${BASE_VERSION}+${BUILD_NUMBER}"
 
-          echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
-          echo "full_version=$FULL_VERSION" >> $GITHUB_OUTPUT
+#           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+#           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+#           echo "full_version=$FULL_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build APK
-        run: flutter build apk --release --build-name=${{ steps.versioning.outputs.base_version }} --build-number=${{ steps.versioning.outputs.build_number }}
+#       - name: Build APK
+#         run: flutter build apk --release --build-name=${{ steps.versioning.outputs.base_version }} --build-number=${{ steps.versioning.outputs.build_number }}
 
-      - name: Create Release Notes
-        run: echo "Build automatizada. Versão ${{ steps.versioning.outputs.full_version }} - Testes validados" > release_notes.txt
+#       - name: Create Release Notes
+#         run: echo "Build automatizada. Versão ${{ steps.versioning.outputs.full_version }} - Testes validados" > release_notes.txt
 
-      - name: Upload to Firebase App Distribution
-        uses: w9jds/firebase-action@master
-        with:
-          args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS,TCC_APRESENTACAO" --release-notes-file release_notes.txt
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+#       - name: Upload to Firebase App Distribution
+#         uses: w9jds/firebase-action@master
+#         with:
+#           args: appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk --app 1:660606500922:android:7a5e698da565dc9a34f503 --groups "TCC_DS,TCC_APRESENTACAO" --release-notes-file release_notes.txt
+#         env:
+#           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
