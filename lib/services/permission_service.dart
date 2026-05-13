@@ -68,20 +68,25 @@ class PermissionService {
           builder: (BuildContext context) {
             return AlertDialog(
               title: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.location_on, color: Colors.blue),
                   SizedBox(width: 8),
-                  Text('Permissão de Localização'),
+                  Expanded(
+                    child: Text('Permissão de Localização'),
+                  ),
                 ],
               ),
-              content: const Text(
-                'Este app precisa acessar sua localização para:\n\n'
-                '• Sugerir destinos próximos\n'
-                '• Mostrar clima local\n'
-                '• Criar roteiros personalizados\n'
-                '• Funcionalidades de segurança\n\n'
-                'Sua privacidade é importante. A localização só é usada quando você está usando o app.',
-                style: TextStyle(fontSize: 15),
+              content: const SingleChildScrollView(
+                child: Text(
+                  'Este app precisa acessar sua localização para:\n\n'
+                  '• Sugerir destinos próximos\n'
+                  '• Mostrar clima local\n'
+                  '• Criar roteiros personalizados\n'
+                  '• Funcionalidades de segurança\n\n'
+                  'Sua privacidade é importante. A localização só é usada quando você está usando o app.',
+                  style: TextStyle(fontSize: 15, height: 1.4),
+                ),
               ),
               actions: [
                 TextButton(
@@ -106,15 +111,20 @@ class PermissionService {
           builder: (BuildContext context) {
             return AlertDialog(
               title: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.location_off, color: Colors.orange),
                   SizedBox(width: 8),
-                  Text('Localização Desabilitada'),
+                  Expanded(
+                    child: Text('Localização Desabilitada'),
+                  ),
                 ],
               ),
-              content: const Text(
-                'O serviço de localização está desabilitado no seu dispositivo.\n\n'
-                'Para usar recursos baseados em localização, você precisa ativar o GPS nas configurações do dispositivo.',
+              content: const SingleChildScrollView(
+                child: Text(
+                  'O serviço de localização está desabilitado no seu dispositivo.\n\n'
+                  'Para usar recursos baseados em localização, você precisa ativar o GPS nas configurações do dispositivo.',
+                ),
               ),
               actions: [
                 TextButton(
@@ -140,15 +150,20 @@ class PermissionService {
           builder: (BuildContext context) {
             return AlertDialog(
               title: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.block, color: Colors.red),
                   SizedBox(width: 8),
-                  Text('Permissão Negada'),
+                  Expanded(
+                    child: Text('Permissão Negada'),
+                  ),
                 ],
               ),
-              content: const Text(
-                'A permissão de localização foi negada permanentemente.\n\n'
-                'Para usar recursos baseados em localização, você precisa habilitar a permissão manualmente nas configurações do app.',
+              content: const SingleChildScrollView(
+                child: Text(
+                  'A permissão de localização foi negada permanentemente.\n\n'
+                  'Para usar recursos baseados em localização, você precisa habilitar a permissão manualmente nas configurações do app.',
+                ),
               ),
               actions: [
                 TextButton(
@@ -206,4 +221,3 @@ class PermissionService {
     );
   }
 }
-

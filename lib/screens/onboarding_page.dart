@@ -123,7 +123,9 @@ class _OnboardingPageState extends State<OnboardingPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              _pages[_currentPage].color.withOpacity(isDark ? 0.15 : 0.1),
+              _pages[_currentPage].color.withValues(
+                    alpha: isDark ? 0.15 : 0.1,
+                  ),
               theme.colorScheme.surface,
             ],
           ),
@@ -205,7 +207,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                     dotHeight: 12,
                     dotWidth: 12,
                     activeDotColor: _pages[_currentPage].color,
-                    dotColor: theme.colorScheme.outline.withOpacity(0.3),
+                    dotColor: theme.colorScheme.outline.withValues(alpha: 0.3),
                     expansionFactor: 3,
                   ),
                 ),
@@ -286,151 +288,180 @@ class _OnboardingPageState extends State<OnboardingPage>
   Widget _buildPage(OnboardingContent content, int index) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Ícone animado com rotação e escala
-          AnimatedBuilder(
-            animation: _iconAnimationController,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _iconAnimationController.value,
-                child: Transform.rotate(
-                  angle: (1 - _iconAnimationController.value) * math.pi * 2,
-                  child: Container(
-                    width: 160,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        colors: [
-                          content.color.withOpacity(0.2),
-                          content.color.withOpacity(0.05),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: content.color.withOpacity(0.3),
-                          blurRadius: 30,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      content.icon,
-                      size: 80,
-                      color: content.color,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final horizontalPadding = constraints.maxWidth < 360 ? 24.0 : 40.0;
+        final iconSize = constraints.maxHeight < 650 ? 120.0 : 160.0;
+        final innerIconSize = constraints.maxHeight < 650 ? 60.0 : 80.0;
+        final titleSize = constraints.maxWidth < 360 ? 24.0 : 28.0;
+        final descriptionSize = constraints.maxWidth < 360 ? 15.0 : 16.0;
+        final featureSize = constraints.maxWidth < 360 ? 13.0 : 14.0;
 
-          const SizedBox(height: 50),
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
 
-          // Título com animação de fade e slide
-          AnimatedBuilder(
-            animation: _textAnimationController,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _textAnimationController.value,
-                child: Transform.translate(
-                  offset: Offset(0, 20 * (1 - _textAnimationController.value)),
-                  child: Text(
-                    content.title,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: content.color,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          // Descrição com animação
-          AnimatedBuilder(
-            animation: _textAnimationController,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _textAnimationController.value * 0.8,
-                child: Transform.translate(
-                  offset: Offset(0, 30 * (1 - _textAnimationController.value)),
-                  child: Text(
-                    content.description,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 40),
-
-          // Features com animação escalonada
-          ...List.generate(
-            content.features.length,
-            (featureIndex) {
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: Duration(
-                  milliseconds: 400 + (featureIndex * 100),
-                ),
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, 20 * (1 - value)),
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: content.color.withOpacity(0.1),
-                                shape: BoxShape.circle,
+                  // Ícone animado com rotação e escala
+                  AnimatedBuilder(
+                    animation: _iconAnimationController,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _iconAnimationController.value,
+                        child: Transform.rotate(
+                          angle: (1 - _iconAnimationController.value) *
+                              math.pi *
+                              2,
+                          child: Container(
+                            width: iconSize,
+                            height: iconSize,
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  content.color.withValues(alpha: 0.2),
+                                  content.color.withValues(alpha: 0.05),
+                                ],
                               ),
-                              child: Icon(
-                                Icons.check,
-                                color: content.color,
-                                size: 16,
-                              ),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: content.color.withValues(alpha: 0.3),
+                                  blurRadius: 30,
+                                  spreadRadius: 5,
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                content.features[featureIndex],
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.colorScheme.onSurface,
-                                  fontWeight: FontWeight.w500,
+                            child: Icon(
+                              content.icon,
+                              size: innerIconSize,
+                              color: content.color,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  SizedBox(height: constraints.maxHeight < 650 ? 28 : 50),
+
+                  // Título com animação de fade e slide
+                  AnimatedBuilder(
+                    animation: _textAnimationController,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _textAnimationController.value,
+                        child: Transform.translate(
+                          offset: Offset(
+                              0, 20 * (1 - _textAnimationController.value)),
+                          child: Text(
+                            content.title,
+                            style: TextStyle(
+                              fontSize: titleSize,
+                              fontWeight: FontWeight.bold,
+                              color: content.color,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Descrição com animação
+                  AnimatedBuilder(
+                    animation: _textAnimationController,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _textAnimationController.value * 0.8,
+                        child: Transform.translate(
+                          offset: Offset(
+                              0, 30 * (1 - _textAnimationController.value)),
+                          child: Text(
+                            content.description,
+                            style: TextStyle(
+                              fontSize: descriptionSize,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  SizedBox(height: constraints.maxHeight < 650 ? 28 : 40),
+
+                  // Features com animação escalonada
+                  ...List.generate(
+                    content.features.length,
+                    (featureIndex) {
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: 1),
+                        duration: Duration(
+                          milliseconds: 400 + (featureIndex * 100),
+                        ),
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 20 * (1 - value)),
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: content.color
+                                            .withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.check,
+                                        color: content.color,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        content.features[featureIndex],
+                                        style: TextStyle(
+                                          fontSize: featureSize,
+                                          color: theme.colorScheme.onSurface,
+                                          fontWeight: FontWeight.w500,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+
+                  const Spacer(),
+                ],
+              ),
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -41,22 +41,22 @@ jobs:
       - name: Run Tests
         run: flutter test
 
-      - name: Auto Increment Version
+      - name: Resolve Version
         id: versioning
         run: |
-          VERSION=$(grep 'version: ' pubspec.yaml | sed 's/version: //')
-          VERSION_NAME=$(echo $VERSION | cut -d+ -f1)
-          BUILD_NUMBER=$(echo $VERSION | cut -d+ -f2)
-          NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
-          NEW_VERSION="$VERSION_NAME+$NEW_BUILD_NUMBER"
-          sed -i "s/version: $VERSION/version: $NEW_VERSION/" pubspec.yaml
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          BASE_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//' | cut -d+ -f1)
+          BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+          FULL_VERSION="${BASE_VERSION}+${BUILD_NUMBER}"
+
+          echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "full_version=$FULL_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build APK
-        run: flutter build apk --release --build-name=${{ steps.versioning.outputs.new_version }} --build-number=${{ github.run_number }}
+        run: flutter build apk --release --build-name=${{ steps.versioning.outputs.base_version }} --build-number=${{ steps.versioning.outputs.build_number }}
 
       - name: Create Release Notes
-        run: echo "Build automatizada. Versao ${{ steps.versioning.outputs.new_version }} - Testes validados" > release_notes.txt
+        run: echo "Build automatizada. Versão ${{ steps.versioning.outputs.full_version }} - Testes validados" > release_notes.txt
 
       - name: Upload to Firebase App Distribution
         uses: w9jds/firebase-action@master
