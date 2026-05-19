@@ -1,4 +1,4 @@
-# Travel App - Sistema de Planejamento e Gestão de Viagens
+# Travel App - Seu Companheiro de Viagens 
 
 <div align="center">
 
@@ -7,97 +7,231 @@
 ![Firebase](https://img.shields.io/badge/Firebase-Latest-FFCA28?logo=firebase)
 ![License](https://img.shields.io/badge/License-Academic-green)
 
-**Trabalho de Conclusão de Curso**  
-**ETEC - Desenvolvimento de Sistemas**  
-**Versão 1.0.0 | 2026**
+**TCC - ETEC Desenvolvimento de Sistemas**
+**Versão 1.1.2 | 2026**
 
-[Documentação](docs/README.md) • [Início Rápido](#início-rápido) • [Arquitetura](#arquitetura) • [Contribuir](docs/desenvolvimento/CONTRIBUTING.md)
+[Ver Docs](docs/README.md) • [Como Rodar](#como-rodar) • [Funcionalidades](#o-que-o-app-faz)
 
 </div>
 
 ---
 
-## Sumário
+##  Do Que Se Trata?
 
-- [Sobre o Projeto](#sobre-o-projeto)
-- [Problema e Solução](#problema-e-solução)
-- [Funcionalidades](#funcionalidades)
-- [Tecnologias](#tecnologias)
-- [Arquitetura](#arquitetura)
-- [Início Rápido](#início-rápido)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Documentação](#documentação)
-- [Testes](#testes)
-- [Roadmap](#roadmap)
-- [Contribuindo](#contribuindo)
-- [Licença](#licença)
+Sabe quando você vai viajar e fica aquela bagunça pra organizar tudo? Planilha pra um lado, grupo do WhatsApp pro outro, fotos perdidas... Pois é, a gente criou esse app justamente pra resolver isso!
 
----
+O **Travel App** junta tudo num lugar só: planejamento, gastos, fotos, roteiro e até recursos de segurança. E o melhor: funciona pra quem viaja sozinho ou em grupo!
 
-## Sobre o Projeto
+### Por Que Fizemos Isso?
 
-O **Travel App** é uma aplicação multiplataforma desenvolvida em Flutter que unifica todas as necessidades de planejamento e gestão de viagens em uma única plataforma. O sistema foi projetado para atender tanto viajantes individuais quanto grupos, oferecendo ferramentas robustas para organização logística, controle financeiro compartilhado, documentação de experiências e recursos de segurança.
+Bom, todo mundo que viaja passa pelos mesmos perrengues:
 
-### Contexto
+-  **Grupo desorganizado**: Ninguém sabe quem vai fazer o quê
+-  **Divisão de gastos**: Aquela confusão de "quem pagou o quê"
+-  **Apps demais**: Um pra cada coisa, nada conversa entre si
+-  **Fotos perdidas**: Cada um com as suas, difícil juntar tudo depois
+-  **Segurança**: E se der algum problema? Como avisar a galera?
 
-O setor de turismo movimenta bilhões anualmente, com crescente demanda por ferramentas digitais que facilitem a experiência do viajante. A pandemia acelerou a digitalização do setor, criando oportunidades para soluções inovadoras que integrem múltiplas funcionalidades em uma única plataforma.
+### Nossa Solução
 
-### Diferenciais
+Um app que resolve tudo isso:
 
-- **Integração Completa**: Todas as funcionalidades essenciais em um único aplicativo
-- **Colaboração em Tempo Real**: Sincronização instantânea entre membros do grupo via Firebase
-- **Gestão Financeira Avançada**: Algoritmo automático de divisão de despesas com suporte a múltiplas moedas
-- **Segurança**: Recursos de emergência, check-ins de segurança e compartilhamento de localização
-- **Multiplataforma**: Disponível para Android, iOS, Web e Desktop
-- **Offline-First**: Funcionamento sem conexão com sincronização automática
+ **Planeje junto**: Todo mundo vê e vota nas atividades
+ **Divida gastos**: O app calcula automaticamente quem deve pra quem
+ **Guarde memórias**: Diário de viagem com fotos e localização
+ **Fique seguro**: Botão de pânico e check-ins de segurança
+ **Funciona offline**: Sem internet? Sem problema!
 
 ---
 
-## Problema e Solução
+##  O Que o App Faz?
 
-### Problema Identificado
+### Viagens em Grupo
 
-Viajantes enfrentam diversos desafios ao planejar e executar viagens:
+Crie viagens e convide até 20 pessoas! Todo mundo vê o mesmo roteiro, pode sugerir atividades e votar no que fazer. Tipo um grupo do WhatsApp, mas organizado de verdade.
 
-1. **Coordenação de Grupos**: Dificuldade em sincronizar planos entre múltiplos participantes
-2. **Gestão Financeira**: Complexidade na divisão de despesas e controle de orçamento
-3. **Organização de Informações**: Dados dispersos em múltiplas ferramentas (planilhas, apps, notas)
-4. **Preservação de Memórias**: Falta de uma forma estruturada de documentar experiências
-5. **Segurança**: Ausência de recursos de emergência e compartilhamento de localização
+**Dá pra:**
+- Criar viagens com ou sem data de volta (pra quem curte viajar sem pressa)
+- Convidar galera por código
+- Votar nas atividades (democracia na veia!)
+- Cada um adiciona suas fotos no diário compartilhado
 
-### Solução Proposta
+### Controle de Gastos
 
-Uma plataforma unificada que integra:
+Acabou aquela de "depois a gente acerta". O app faz tudo automaticamente:
 
-- **Planejamento Colaborativo**: Sistema de viagens em grupo com permissões e votação democrática
-- **Controle Financeiro Inteligente**: Divisão automática de despesas com conversão de moedas
-- **Documentação Digital**: Diário de viagem com fotos, localização e análise de humor
-- **Recursos de Segurança**: Botão de pânico, check-ins automáticos e contatos de emergência
-- **Sugestões Inteligentes**: Integração com APIs para recomendações de locais e atividades
+- Registra quem pagou o quê
+- Divide entre quem participou
+- Converte moedas (viajou pro exterior? Tranquilo!)
+- Mostra quem deve pra quem
+- Gera relatório em PDF
+- Manda cobrança pelo WhatsApp (com educação, claro 😄)
+
+### Diário de Viagem
+
+Registre suas experiências enquanto viaja:
+
+- Escreve sobre o dia
+- Adiciona fotos
+- Marca a localização
+- Registra seu humor (tava feliz? Cansado? Empolgado?)
+- Compartilha com o grupo ou deixa privado
+- Exporta tudo em PDF depois
+
+### Roteiro Inteligente
+
+Monte seu roteiro e receba sugestões:
+
+- Adiciona atividades com horário e local
+- Vê sugestões de atrações próximas (usuários Premium)
+- Exporta pro Google Calendar
+- Abre no Google Maps ou Waze
+- Recebe notificações antes das atividades
+
+### Segurança
+
+Porque viajar com tranquilidade é importante:
+
+- **Botão de Pânico**: Avisa o grupo e contato de emergência na hora
+- **Check-ins**: Marca quando chegou em algum lugar
+- **Compartilha localização**: Galera sabe onde você tá
+- **Contatos de emergência**: Cadastra quem avisar se precisar
+
+### Lista de Mala
+
+Nunca mais esqueça nada:
+
+- Templates prontos (praia, montanha, cidade...)
+- Marca o que já colocou na mala
+- Organiza por categoria
+- Prioriza itens importantes
+- Busca rápida
 
 ---
 
-## Funcionalidades
+##  Tecnologias
 
-### 1. Gestão de Viagens
+A gente usou o que tem de melhor:
 
-**Módulo Central de Planejamento**
+- **Flutter**: Pra rodar em Android, iOS, Web e Desktop
+- **Firebase**: Banco de dados em tempo real (tudo sincroniza na hora!)
+- **APIs Gratuitas**: Clima, conversão de moedas, sugestões de locais
 
-- Criação de viagens individuais ou em grupo (até 20 membros)
-- Suporte a viagens planejadas (com datas definidas) ou nômades (sem data de término)
-- Sistema de convites por código único
-- Controle de permissões (administrador e membros)
-- Acompanhamento de orçamento em tempo real
-- Status da viagem (planejada, ativa, concluída)
-- Foto de capa personalizável
+**Tudo 100% gratuito pra desenvolver!** 
 
-**Implementação Técnica:**
-```dart
-class Trip {
-  final String id;
-  final String ownerId;
-  final String destination;
-  final DateTime? startDate;
+---
+
+##  Como Rodar
+
+### Você vai precisar de:
+
+- Flutter 3.5.0 ou superior
+- Dart 3.0 ou superior
+- Android Studio ou VS Code
+- Uma conta no Firebase (gratuita)
+
+### Instalação Rápida:
+
+```bash
+# 1. Clona o projeto
+git clone <url-do-repo>
+cd TCC
+
+# 2. Instala as dependências
+flutter pub get
+
+# 3. Configura as chaves de API (opcional)
+cp lib/config/api_keys.dart.example lib/config/api_keys.dart
+# Edita o arquivo com suas chaves
+
+# 4. Roda o app
+flutter run
+```
+
+**Guia completo:** [Como Executar no Emulador](docs/desenvolvimento/COMO_EXECUTAR_NO_EMULADOR.md)
+
+---
+
+##  Como Está Organizado
+
+```
+lib/
+├── models/          # Estrutura dos dados (Trip, Expense, etc)
+├── controllers/     # Lógica de negócio
+├── services/        # Integração com Firebase e APIs
+├── screens/         # Telas do app (30+)
+├── widgets/         # Componentes reutilizáveis
+└── theme/           # Cores e estilos
+```
+
+**Quer entender melhor?** Leia: [Organização das Regras de Negócio](docs/desenvolvimento/ORGANIZACAO_REGRAS_NEGOCIO.md)
+
+---
+
+##  Documentação
+
+Tem docs pra tudo:
+
+- [📖 Índice Geral](docs/README.md)
+- [ Como Executar](docs/desenvolvimento/COMO_EXECUTAR_NO_EMULADOR.md)
+- [🏗️ Organização do Código](docs/desenvolvimento/ORGANIZACAO_REGRAS_NEGOCIO.md)
+- [🔌 APIs Usadas](docs/apis/IMPLEMENTACAO_APIS_FINAL.md)
+- [ Roadmap](docs/planejamento/PLANO_MELHORIAS_FUNCIONALIDADES.md)
+
+---
+
+##  Limitações
+
+Olha, o app é gratuito, então tem alguns limites:
+
+**APIs Externas:**
+- Geoapify: 3.000 buscas/dia
+- OpenWeatherMap: 1.000 consultas/dia
+- ExchangeRate: 1.500 conversões/mês
+
+**Firebase (plano grátis):**
+- 50.000 leituras/dia
+- 20.000 escritas/dia
+- 5 GB de armazenamento
+
+**Pra uso normal, tá de boa!** Mas se o app bombar, vai precisar fazer upgrade. 
+
+---
+
+##  Sobre o Projeto
+
+Esse é nosso TCC da ETEC de Desenvolvimento de Sistemas. A gente quis fazer algo útil de verdade, que resolvesse problemas reais.
+
+**Estatísticas:**
+- ~15.000 linhas de código
+- 30+ telas
+- 10+ testes automatizados
+- 6 plataformas suportadas
+- 5 APIs integradas
+
+---
+
+##  Quer Contribuir?
+
+Achou um bug? Tem uma ideia legal? Abre uma issue ou manda um PR!
+
+Leia o [Guia de Contribuição](docs/desenvolvimento/CONTRIBUTING.md) antes.
+
+---
+
+##  Licença
+
+Projeto acadêmico - ETEC 2026
+
+---
+
+<div align="center">
+
+**Feito com  e muito  por estudantes da ETEC**
+
+[ Voltar pro topo](#travel-app---seu-companheiro-de-viagens-)
+
+</div>
   final DateTime? endDate;
   final double budget;
   final String baseCurrency;
@@ -665,15 +799,6 @@ TCC/
 └── README.md                   # Este arquivo
 ```
 
-### Destaques da Organização
-
-- **Documentação Centralizada**: Toda documentação em `docs/`
-- **Código Organizado**: Separação clara de responsabilidades (MVC)
-- **30+ Telas**: Interface completa e intuitiva
-- **20+ Serviços**: Integrações robustas
-- **10+ Testes**: Cobertura de funcionalidades críticas
-- **Assets Separados**: Design e documentação organizados
-- **Configurações Isoladas**: API keys em arquivo separado
 
 ---
 
@@ -721,81 +846,6 @@ Acesse o [Índice de Documentação](docs/README.md) para navegação completa.
 
 ---
 
-## Testes
-
-### Executar Testes
-
-```bash
-# Todos os testes
-flutter test
-
-# Teste específico
-flutter test test/use_cases_test.dart
-
-# Com cobertura
-flutter test --coverage
-
-# Gerar relatório HTML
-genhtml coverage/lcov.info -o coverage/html
-```
-
-### Cobertura de Testes
-
-O projeto inclui testes abrangentes para:
-
-**1. Modelos de Dados**
-- Validação de campos obrigatórios
-- Serialização/deserialização JSON
-- Regras de negócio
-
-**2. Lógica Financeira**
-- Algoritmo de divisão de despesas
-- Conversão de moedas
-- Cálculo de balanços
-
-**3. Segurança**
-- Validação de permissões
-- Regras de acesso a dados
-- Autenticação e autorização
-- Testes funcionais de segurança
-
-**4. Casos de Uso**
-- Fluxos completos de funcionalidades
-- Integração entre componentes
-- Validação de estados
-
-**5. Acessibilidade**
-- Suporte a leitores de tela
-- Navegação por teclado
-- Contraste de cores
-
-**6. Integrações**
-- APIs externas
-- Firebase services
-- Notificações
-
-### Exemplo de Teste
-
-```dart
-void main() {
-  group('Trip Model Tests', () {
-    test('deve criar viagem válida', () {
-      final trip = Trip(
-        id: '123',
-        ownerId: 'user1',
-        destination: 'Paris',
-        budget: 5000.0,
-        objective: 'Lazer',
-        createdAt: DateTime.now(),
-      );
-      
-      expect(trip.destination, 'Paris');
-      expect(trip.budget, 5000.0);
-      expect(trip.isAdmin('user1'), true);
-    });
-  });
-}
-```
 
 
 ### Convenção de Commits
@@ -941,7 +991,7 @@ Este projeto foi desenvolvido como **Trabalho de Conclusão de Curso (TCC)** par
 ### Limitações de Negócio
 
 #### 1. **Monetização**
-- ⚠️ Versão atual: Completamente gratuita
+-  Versão atual: Completamente gratuita
 - 💡 Futuro: Plano Premium planejado para recursos avançados
 
 #### 2. **Suporte**

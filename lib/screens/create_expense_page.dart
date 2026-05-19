@@ -78,129 +78,134 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
   Future<void> _loadData() async {
     try {
-      final tripDoc = await FirebaseFirestore.instance
+      // Timeout de 10 segundos para evitar travamento em conexões lentas
+      final docViagem = await FirebaseFirestore.instance
           .collection('trips')
           .doc(widget.tripId)
           .get()
           .timeout(const Duration(seconds: 10));
 
-      if (!tripDoc.exists) {
+      if (!docViagem.exists) {
         throw Exception('Viagem não encontrada.');
       }
 
-      _trip = Trip.fromFirestore(tripDoc);
+      _trip = Trip.fromFirestore(docViagem);
       _selectedCurrency = _trip!.baseCurrency;
 
-      final currentUser = _auth.currentUser;
-      final currentUid = currentUser?.uid ?? '';
+      final usuarioAtual = _auth.currentUser;
+      final uidAtual = usuarioAtual?.uid ?? '';
 
-      final validTripMembers = <String>{
+      // Filtra apenas IDs válidos (não vazios) dos membros da viagem
+      final membrosValidosViagem = <String>{
         if (_trip!.ownerId.trim().isNotEmpty) _trip!.ownerId.trim(),
         ..._trip!.members
             .where((id) => id.trim().isNotEmpty)
             .map((id) => id.trim()),
       };
 
-      final bool isRealGroup = _trip!.isGroup || validTripMembers.length > 1;
+      final bool ehGrupoReal =
+          _trip!.isGroup || membrosValidosViagem.length > 1;
 
-      if (!isRealGroup && currentUid.isNotEmpty) {
+      if (!ehGrupoReal && uidAtual.isNotEmpty) {
         _members = [
           UserModel(
-            uid: currentUid,
-            name: (currentUser?.displayName?.trim().isNotEmpty ?? false)
-                ? currentUser!.displayName!.trim()
+            uid: uidAtual,
+            name: (usuarioAtual?.displayName?.trim().isNotEmpty ?? false)
+                ? usuarioAtual!.displayName!.trim()
                 : 'Você',
-            email: currentUser?.email ?? '',
+            email: usuarioAtual?.email ?? '',
           ),
         ];
       } else {
-        final memberIds = <String>{...validTripMembers};
-        if (currentUid.isNotEmpty) {
-          memberIds.add(currentUid);
+        final idsMembros = <String>{...membrosValidosViagem};
+        if (uidAtual.isNotEmpty) {
+          idsMembros.add(uidAtual);
         }
 
-        _members = memberIds
+        _members = idsMembros
             .map(
               (id) => UserModel(
                 uid: id,
-                name: id == currentUid
-                    ? ((currentUser?.displayName?.trim().isNotEmpty ?? false)
-                        ? currentUser!.displayName!.trim()
+                name: id == uidAtual
+                    ? ((usuarioAtual?.displayName?.trim().isNotEmpty ?? false)
+                        ? usuarioAtual!.displayName!.trim()
                         : 'Você')
                     : 'Participante',
-                email: id == currentUid ? (currentUser?.email ?? '') : '',
+                email: id == uidAtual ? (usuarioAtual?.email ?? '') : '',
               ),
             )
             .toList();
 
         try {
-          final loadedMembers = await _controller
-              .getTripMembers(memberIds.toList())
+          final membrosCarregados = await _controller
+              .getTripMembers(idsMembros.toList())
               .timeout(const Duration(seconds: 6));
 
-          if (loadedMembers.isNotEmpty) {
-            final Map<String, UserModel> byId = {
-              for (final member in _members) member.uid: member,
+          if (membrosCarregados.isNotEmpty) {
+            final Map<String, UserModel> porId = {
+              for (final membro in _members) membro.uid: membro,
             };
-            for (final member in loadedMembers) {
-              final normalizedName = _normalizeMemberName(
-                uid: member.uid,
-                originalName: member.name,
-                email: member.email,
+            for (final membro in membrosCarregados) {
+              final nomeNormalizado = _normalizeMemberName(
+                uid: membro.uid,
+                originalName: membro.name,
+                email: membro.email,
               );
 
-              byId[member.uid] = UserModel(
-                uid: member.uid,
-                name: normalizedName,
-                email: member.email,
-                phone: member.phone,
-                emergencyContact: member.emergencyContact,
-                emergencyPhone: member.emergencyPhone,
-                bio: member.bio,
-                photoUrl: member.photoUrl,
-                isPremium: member.isPremium,
+              porId[membro.uid] = UserModel(
+                uid: membro.uid,
+                name: nomeNormalizado,
+                email: membro.email,
+                phone: membro.phone,
+                emergencyContact: membro.emergencyContact,
+                emergencyPhone: membro.emergencyPhone,
+                bio: membro.bio,
+                photoUrl: membro.photoUrl,
+                isPremium: membro.isPremium,
               );
             }
-            _members = byId.values.toList();
+            _members = porId.values.toList();
           }
 
           _members = _members
               .map(
-                (member) => UserModel(
-                  uid: member.uid,
+                (membro) => UserModel(
+                  uid: membro.uid,
                   name: _normalizeMemberName(
-                    uid: member.uid,
-                    originalName: member.name,
-                    email: member.email,
+                    uid: membro.uid,
+                    originalName: membro.name,
+                    email: membro.email,
                   ),
-                  email: member.email,
-                  phone: member.phone,
-                  emergencyContact: member.emergencyContact,
-                  emergencyPhone: member.emergencyPhone,
-                  bio: member.bio,
-                  photoUrl: member.photoUrl,
-                  isPremium: member.isPremium,
+                  email: membro.email,
+                  phone: membro.phone,
+                  emergencyContact: membro.emergencyContact,
+                  emergencyPhone: membro.emergencyPhone,
+                  bio: membro.bio,
+                  photoUrl: membro.photoUrl,
+                  isPremium: membro.isPremium,
                 ),
               )
               .toList();
         } catch (_) {
+          // Ignora erros ao carregar membros do Firestore
+          // Usa os dados básicos já carregados
         }
 
-        if (_members.isEmpty && currentUid.isNotEmpty) {
+        if (_members.isEmpty && uidAtual.isNotEmpty) {
           _members = [
             UserModel(
-              uid: currentUid,
-              name: (currentUser?.displayName?.trim().isNotEmpty ?? false)
-                  ? currentUser!.displayName!.trim()
+              uid: uidAtual,
+              name: (usuarioAtual?.displayName?.trim().isNotEmpty ?? false)
+                  ? usuarioAtual!.displayName!.trim()
                   : 'Você',
-              email: currentUser?.email ?? '',
+              email: usuarioAtual?.email ?? '',
             ),
           ];
         }
       }
 
-      _payerId = currentUid.isNotEmpty
-          ? currentUid
+      _payerId = uidAtual.isNotEmpty
+          ? uidAtual
           : (_members.isNotEmpty ? _members.first.uid : null);
 
       for (final m in _members) {
@@ -611,14 +616,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary),
+          Icon(Icons.info_outline,
+              color: Theme.of(context).colorScheme.secondary),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               "Moeda da viagem: ${_trip?.baseCurrency}. Conversão automática ativa.",
-              
-              style:  TextStyle(fontSize: 12,color: Theme.of( context).colorScheme.secondary),
-              
+              style: TextStyle(
+                  fontSize: 12, color: Theme.of(context).colorScheme.secondary),
             ),
           ),
         ],

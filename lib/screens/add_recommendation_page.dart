@@ -1,9 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:path/path.dart' as path;
 import '../models/service_model.dart';
 import '../controllers/trip_controller.dart';
 
@@ -38,7 +37,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
     'Transporte',
     'Passeio',
     'Serviço',
-    'Outros', // Adicionado para consistência com o feed
+    'Outros', // Adicionado para a
   ];
 
   Future<void> _pickImage(ImageSource source) async {
@@ -55,18 +54,9 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
     }
   }
 
-  Future<String> _uploadFile(File file) async {
-    String fileName = path.basename(file.path);
-    String uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-    Reference ref = FirebaseStorage.instance
-        .ref()
-        .child('service_photos')
-        .child(uid)
-        .child('${DateTime.now().millisecondsSinceEpoch}_$fileName');
-
-    UploadTask uploadTask = ref.putFile(file);
-    TaskSnapshot snapshot = await uploadTask;
-    return await snapshot.ref.getDownloadURL();
+  Future<String> _imageToBase64(File file) async {
+    final List<int> imageBytes = await file.readAsBytes();
+    return base64Encode(imageBytes);
   }
 
   void _saveRecommendation() async {
@@ -78,11 +68,11 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
       try {
         final user = FirebaseAuth.instance.currentUser;
 
-        // 1. Fazer upload das imagens locais e obter URLs
-        List<String> allPhotos = List.from(photos);
-        for (File img in _localImages) {
-          String url = await _uploadFile(img);
-          allPhotos.add(url);
+        // 1. Converter imagens locais para base64 e juntar com URLs já informadas
+        final List<String> allPhotos = List.from(photos);
+        for (final File img in _localImages) {
+          final String base64Image = await _imageToBase64(img);
+          allPhotos.add(base64Image);
         }
 
         final newService = ServiceModel(
@@ -101,7 +91,7 @@ class _AddRecommendationPageState extends State<AddRecommendationPage> {
         );
 
         await _controller.saveService(newService);
-        
+
         if (mounted) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(

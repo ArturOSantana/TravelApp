@@ -31,13 +31,12 @@ class _ReportsPageState extends State<ReportsPage> {
 
   bool _isExporting = false;
 
-  double get _totalSpent {
-    return widget.expenses.fold(0.0, (sum, expense) => sum + expense.value);
+  double get _totalGasto {
+    return widget.expenses.fold(0.0, (soma, despesa) => soma + despesa.value);
   }
 
-  // int get _photosCount { // Unused - can be implemented when photo gallery is added
-  int get _photosCount {
-    // Aqui você pode buscar do PhotoGallery se necessário
+  // TODO: Implementar contagem de fotos quando integrar com a galeria
+  int get _quantidadeFotos {
     return 0;
   }
 
@@ -276,7 +275,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         _buildStatItem(
                           icon: Icons.attach_money,
                           label: 'Total Gasto',
-                          value: _currencyFormat.format(_totalSpent),
+                          value: _currencyFormat.format(_totalGasto),
                         ),
                       ],
                     ),
@@ -537,7 +536,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     ),
                   ),
                   Text(
-                    _currencyFormat.format(_totalSpent),
+                    _currencyFormat.format(_totalGasto),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -835,9 +836,12 @@ class _CommunityPageState extends State<CommunityPage>
                                 child: Padding(
                                   padding: const EdgeInsets.only(right: 10),
                                   child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(15),
-                                      child: Image.network(post.photos[i],
-                                          width: 280, fit: BoxFit.cover)),
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: _buildPostImage(
+                                      post.photos[i],
+                                      width: 280,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -937,6 +941,35 @@ class _CommunityPageState extends State<CommunityPage>
           }),
     );
   }
+
+  Widget _buildPostImage(String photoData, {double? width, double? height}) {
+    final bool isBase64 = !photoData.startsWith('http');
+
+    return isBase64
+        ? Image.memory(
+            base64Decode(photoData),
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                _errorImage(width: width, height: height),
+          )
+        : Image.network(
+            photoData,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                _errorImage(width: width, height: height),
+          );
+  }
+
+  Widget _errorImage({double? width, double? height}) => Container(
+        width: width,
+        height: height,
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+      );
 
   void _showDestinationRatingDetails(
       BuildContext context, DestinationRating rating) {

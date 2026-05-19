@@ -24,31 +24,33 @@ class ItineraryPage extends StatefulWidget {
 class _ItineraryPageState extends State<ItineraryPage> {
   final TripController _controller = TripController();
   final AuthController _authController = AuthController();
-  final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
-  String _selectedCategory = 'Todos';
-  String _selectedFilter = 'Todos';
-  String _selectedStatus = 'Todas';
-  Trip? _trip;
-  UserModel? _currentUser;
+  final String _uidAtual = FirebaseAuth.instance.currentUser?.uid ?? '';
+  String _categoriaSelecionada = 'Todos';
+  String _filtroSelecionado = 'Todos';
+  String _statusSelecionado = 'Todas';
+  Trip? _viagem;
+  UserModel? _usuarioAtual;
 
   @override
   void initState() {
     super.initState();
-    _loadTrip();
-    _loadUser();
+    _carregarViagem();
+    _carregarUsuario();
   }
 
-  Future<void> _loadTrip() async {
-    final trip = await _controller.getTripById(widget.tripId);
+  /// Carrega os dados da viagem do Firestore
+  Future<void> _carregarViagem() async {
+    final viagem = await _controller.getTripById(widget.tripId);
     if (mounted) {
-      setState(() => _trip = trip);
+      setState(() => _viagem = viagem);
     }
   }
 
-  Future<void> _loadUser() async {
-    final user = await _authController.getUserData();
+  /// Carrega os dados do usuário logado
+  Future<void> _carregarUsuario() async {
+    final usuario = await _authController.getUserData();
     if (mounted) {
-      setState(() => _currentUser = user);
+      setState(() => _usuarioAtual = usuario);
     }
   }
 
@@ -117,7 +119,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
           _buildSuggestionsButton(),
           _buildCategoryFilter(),
           _buildStatusFilter(),
-          if (_trip?.isGroup ?? false) _buildVoteFilter(),
+          if (_viagem?.isGroup ?? false) _buildVoteFilter(),
           Expanded(child: _buildActivityList()),
         ],
       ),
@@ -138,7 +140,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
   }
 
   Widget _buildSuggestionsButton() {
-    if (_trip == null) return const SizedBox.shrink();
+    if (_viagem == null) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -153,25 +155,26 @@ class _ItineraryPageState extends State<ItineraryPage> {
             foregroundColor: Colors.white,
           ),
           onPressed: () async {
-            // Verificar se é premium
-            if (_currentUser?.isPremium != true) {
+            // CONFIRMAR: Usuário precisa ser premium para ver sugestões
+            if (_usuarioAtual?.isPremium != true) {
               _showPremiumDialog();
               return;
             }
 
-            // Buscar coordenadas do destino
+            // Busca as coordenadas do destino usando OpenStreetMap
+            // Necessário para passar para a API de sugestões
             try {
               final url = Uri.parse(
-                'https://nominatim.openstreetmap.org/search?q=${_trip!.destination}&format=json&limit=1',
+                'https://nominatim.openstreetmap.org/search?q=${_viagem!.destination}&format=json&limit=1',
               );
 
-              final response = await http.get(
+              final resposta = await http.get(
                 url,
                 headers: {'User-Agent': 'TravelPlannerApp/1.0'},
               );
 
-              if (response.statusCode == 200) {
-                final List<dynamic> data = json.decode(response.body);
+              if (resposta.statusCode == 200) {
+                final List<dynamic> data = json.decode(resposta.body);
                 if (data.isNotEmpty && mounted) {
                   final lat = double.tryParse(data[0]['lat']);
                   final lon = double.tryParse(data[0]['lon']);
@@ -181,7 +184,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
                     MaterialPageRoute(
                       builder: (context) => ActivitySuggestionsPage(
                         tripId: widget.tripId,
-                        destination: _trip!.destination,
+                        destination: _viagem!.destination,
                         lat: lat,
                         lon: lon,
                       ),
@@ -239,8 +242,9 @@ class _ItineraryPageState extends State<ItineraryPage> {
                 padding: const EdgeInsets.only(right: 8),
                 child: ChoiceChip(
                   label: Text(cat),
-                  selected: _selectedCategory == cat,
-                  onSelected: (val) => setState(() => _selectedCategory = cat),
+                  selected: _categoriaSelecionada == cat,
+                  onSelected: (val) =>
+                      setState(() => _categoriaSelecionada = cat),
                 ),
               );
             },
@@ -272,9 +276,9 @@ class _ItineraryPageState extends State<ItineraryPage> {
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
                     label: Text(status, style: const TextStyle(fontSize: 12)),
-                    selected: _selectedStatus == status,
+                    selected: _statusSelecionado == status,
                     onSelected: (val) =>
-                        setState(() => _selectedStatus = status),
+                        setState(() => _statusSelecionado = status),
                   ),
                 );
               },
@@ -307,9 +311,9 @@ class _ItineraryPageState extends State<ItineraryPage> {
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
                     label: Text(filter, style: const TextStyle(fontSize: 12)),
-                    selected: _selectedFilter == filter,
+                    selected: _filtroSelecionado == filter,
                     onSelected: (val) =>
-                        setState(() => _selectedFilter = filter),
+                        setState(() => _filtroSelecionado = filter),
                   ),
                 );
               },
@@ -330,29 +334,29 @@ class _ItineraryPageState extends State<ItineraryPage> {
         final allActivities = snapshot.data!;
 
         // Filtrar por categoria
-        var activities = _selectedCategory == 'Todos'
+        var activities = _categoriaSelecionada == 'Todos'
             ? allActivities
             : allActivities
-                .where((a) => a.category == _selectedCategory)
+                .where((a) => a.category == _categoriaSelecionada)
                 .toList();
 
         // Filtrar por status
-        if (_selectedStatus == 'Pendentes') {
+        if (_statusSelecionado == 'Pendentes') {
           activities = activities
               .where((a) => a.status == ActivityStatus.pending)
               .toList();
-        } else if (_selectedStatus == 'Concluídas') {
+        } else if (_statusSelecionado == 'Concluídas') {
           activities = activities
               .where((a) => a.status == ActivityStatus.completed)
               .toList();
-        } else if (_selectedStatus == 'Canceladas') {
+        } else if (_statusSelecionado == 'Canceladas') {
           activities = activities
               .where((a) => a.status == ActivityStatus.cancelled)
               .toList();
         }
 
         // Filtrar por votação/comentários
-        if (_selectedFilter == 'Mais votados') {
+        if (_filtroSelecionado == 'Mais votados') {
           activities = activities.where((a) {
             final upvotes = a.votes.values.where((v) => v == 1).length;
             final downvotes = a.votes.values.where((v) => v == -1).length;
@@ -364,7 +368,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
             final bVotes = b.votes.values.where((v) => v == 1).length;
             return bVotes.compareTo(aVotes);
           });
-        } else if (_selectedFilter == 'Com comentários') {
+        } else if (_filtroSelecionado == 'Com comentários') {
           activities = activities.where((a) => a.opinions.isNotEmpty).toList();
           // Ordenar por mais comentários
           activities.sort(
@@ -415,10 +419,10 @@ class _ItineraryPageState extends State<ItineraryPage> {
   }
 
   Widget _buildActivityCard(Activity activity, int index, {Key? key}) {
-    final isGroupTrip = _trip?.isGroup ?? false;
+    final isGroupTrip = _viagem?.isGroup ?? false;
     final upvotes = activity.votes.values.where((v) => v == 1).length;
     final downvotes = activity.votes.values.where((v) => v == -1).length;
-    final userVote = activity.votes[_currentUid];
+    final userVote = activity.votes[_uidAtual];
 
     return Card(
       key: key,
@@ -466,7 +470,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
                     _updateStatus(activity, ActivityStatus.cancelled);
                 },
                 itemBuilder: (context) {
-                  final isAdmin = _trip?.isAdmin(_currentUid) ?? false;
+                  final isAdmin = _viagem?.isAdmin(_uidAtual) ?? false;
                   return [
                     const PopupMenuItem(
                       value: 'edit',
@@ -490,7 +494,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
                     ),
                     const PopupMenuDivider(),
                     // Opções de status - apenas para admin em viagens de grupo
-                    if (isAdmin || !(_trip?.isGroup ?? false)) ...[
+                    if (isAdmin || !(_viagem?.isGroup ?? false)) ...[
                       const PopupMenuItem(
                         value: 'pending',
                         child: Row(
@@ -700,9 +704,9 @@ class _ItineraryPageState extends State<ItineraryPage> {
   }
 
   Future<void> _vote(Activity activity, int vote) async {
-    final currentVote = activity.votes[_currentUid];
+    final currentVote = activity.votes[_uidAtual];
     final newVote = currentVote == vote ? 0 : vote;
-    await _controller.voteActivity(activity.id, _currentUid, newVote);
+    await _controller.voteActivity(activity.id, _uidAtual, newVote);
   }
 
   void _confirmDelete(Activity activity) {
@@ -750,8 +754,8 @@ class _ItineraryPageState extends State<ItineraryPage> {
     ActivityStatus newStatus,
   ) async {
     // Verificar permissão: apenas admin pode alterar status em viagens de grupo
-    final isGroupTrip = _trip?.isGroup ?? false;
-    final isAdmin = _trip?.isAdmin(_currentUid) ?? false;
+    final isGroupTrip = _viagem?.isGroup ?? false;
+    final isAdmin = _viagem?.isAdmin(_uidAtual) ?? false;
 
     if (isGroupTrip && !isAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(

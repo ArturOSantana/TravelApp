@@ -19,19 +19,15 @@ class AuthController {
 
   Future<bool> isEmailRegistered(String email) async {
     try {
-      // Busca no Firestore
-      final query = await _db
+      // Verifica se o email já existe no Firestore
+      final consulta = await _db
           .collection('users')
           .where('email', isEqualTo: email.trim())
           .get();
-      if (query.docs.isNotEmpty) {
-        return true;
-      }
 
-     
-      return true; 
+      return consulta.docs.isNotEmpty;
     } catch (e) {
-   
+      // Em caso de erro, assume que o email existe para evitar duplicatas
       return true;
     }
   }
@@ -54,24 +50,26 @@ class AuthController {
     String phone = '',
   }) async {
     try {
-      UserCredential userCredential = await _auth
+      UserCredential credencialUsuario = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
 
-      if (userCredential.user != null) {
-        final normalizedName = name.trim();
-        await userCredential.user!.updateDisplayName(normalizedName);
+      if (credencialUsuario.user != null) {
+        final nomeNormalizado = name.trim();
+        await credencialUsuario.user!.updateDisplayName(nomeNormalizado);
 
-        UserModel newUser = UserModel(
-          uid: userCredential.user!.uid,
-          name: normalizedName,
+        UserModel novoUsuario = UserModel(
+          uid: credencialUsuario.user!.uid,
+          name: nomeNormalizado,
           email: email.trim(),
           phone: phone.trim(),
         );
 
-        await _db.collection('users').doc(newUser.uid).set({
-          ...newUser.toMap(),
-          'name': normalizedName,
-          'userName': normalizedName,
+        // Salva os dados do usuário no Firestore
+        // Mantém name e userName sincronizados para evitar inconsistências
+        await _db.collection('users').doc(novoUsuario.uid).set({
+          ...novoUsuario.toMap(),
+          'name': nomeNormalizado,
+          'userName': nomeNormalizado,
           'email': email.trim(),
           'phone': phone.trim(),
           'createdAt': FieldValue.serverTimestamp(),
@@ -91,27 +89,29 @@ class AuthController {
 
   Future<String?> login(String email, String password) async {
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      final credencial = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final user = credential.user;
-      if (user != null) {
-        final docRef = _db.collection('users').doc(user.uid);
+      final usuario = credencial.user;
+      if (usuario != null) {
+        final docRef = _db.collection('users').doc(usuario.uid);
         final doc = await docRef.get();
-        final data = doc.data();
+        final dados = doc.data();
 
-        final storedName =
-            (data?['name'] ?? data?['userName'] ?? '').toString().trim();
-        final authName = user.displayName?.trim() ?? '';
-        final normalizedName = storedName.isNotEmpty ? storedName : authName;
+        // Sincroniza o nome entre Firestore e Firebase Auth
+        final nomeArmazenado =
+            (dados?['name'] ?? dados?['userName'] ?? '').toString().trim();
+        final nomeAuth = usuario.displayName?.trim() ?? '';
+        final nomeNormalizado =
+            nomeArmazenado.isNotEmpty ? nomeArmazenado : nomeAuth;
 
         await docRef.set({
-          'uid': user.uid,
-          'name': normalizedName,
-          'userName': normalizedName,
-          'email': user.email?.trim() ?? '',
+          'uid': usuario.uid,
+          'name': nomeNormalizado,
+          'userName': nomeNormalizado,
+          'email': usuario.email?.trim() ?? '',
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       }

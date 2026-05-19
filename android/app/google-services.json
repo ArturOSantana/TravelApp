@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "660606500922",
     "project_id": "travel-app-tcc",
-    "storage_bucket": "travel-app-tcc.firebasestorage.app"
+    "storage_bucket": "travel-app-tcc.appspot.com"
   },
   "client": [
     {

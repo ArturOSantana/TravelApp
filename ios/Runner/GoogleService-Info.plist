@@ -13,17 +13,17 @@
 	<key>PROJECT_ID</key>
 	<string>travel-app-tcc</string>
 	<key>STORAGE_BUCKET</key>
-	<string>travel-app-tcc.firebasestorage.app</string>
+	<string>travel-app-tcc.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_ANALYTICS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_APPINVITE_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_GCM_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_SIGNIN_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:660606500922:ios:b2a4d3d8934ba63f34f503</string>
 </dict>

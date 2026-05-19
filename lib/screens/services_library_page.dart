@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -221,8 +222,11 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
               ClipRRect(
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.network(post.photos.first,
-                    height: 180, width: double.infinity, fit: BoxFit.cover),
+                child: _buildPostImage(
+                  post.photos.first,
+                  height: 180,
+                  width: double.infinity,
+                ),
               ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -339,9 +343,12 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
                               itemBuilder: (context, i) => Padding(
                                 padding: const EdgeInsets.only(right: 10),
                                 child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(15),
-                                    child: Image.network(post.photos[i],
-                                        width: 280, fit: BoxFit.cover)),
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: _buildPostImage(
+                                    post.photos[i],
+                                    width: 280,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -479,4 +486,37 @@ class _ServicesLibraryPageState extends State<ServicesLibraryPage>
     );
     if (confirm == true) await _controller.deleteService(post.id, post.ownerId);
   }
+
+  Widget _buildPostImage(
+    String photoData, {
+    double? height,
+    double? width,
+  }) {
+    final bool isBase64 = !photoData.startsWith('http');
+
+    return isBase64
+        ? Image.memory(
+            base64Decode(photoData),
+            height: height,
+            width: width,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                _errorImage(height: height, width: width),
+          )
+        : Image.network(
+            photoData,
+            height: height,
+            width: width,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                _errorImage(height: height, width: width),
+          );
+  }
+
+  Widget _errorImage({double? height, double? width}) => Container(
+        height: height,
+        width: width,
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+      );
 }

@@ -28,21 +28,23 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Inicializa o gerenciador de memória para otimizar dispositivos antigos
+  // Inicializa o gerenciador de memória
+  // Detecta automaticamente dispositivos antigos e ajusta configurações
   await MemoryManagerService().initialize();
 
   if (!kIsWeb) {
-    // Configurações otimizadas do Firestore baseadas no dispositivo
-    final memoryManager = MemoryManagerService();
-    final settings = memoryManager.getOptimizedSettings();
+    // Configura o Firestore com cache otimizado para o dispositivo
+    final gerenciadorMemoria = MemoryManagerService();
+    final configuracoes = gerenciadorMemoria.getOptimizedSettings();
 
-    // Cache do Firestore deve estar entre 1MB (1048576) e 100MB (104857600)
-    final cacheSize = settings['cacheSize'] as int;
-    final validCacheSize = cacheSize.clamp(1048576, 104857600);
+    // Firebase exige cache entre 1MB e 100MB
+    // Dispositivos antigos recebem valores menores automaticamente
+    final tamanhoCache = configuracoes['cacheSize'] as int;
+    final tamanhoCacheValido = tamanhoCache.clamp(1048576, 104857600);
 
     FirebaseFirestore.instance.settings = Settings(
       persistenceEnabled: true,
-      cacheSizeBytes: validCacheSize,
+      cacheSizeBytes: tamanhoCacheValido,
     );
   }
 
@@ -158,20 +160,18 @@ class _AppInitializerState extends State<AppInitializer> {
           );
         }
 
-        final bool onboardingCompleted = CacheService.isOnboardingCompleted();
+        final bool onboardingConcluido = CacheService.isOnboardingCompleted();
 
-        // 1. Se não terminou onboarding, manda pra lá
-        if (!onboardingCompleted) {
+        // Fluxo de navegação inicial do app
+        if (!onboardingConcluido) {
           return const OnboardingPage();
         }
 
-        // 2. Se tem usuário logado, solicita permissão e manda pra Home
         if (snapshot.hasData && snapshot.data != null) {
           _requestLocationPermission();
           return const DashboardPage();
         }
 
-        // 3. Caso contrário, LoginPage
         return const LoginPage();
       },
     );

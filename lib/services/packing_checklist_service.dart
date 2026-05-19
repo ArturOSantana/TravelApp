@@ -5,8 +5,8 @@ import '../models/packing_checklist.dart';
 
 class PackingChecklistService {
   PackingChecklistService({FirebaseFirestore? firestore, FirebaseAuth? auth})
-    : _db = firestore ?? FirebaseFirestore.instance,
-      _auth = auth ?? FirebaseAuth.instance;
+      : _db = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFirestore _db;
   final FirebaseAuth _auth;
@@ -90,24 +90,27 @@ class PackingChecklistService {
       throw Exception('Usuário não autenticado.');
     }
 
-    final existingSnapshot = await _collection
-        .where('tripId', isEqualTo: tripId)
-        .get();
+    // Busca itens já existentes para evitar duplicatas
+    final itensExistentes =
+        await _collection.where('tripId', isEqualTo: tripId).get();
 
-    final existingKeys = existingSnapshot.docs.map((doc) {
-      final data = doc.data();
-      return '${(data['name'] ?? '').toString().trim().toLowerCase()}|${(data['category'] ?? '').toString().trim().toLowerCase()}';
+    // Cria chave única no formato "nome|categoria" para detectar duplicatas
+    final chavesExistentes = itensExistentes.docs.map((doc) {
+      final dados = doc.data();
+      return '${(dados['name'] ?? '').toString().trim().toLowerCase()}|${(dados['category'] ?? '').toString().trim().toLowerCase()}';
     }).toSet();
 
+    // Usa batch para adicionar múltiplos itens de uma vez (mais eficiente)
     final batch = _db.batch();
-    var addedCount = 0;
+    var quantidadeAdicionada = 0;
 
     for (final item in items) {
-      final name = (item['name'] ?? '').trim();
-      final category = (item['category'] ?? 'Outros').trim();
-      final key = '${name.toLowerCase()}|${category.toLowerCase()}';
+      final nome = (item['name'] ?? '').trim();
+      final categoria = (item['category'] ?? 'Outros').trim();
+      final chaveUnica = '${nome.toLowerCase()}|${categoria.toLowerCase()}';
 
-      if (name.isEmpty || existingKeys.contains(key)) {
+      // Pula se o nome estiver vazio ou se já existir
+      if (nome.isEmpty || chavesExistentes.contains(chaveUnica)) {
         continue;
       }
 
@@ -115,8 +118,8 @@ class PackingChecklistService {
       batch.set(docRef, {
         'tripId': tripId,
         'createdBy': userId,
-        'name': name,
-        'category': category,
+        'name': nome,
+        'category': categoria,
         'quantity': 1,
         'isChecked': false,
         'notes': null,
@@ -124,15 +127,15 @@ class PackingChecklistService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      existingKeys.add(key);
-      addedCount++;
+      chavesExistentes.add(chaveUnica);
+      quantidadeAdicionada++;
     }
 
-    if (addedCount > 0) {
+    if (quantidadeAdicionada > 0) {
       await batch.commit();
     }
 
-    return addedCount;
+    return quantidadeAdicionada;
   }
 
   Future<void> toggleItem({
@@ -165,4 +168,3 @@ class PackingChecklistService {
     await _collection.doc(itemId).delete();
   }
 }
-

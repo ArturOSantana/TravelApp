@@ -32,7 +32,7 @@ class DefaultFirebaseOptions {
     appId: '1:660606500922:ios:b2a4d3d8934ba63f34f503',
     messagingSenderId: '660606500922',
     projectId: 'travel-app-tcc',
-    storageBucket: 'travel-app-tcc.firebasestorage.app',
+    storageBucket: 'travel-app-tcc.appspot.com',
     iosBundleId: 'com.example.travelApp',
   );
 
@@ -41,7 +41,7 @@ class DefaultFirebaseOptions {
     appId: '1:660606500922:ios:b2a4d3d8934ba63f34f503',
     messagingSenderId: '660606500922',
     projectId: 'travel-app-tcc',
-    storageBucket: 'travel-app-tcc.firebasestorage.app',
+    storageBucket: 'travel-app-tcc.appspot.com',
     iosBundleId: 'com.example.travelApp',
   );
 
@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '660606500922',
     projectId: 'travel-app-tcc',
     authDomain: 'travel-app-tcc.firebaseapp.com',
-    storageBucket: 'travel-app-tcc.firebasestorage.app',
+    storageBucket: 'travel-app-tcc.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -59,6 +59,6 @@ class DefaultFirebaseOptions {
     appId: '1:660606500922:android:7a5e698da565dc9a34f503',
     messagingSenderId: '660606500922',
     projectId: 'travel-app-tcc',
-    storageBucket: 'travel-app-tcc.firebasestorage.app',
+    storageBucket: 'travel-app-tcc.appspot.com',
   );
 }

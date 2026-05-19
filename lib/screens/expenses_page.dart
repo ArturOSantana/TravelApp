@@ -112,19 +112,28 @@ class _ExpensesPageState extends State<ExpensesPage> {
       builder: (context, snapshot) {
         if (!snapshot.hasData)
           return const Center(child: CircularProgressIndicator());
-        final expenses =
+
+        // Filtra pagamentos internos (divisão entre membros)
+        final despesas =
             snapshot.data!.where((e) => e.category != 'payment').toList();
-        double totalSpent =
-            expenses.fold(0, (acc, e) => acc + (e.value * _exchangeRate));
-        double progress =
-            trip.budget > 0 ? (totalSpent / trip.budget).clamp(0.0, 1.0) : 0;
+
+        // Calcula total gasto considerando taxa de câmbio
+        double totalGasto = despesas.fold(
+            0,
+            (acumulado, despesa) =>
+                acumulado + (despesa.value * _exchangeRate));
+
+        // Progresso do orçamento (0 a 100%)
+        // LEMBRAR: Clampar entre 0 e 1 para não estourar a barra
+        double progresso =
+            trip.budget > 0 ? (totalGasto / trip.budget).clamp(0.0, 1.0) : 0;
 
         return Column(
           children: [
             Semantics(
               label:
-                  "Resumo financeiro. Total gasto: R\$ ${totalSpent.toStringAsFixed(2)}. Orçamento total: R\$ ${trip.budget.toStringAsFixed(2)}",
-              child: _buildBudgetHeader(totalSpent, trip.budget, progress),
+                  "Resumo financeiro. Total gasto: R\$ ${totalGasto.toStringAsFixed(2)}. Orçamento total: R\$ ${trip.budget.toStringAsFixed(2)}",
+              child: _buildBudgetHeader(totalGasto, trip.budget, progresso),
             ),
             Expanded(
               child: ListView.builder(
@@ -140,7 +149,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
     );
   }
 
-  Widget _buildBudgetHeader(double spent, double budget, double progress) {
+  Widget _buildBudgetHeader(double gasto, double orcamento, double progresso) {
+    // Calcula quanto ainda tem disponível
+    final disponivel = orcamento - gasto;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -160,7 +172,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       style: TextStyle(
                           color: AppColors.textOnPrimary.withOpacity(0.7),
                           fontSize: 14)),
-                  Text("R\$ ${spent.toStringAsFixed(2)}",
+                  Text("R\$ ${gasto.toStringAsFixed(2)}",
                       style: const TextStyle(
                           color: AppColors.textOnPrimary,
                           fontSize: 24,
@@ -174,7 +186,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       style: TextStyle(
                           color: AppColors.textOnPrimary.withOpacity(0.7),
                           fontSize: 14)),
-                  Text("R\$ ${(budget - spent).toStringAsFixed(2)}",
+                  // ATENÇÃO: Pode ficar negativo se estourar o orçamento!
+                  Text("R\$ ${disponivel.toStringAsFixed(2)}",
                       style: const TextStyle(
                           color: AppColors.textOnPrimary,
                           fontSize: 20,
@@ -184,8 +197,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
             ],
           ),
           const SizedBox(height: 20),
+          // Barra de progresso do orçamento
           LinearProgressIndicator(
-              value: progress,
+              value: progresso,
               backgroundColor: AppColors.textOnPrimary.withOpacity(0.24),
               color: AppColors.textOnPrimary,
               minHeight: 8),

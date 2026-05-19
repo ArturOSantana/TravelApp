@@ -4,7 +4,7 @@ import '../services/packing_checklist_service.dart';
 
 class PackingChecklistController {
   PackingChecklistController({PackingChecklistService? service})
-    : _service = service ?? PackingChecklistService();
+      : _service = service ?? PackingChecklistService();
 
   final PackingChecklistService _service;
 
@@ -28,7 +28,7 @@ class PackingChecklistController {
       final activityCategories = snapshot.docs
           .map((doc) => _capitalize(doc.data()['category'] ?? 'Geral'))
           .toSet();
-      
+
       final allCategories = {...defaultCategories, ...activityCategories};
       return ['Todos', ...allCategories.toList()..sort()];
     });
@@ -44,9 +44,7 @@ class PackingChecklistController {
     required bool showOnlyPriority,
     required String searchQuery,
   }) {
-    return _service
-        .watchItems(tripId)
-        .map(
+    return _service.watchItems(tripId).map(
           (items) => buildViewData(
             items: items,
             selectedCategory: selectedCategory,
@@ -77,9 +75,8 @@ class PackingChecklistController {
     final checkedCount = items.where((item) => item.isChecked).length;
     final pendingCount = totalCount - checkedCount;
     final priorityCount = items.where(isPriority).length;
-    final pendingPriorityCount = items
-        .where((item) => isPriority(item) && !item.isChecked)
-        .length;
+    final pendingPriorityCount =
+        items.where((item) => isPriority(item) && !item.isChecked).length;
     final progress = totalCount == 0 ? 0.0 : checkedCount / totalCount;
     final categoriesCount = groupByCategory(items).length;
 
@@ -104,50 +101,56 @@ class PackingChecklistController {
     required bool showOnlyPriority,
     required String searchQuery,
   }) {
-    var filtered = List<PackingItem>.from(items);
-    final normalizedQuery = searchQuery.toLowerCase().trim();
+    var filtrados = List<PackingItem>.from(items);
+    final buscaNormalizada = searchQuery.toLowerCase().trim();
 
+    // Filtra por categoria selecionada
     if (selectedCategory != 'Todos') {
-      filtered = filtered
-          .where((item) => item.category.toLowerCase() == selectedCategory.toLowerCase())
+      filtrados = filtrados
+          .where((item) =>
+              item.category.toLowerCase() == selectedCategory.toLowerCase())
           .toList();
     }
 
-    if (normalizedQuery.isNotEmpty) {
-      filtered = filtered.where((item) {
-        final name = item.name.toLowerCase();
-        final notes = (item.notes ?? '').toLowerCase();
-        final category = item.category.toLowerCase();
+    // Busca por nome, notas ou categoria
+    if (buscaNormalizada.isNotEmpty) {
+      filtrados = filtrados.where((item) {
+        final nome = item.name.toLowerCase();
+        final notas = (item.notes ?? '').toLowerCase();
+        final categoria = item.category.toLowerCase();
 
-        return name.contains(normalizedQuery) ||
-            notes.contains(normalizedQuery) ||
-            category.contains(normalizedQuery);
+        return nome.contains(buscaNormalizada) ||
+            notas.contains(buscaNormalizada) ||
+            categoria.contains(buscaNormalizada);
       }).toList();
     }
 
+    // Mostra apenas itens pendentes (não marcados)
     if (showOnlyPending) {
-      filtered = filtered.where((item) => !item.isChecked).toList();
+      filtrados = filtrados.where((item) => !item.isChecked).toList();
     }
 
+    // Mostra apenas itens prioritários
     if (showOnlyPriority) {
-      filtered = filtered.where(isPriority).toList();
+      filtrados = filtrados.where(isPriority).toList();
     }
 
-    filtered.sort((a, b) {
+    // Ordenação: não marcados primeiro, depois prioridade, depois data de criação
+    filtrados.sort((a, b) {
       if (a.isChecked != b.isChecked) {
         return a.isChecked ? 1 : -1;
       }
 
-      final aPriority = isPriority(a);
-      final bPriority = isPriority(b);
-      if (aPriority != bPriority) {
-        return aPriority ? -1 : 1;
+      final aPrioridade = isPriority(a);
+      final bPrioridade = isPriority(b);
+      if (aPrioridade != bPrioridade) {
+        return aPrioridade ? -1 : 1;
       }
 
       return a.createdAt.compareTo(b.createdAt);
     });
 
-    return filtered;
+    return filtrados;
   }
 
   Map<String, List<PackingItem>> groupByCategory(List<PackingItem> items) {
