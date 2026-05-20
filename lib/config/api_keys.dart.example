@@ -1,14 +1,79 @@
 
+/// ⚠️ IMPORTANTE - SEGURANÇA DE API KEYS ⚠️
+///
+/// NUNCA commite este arquivo com suas keys reais!
+///
+/// CONFIGURAÇÃO RECOMENDADA:
+/// 1. Copie este arquivo para 'api_keys.dart'
+/// 2. Adicione 'api_keys.dart' ao .gitignore
+/// 3. Configure suas keys no arquivo copiado
+///
+/// PRODUÇÃO:
+/// Para produção, use variáveis de ambiente com flutter_dotenv:
+/// 1. Adicione flutter_dotenv ao pubspec.yaml
+/// 2. Crie arquivo .env na raiz do projeto
+/// 3. Adicione .env ao .gitignore
+/// 4. Use: String.fromEnvironment('API_KEY') ou dotenv.env['API_KEY']
+///
 /// COMO OBTER AS KEYS:
-- OpenTripMap: https://opentripmap.io/product
-- Geoapify: https://www.geoapify.com/get-started-with-maps-api
+/// - OpenWeatherMap: https://openweathermap.org/api
+/// - Geoapify: https://www.geoapify.com/get-started-with-maps-api
+/// - OpenTripMap: https://opentripmap.io/product (opcional)
+/// - Foursquare: https://foursquare.com/developers/apps (opcional)
+
 class ApiKeys {
-  // OpenTripMap - Pontos Turísticos
+  // ⚠️ NÃO COMMITE KEYS REAIS - Use apenas para desenvolvimento local
+  
+  /// OpenWeatherMap - Clima e Previsão do Tempo
+  /// Plano gratuito: 1000 chamadas/dia
+  static const String openWeatherMap = 'COLE_SUA_KEY_AQUI';
+  
+  /// Geoapify - Rotas, Mapas e Lugares
+  /// Plano gratuito: 3000 créditos/dia
+  static const String geoapify = 'COLE_SUA_KEY_AQUI';
+  
+  /// OpenTripMap - Pontos Turísticos (OPCIONAL)
+  /// Plano gratuito: limitado
   static const String openTripMap = 'COLE_SUA_KEY_AQUI';
   
-  // Foursquare - Restaurantes e Locais
+  /// Foursquare - Restaurantes e Locais (OPCIONAL)
+  /// Plano gratuito: limitado
   static const String foursquare = 'COLE_SUA_KEY_AQUI';
   
-  // Geoapify - Rotas e Mapas
-  static const String geoapify = 'COLE_SUA_KEY_AQUI';
+  // APIs GRATUITAS (não requerem key):
+  // - ExchangeRate API: https://api.exchangerate-api.com
+  // - REST Countries: https://restcountries.com
+  // - Nominatim (OpenStreetMap): https://nominatim.openstreetmap.org
 }
+
+/// Exemplo de uso com variáveis de ambiente (RECOMENDADO PARA PRODUÇÃO):
+///
+/// 1. Instale: flutter pub add flutter_dotenv
+///
+/// 2. Crie .env na raiz:
+/// ```
+/// OPENWEATHERMAP_API_KEY=sua_key_aqui
+/// GEOAPIFY_API_KEY=sua_key_aqui
+/// ```
+///
+/// 3. Adicione ao pubspec.yaml:
+/// ```yaml
+/// flutter:
+///   assets:
+///     - .env
+/// ```
+///
+/// 4. Carregue no main.dart:
+/// ```dart
+/// import 'package:flutter_dotenv/flutter_dotenv.dart';
+///
+/// Future<void> main() async {
+///   await dotenv.load(fileName: ".env");
+///   runApp(MyApp());
+/// }
+/// ```
+///
+/// 5. Use no código:
+/// ```dart
+/// final apiKey = dotenv.env['OPENWEATHERMAP_API_KEY'] ?? '';
+/// ```
