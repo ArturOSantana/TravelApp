@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço centralizado para gerenciar permissões do app
+/// Serviço centralizado para gerenciar permissões do aplicativo.
+///
+/// Gerencia solicitações de permissões com diálogos informativos
+/// e tratamento adequado de diferentes estados de permissão.
 class PermissionService {
-  /// Verifica e solicita permissão de localização
+  /// Verifica e solicita permissão de localização.
+  ///
+  /// Exibe diálogos informativos para o usuário e trata todos os
+  /// estados possíveis de permissão (negada, negada permanentemente, etc).
+  ///
+  /// Parameters:
+  /// - [context]: BuildContext para exibir diálogos
+  ///
+  /// Returns: `true` se a permissão foi concedida
+  ///
+  /// Throws:
+  /// - [PermissionException] se houver erro ao verificar/solicitar permissão
   static Future<bool> requestLocationPermission(BuildContext context) async {
     try {
       // Verifica se o serviço de localização está habilitado
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         final shouldOpenSettings = await _showLocationServiceDialog(context);
         if (shouldOpenSettings) {
@@ -16,8 +31,8 @@ class PermissionService {
         return false;
       }
 
-      // Verifica permissões usando geolocator
-      LocationPermission permission = await Geolocator.checkPermission();
+      // Verifica permissões
+      var permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
         final shouldRequest = await _showPermissionRationaleDialog(context);
@@ -43,20 +58,30 @@ class PermissionService {
 
       return true;
     } catch (e) {
-      print('Erro ao solicitar permissão de localização: $e');
       _showErrorSnackbar(context, 'Erro ao verificar permissões');
-      return false;
+      throw PermissionException(
+        'Erro ao solicitar permissão de localização',
+        code: 'location_permission_error',
+      );
     }
   }
 
+  /// Verifica se o app possui permissão de localização.
+  ///
+  /// Returns: `true` se possui permissão (always ou whileInUse)
+  ///
+  /// Throws:
+  /// - [PermissionException] se houver erro ao verificar
   static Future<bool> hasLocationPermission() async {
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
+      final permission = await Geolocator.checkPermission();
       return permission == LocationPermission.always ||
           permission == LocationPermission.whileInUse;
     } catch (e) {
-      print('Erro ao verificar permissão: $e');
-      return false;
+      throw PermissionException(
+        'Erro ao verificar permissão de localização',
+        code: 'check_permission_error',
+      );
     }
   }
 

@@ -9,6 +9,14 @@ import '../models/trip.dart';
 import '../models/expense.dart';
 import 'analytics_service.dart';
 
+/// Serviço de exportação de relatórios em PDF.
+///
+/// Gera relatórios completos de viagens com:
+/// - Resumo financeiro e estatísticas
+/// - Gráficos de categorias e evolução temporal
+/// - Detalhamento de despesas
+/// - Divisão de gastos por pessoa (viagens em grupo)
+/// - Recomendações inteligentes
 class PdfExportService {
   static final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'pt_BR',
@@ -16,7 +24,18 @@ class PdfExportService {
     decimalDigits: 2,
   );
 
-  // rela pdf
+  /// Exporta relatório completo da viagem em PDF.
+  ///
+  /// Gera um PDF de múltiplas páginas com análise completa dos gastos.
+  ///
+  /// Parameters:
+  /// - [trip]: Dados da viagem
+  /// - [expenses]: Lista de despesas da viagem
+  ///
+  /// Returns: File com o PDF gerado
+  ///
+  /// Throws:
+  /// - [FileSystemException] se houver erro ao salvar o arquivo
   static Future<File> exportTripReport({
     required Trip trip,
     required List<Expense> expenses,
@@ -47,8 +66,7 @@ class PdfExportService {
                 (spendingByPerson[personId] ?? 0) + amount;
           });
         } else {
-          final perPerson = expense.value /
-              (trip.members.length + 1); // +1 
+          final perPerson = expense.value / (trip.members.length + 1); // +1
           spendingByPerson[expense.payerId] =
               (spendingByPerson[expense.payerId] ?? 0) + perPerson;
         }
@@ -143,7 +161,7 @@ class PdfExportService {
 
               pw.SizedBox(height: 30),
 
-              // Gráfico dpiza 
+              // Gráfico dpiza
               pw.Text(
                 'Despesas por Categoria',
                 style: pw.TextStyle(

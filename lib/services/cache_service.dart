@@ -1,34 +1,75 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
+import '../core/exceptions/app_exceptions.dart';
 
+/// Serviço de cache local usando SharedPreferences.
+///
+/// Fornece armazenamento persistente com suporte a:
+/// - Expiração automática de dados
+/// - Limite de tamanho do cache
+/// - Limpeza periódica
+/// - Múltiplos tipos de dados
 class CacheService {
   static SharedPreferences? _prefs;
   static Timer? _cleanupTimer;
-  static const int _maxCacheSize = 50; // Máximo de 50 entradas no cache
 
+  // Configurações
+  static const int _maxCacheSize = 50;
+  static const Duration _cleanupInterval = Duration(hours: 6);
+  static const int _batchRemoveSize = 10;
+
+  /// Inicializa o serviço de cache.
+  ///
+  /// Deve ser chamado antes de usar qualquer outro método.
+  /// Configura limpeza automática periódica.
+  ///
+  /// Throws:
+  /// - [CacheException] se houver erro na inicialização
   static Future<void> initialize() async {
-    _prefs = await SharedPreferences.getInstance();
-    print('[CACHE] Cache Service inicializado');
+    try {
+      _prefs = await SharedPreferences.getInstance();
+      await _cleanExpiredCache();
 
-    // Limpa cache expirado na inicialização
-    await _cleanExpiredCache();
-
-    // Configura limpeza periódica (a cada 6 horas)
-    _cleanupTimer = Timer.periodic(const Duration(hours: 6), (_) {
-      _cleanExpiredCache();
-    });
+      _cleanupTimer?.cancel();
+      _cleanupTimer = Timer.periodic(_cleanupInterval, (_) {
+        _cleanExpiredCache();
+      });
+    } catch (e) {
+      throw CacheException(
+        'Erro ao inicializar cache',
+        code: 'initialization_failed',
+        originalError: e,
+      );
+    }
   }
 
-  static Future<bool> saveData(String key, dynamic data,
-      {Duration? expiration}) async {
+  /// Salva dados no cache com expiração opcional.
+  ///
+  /// Suporta: String, int, double, bool, List<String> e objetos JSON.
+  ///
+  /// Parameters:
+  /// - [key]: Chave única para o dado (não pode estar vazia)
+  /// - [data]: Dado a ser salvo
+  /// - [expiration]: Duração até expiração (opcional)
+  ///
+  /// Returns: `true` se salvou com sucesso
+  ///
+  /// Throws:
+  /// - [ValidationException] se a chave for inválida
+  /// - [CacheException] se houver erro ao salvar
+  static Future<bool> saveData(
+    String key,
+    dynamic data, {
+    Duration? expiration,
+  }) async {
+    _validateKey(key);
+
     try {
       if (_prefs == null) await initialize();
 
-      // Verifica limite de cache
       await _checkCacheLimit();
 
-      // Salva timestamp de expiração
       if (expiration != null) {
         final expiryTime =
             DateTime.now().add(expiration).millisecondsSinceEpoch;
@@ -49,131 +90,228 @@ class CacheService {
         final jsonString = json.encode(data);
         return await _prefs!.setString(key, jsonString);
       }
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      print('[ERROR] Erro ao salvar cache: $e');
-      return false;
+      throw CacheException(
+        'Erro ao salvar no cache',
+        code: 'save_failed',
+        originalError: e,
+      );
     }
   }
 
+  /// Recupera dados do cache.
+  ///
+  /// Remove automaticamente se expirado.
+  ///
+  /// Parameters:
+  /// - [key]: Chave do dado
+  /// - [defaultValue]: Valor padrão se não encontrado
+  ///
+  /// Returns: Dado armazenado ou defaultValue
+  ///
+  /// Throws:
+  /// - [ValidationException] se a chave for inválida
   static dynamic getData(String key, {dynamic defaultValue}) {
+    _validateKey(key);
+
     try {
       if (_prefs == null) return defaultValue;
 
-      // Verifica se o cache expirou
       if (_isExpired(key)) {
         removeKey(key);
         return defaultValue;
       }
 
       return _prefs!.get(key) ?? defaultValue;
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      print('[ERROR] Erro ao recuperar cache: $e');
-      return defaultValue;
+      throw CacheException(
+        'Erro ao recuperar do cache',
+        code: 'get_failed',
+        originalError: e,
+      );
     }
   }
 
+  /// Recupera dados JSON do cache.
+  ///
+  /// Parameters:
+  /// - [key]: Chave do dado JSON
+  ///
+  /// Returns: Map com dados ou null se não encontrado
+  ///
+  /// Throws:
+  /// - [ValidationException] se a chave for inválida
+  /// - [CacheException] se houver erro ao decodificar JSON
   static Map<String, dynamic>? getJsonData(String key) {
+    _validateKey(key);
+
     try {
       if (_prefs == null) return null;
+
       final jsonString = _prefs!.getString(key);
       if (jsonString == null) return null;
+
       return json.decode(jsonString) as Map<String, dynamic>;
+    } on ValidationException {
+      rethrow;
+    } on FormatException catch (e) {
+      throw CacheException(
+        'JSON inválido no cache',
+        code: 'invalid_json',
+        originalError: e,
+      );
     } catch (e) {
-      print('[ERROR] Erro ao recuperar JSON do cache: $e');
-      return null;
+      throw CacheException(
+        'Erro ao recuperar JSON do cache',
+        code: 'get_json_failed',
+        originalError: e,
+      );
     }
   }
 
+  /// Verifica se uma chave existe no cache.
+  ///
+  /// Parameters:
+  /// - [key]: Chave a verificar
+  ///
+  /// Returns: `true` se existe
+  ///
+  /// Throws:
+  /// - [ValidationException] se a chave for inválida
   static bool hasKey(String key) {
+    _validateKey(key);
+
     if (_prefs == null) return false;
     return _prefs!.containsKey(key);
   }
 
+  /// Remove uma chave do cache.
+  ///
+  /// Parameters:
+  /// - [key]: Chave a remover
+  ///
+  /// Returns: `true` se removeu com sucesso
+  ///
+  /// Throws:
+  /// - [ValidationException] se a chave for inválida
+  /// - [CacheException] se houver erro ao remover
   static Future<bool> removeKey(String key) async {
+    _validateKey(key);
+
     try {
       if (_prefs == null) await initialize();
+
+      await _prefs!.remove('${key}_expiry');
       return await _prefs!.remove(key);
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      print('[ERROR] Erro ao remover chave do cache: $e');
-      return false;
+      throw CacheException(
+        'Erro ao remover do cache',
+        code: 'remove_failed',
+        originalError: e,
+      );
     }
   }
 
+  /// Limpa todo o cache.
+  ///
+  /// Returns: `true` se limpou com sucesso
+  ///
+  /// Throws:
+  /// - [CacheException] se houver erro ao limpar
   static Future<bool> clearAll() async {
     try {
       if (_prefs == null) await initialize();
       return await _prefs!.clear();
     } catch (e) {
-      print('[ERROR] Erro ao limpar cache: $e');
-      return false;
+      throw CacheException(
+        'Erro ao limpar cache',
+        code: 'clear_failed',
+        originalError: e,
+      );
     }
   }
 
+  // ==================== MÉTODOS DE CONVENIÊNCIA ====================
+
+  /// Verifica se o onboarding foi concluído.
   static bool isOnboardingCompleted() {
     return getData('onboarding_completed', defaultValue: false) as bool;
   }
 
+  /// Marca o onboarding como concluído.
   static Future<bool> setOnboardingCompleted() {
     return saveData('onboarding_completed', true);
   }
 
+  /// Salva dados do usuário no cache.
   static Future<bool> cacheUserData(Map<String, dynamic> userData) {
     return saveData('user_data', userData);
   }
 
+  /// Recupera dados do usuário do cache.
   static Map<String, dynamic>? getCachedUserData() {
     return getJsonData('user_data');
   }
 
+  /// Salva timestamp da última sincronização.
   static Future<bool> saveLastSync() {
     return saveData('last_sync', DateTime.now().toIso8601String());
   }
 
+  /// Recupera timestamp da última sincronização.
   static DateTime? getLastSync() {
     final syncString = getData('last_sync') as String?;
     if (syncString == null) return null;
     return DateTime.tryParse(syncString);
   }
 
+  /// Verifica se precisa sincronizar (última sync há mais de 1 hora).
   static bool needsSync() {
     final lastSync = getLastSync();
     if (lastSync == null) return true;
     return DateTime.now().difference(lastSync).inHours >= 1;
   }
 
-  /// Verifica se uma chave expirou
+  // ==================== MÉTODOS AUXILIARES ====================
+
+  /// Verifica se uma chave expirou.
   static bool _isExpired(String key) {
     final expiryTime = _prefs?.getInt('${key}_expiry');
     if (expiryTime == null) return false;
     return DateTime.now().millisecondsSinceEpoch > expiryTime;
   }
 
-  /// Limpa cache expirado
+  /// Limpa cache expirado.
   static Future<void> _cleanExpiredCache() async {
     try {
       if (_prefs == null) return;
 
       final keys = _prefs!.getKeys();
-      int cleaned = 0;
+      var cleaned = 0;
 
       for (final key in keys) {
         if (key.endsWith('_expiry')) continue;
         if (_isExpired(key)) {
           await removeKey(key);
-          await removeKey('${key}_expiry');
           cleaned++;
         }
       }
-
-      if (cleaned > 0) {
-        print('[CACHE] $cleaned entradas expiradas removidas');
-      }
     } catch (e) {
-      print('[ERROR] Erro ao limpar cache expirado: $e');
+      throw CacheException(
+        'Erro ao limpar cache expirado',
+        code: 'cleanup_failed',
+        originalError: e,
+      );
     }
   }
 
-  /// Verifica e limita o tamanho do cache
+  /// Verifica e limita o tamanho do cache.
   static Future<void> _checkCacheLimit() async {
     try {
       if (_prefs == null) return;
@@ -182,21 +320,23 @@ class CacheService {
           _prefs!.getKeys().where((k) => !k.endsWith('_expiry')).toList();
 
       if (keys.length >= _maxCacheSize) {
-        // Remove as entradas mais antigas (primeiras 10)
-        final keysToRemove = keys.take(10).toList();
+        final keysToRemove = keys.take(_batchRemoveSize).toList();
         for (final key in keysToRemove) {
           await removeKey(key);
-          await removeKey('${key}_expiry');
         }
-        print(
-            '[CACHE] Cache limitado: ${keysToRemove.length} entradas removidas');
       }
     } catch (e) {
-      print('[ERROR] Erro ao verificar limite de cache: $e');
+      throw CacheException(
+        'Erro ao verificar limite de cache',
+        code: 'limit_check_failed',
+        originalError: e,
+      );
     }
   }
 
-  /// Obtém estatísticas do cache
+  /// Obtém estatísticas do cache.
+  ///
+  /// Returns: Map com informações sobre o cache
   static Map<String, dynamic> getCacheStats() {
     if (_prefs == null) return {};
 
@@ -209,12 +349,34 @@ class CacheService {
       'expiredEntries': expiredCount,
       'activeEntries': dataKeys.length - expiredCount,
       'maxSize': _maxCacheSize,
+      'usagePercent': (_maxCacheSize > 0)
+          ? ((dataKeys.length / _maxCacheSize) * 100).toStringAsFixed(1)
+          : '0.0',
     };
   }
 
-  /// Libera recursos
+  /// Libera recursos do serviço.
   static void dispose() {
     _cleanupTimer?.cancel();
     _cleanupTimer = null;
   }
+
+  // ==================== VALIDAÇÕES ====================
+
+  static void _validateKey(String key) {
+    if (key.trim().isEmpty) {
+      throw ValidationException('Chave do cache não pode estar vazia');
+    }
+    if (key.length > 255) {
+      throw ValidationException(
+          'Chave do cache muito longa (máx. 255 caracteres)');
+    }
+    if (key.contains(RegExp(r'[^\w\-_.]'))) {
+      throw ValidationException(
+        'Chave do cache contém caracteres inválidos (use apenas letras, números, -, _ e .)',
+      );
+    }
+  }
 }
+
+// Made with Bob
