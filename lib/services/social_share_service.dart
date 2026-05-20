@@ -5,9 +5,31 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
+import '../core/exceptions/app_exceptions.dart';
 import '../models/trip.dart';
 
+/// Serviço de compartilhamento social de viagens.
+///
+/// Gera cards visuais personalizados para compartilhamento em redes sociais
+/// com informações da viagem, estatísticas e design atrativo.
 class SocialShareService {
+  /// Compartilha um card visual da viagem.
+  ///
+  /// Gera uma imagem de alta qualidade (1080x1920) com:
+  /// - Destino da viagem
+  /// - Duração, fotos e gastos
+  /// - Design gradiente personalizado
+  /// - Marca d'água do app
+  ///
+  /// Parameters:
+  /// - [context]: BuildContext necessário para renderização
+  /// - [trip]: Dados da viagem
+  /// - [photosCount]: Quantidade de fotos da viagem
+  /// - [totalSpent]: Total gasto na viagem
+  ///
+  /// Throws:
+  /// - [ValidationException] se os parâmetros forem inválidos
+  /// - [GenericException] se houver erro ao gerar/compartilhar
   static Future<void> shareTripCard({
     required BuildContext context,
     required Trip trip,
@@ -22,7 +44,6 @@ class SocialShareService {
       );
 
       final image = await _widgetToImage(widget);
-
       final file = await _saveImage(image, trip.destination);
 
       await Share.shareXFiles(
@@ -30,8 +51,10 @@ class SocialShareService {
         text: 'Minha viagem para ${trip.destination}! #TravelApp #Viagem',
       );
     } catch (e) {
-      print('Erro ao compartilhar: $e');
-      rethrow;
+      throw GenericException(
+        'Erro ao compartilhar card da viagem',
+        code: 'share_failed',
+      );
     }
   }
 

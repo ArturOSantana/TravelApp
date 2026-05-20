@@ -1,9 +1,26 @@
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
+import '../core/exceptions/app_exceptions.dart';
 import '../models/activity.dart';
 
+/// Serviço de integração com aplicativos externos.
+///
+/// Fornece métodos para abrir apps de mapas, calendário e compartilhamento,
+/// com fallbacks automáticos para web quando o app não está instalado.
 class ExternalAppsService {
-  //google maps
+  /// Abre localização no app de mapas (Google Maps, Apple Maps ou Waze).
+  ///
+  /// Tenta abrir no app nativo primeiro, com fallback para versão web.
+  ///
+  /// Parameters:
+  /// - [latitude]: Latitude da localização
+  /// - [longitude]: Longitude da localização
+  /// - [label]: Rótulo opcional para o local
+  ///
+  /// Returns: `true` se abriu com sucesso
+  ///
+  /// Throws:
+  /// - [ValidationException] se coordenadas forem inválidas
   static Future<bool> openInMaps({
     required double latitude,
     required double longitude,
@@ -54,8 +71,7 @@ class ExternalAppsService {
   static Future<bool> addToCalendar(Activity activity) async {
     try {
       final startDate = activity.time;
-      final endDate =
-          startDate.add(const Duration(hours: 1)); 
+      final endDate = startDate.add(const Duration(hours: 1));
 
       final startStr = _formatDateForCalendar(startDate);
       final endStr = _formatDateForCalendar(endDate);
@@ -64,7 +80,6 @@ class ExternalAppsService {
           ? 'Local: ${activity.location}'
           : 'Atividade da viagem';
 
-    
       final calendarUrl = Uri.parse(
         'https://calendar.google.com/calendar/render?action=TEMPLATE'
         '&text=${Uri.encodeComponent(activity.title)}'
@@ -96,7 +111,6 @@ class ExternalAppsService {
         'Z';
   }
 
- 
   static Future<bool> openInWaze({
     required double latitude,
     required double longitude,
@@ -120,7 +134,6 @@ class ExternalAppsService {
     }
   }
 
-  
   static Future<bool> shareLocation({
     required double latitude,
     required double longitude,
@@ -139,4 +152,3 @@ class ExternalAppsService {
     }
   }
 }
-
