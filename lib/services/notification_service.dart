@@ -2,83 +2,354 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'dart:io';
+import '../core/exceptions/app_exceptions.dart';
 
+/// Serviço de notificações locais
+///
+/// Responsabilidades:
+/// - Inicialização do sistema de notificações
+/// - Agendamento de notificações
+/// - Cancelamento de notificações
+/// - Gerenciamento de permissões
+///
+/// Usa: flutter_local_notifications
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
+  static bool _isInitialized = false;
+
+  // Constantes de validação
+  static const int _minNotificationId = 0;
+  static const int _maxNotificationId = 2147483647; // Max int32
+  static const int _minTitleLength = 1;
+  static const int _maxTitleLength = 65;
+  static const int _minBodyLength = 1;
+  static const int _maxBodyLength = 240;
+
+  /// Inicializa o serviço de notificações
+  ///
+  /// Deve ser chamado uma vez no início do app
+  ///
+  /// Lança:
+  /// - [GenericException]: Se falhar ao inicializar
   static Future<void> init() async {
-    tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
+    if (_isInitialized) {
+      return; // Já inicializado
+    }
 
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    try {
+      // Inicializar timezones
+      tz_data.initializeTimeZones();
+      tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
 
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+      const DarwinInitializationSettings initializationSettingsIOS =
+          DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    // Inicializa o sistema de notificações locais
-    // A partir da versão 21 do plugin, o parâmetro mudou para 'settings'
-    await _notifications.initialize(
-      settings: initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse resposta) {
-        // Aqui podemos adicionar navegação quando o usuário clicar na notificação
-        // Por exemplo: abrir a tela da atividade específica
-      },
-    );
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+      );
 
-    if (Platform.isAndroid) {
-      final androidPlugin =
-          _notifications.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.requestNotificationsPermission();
-      await androidPlugin?.requestExactAlarmsPermission();
+      // Inicializa o sistema de notificações locais
+      await _notifications.initialize(
+        settings: initializationSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
+
+      // Solicitar permissões no Android
+      if (Platform.isAndroid) {
+        await _requestAndroidPermissions();
+      }
+
+      _isInitialized = true;
+    } catch (e) {
+      throw GenericException(
+        'Falha ao inicializar serviço de notificações',
+        originalError: e,
+      );
     }
   }
 
+  /// Solicita permissões necessárias no Android
+  static Future<void> _requestAndroidPermissions() async {
+    try {
+      final androidPlugin =
+          _notifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidPlugin != null) {
+        await androidPlugin.requestNotificationsPermission();
+        await androidPlugin.requestExactAlarmsPermission();
+      }
+    } catch (e) {
+      // Não lançar exceção se falhar permissões, apenas logar
+      // O app pode continuar funcionando sem notificações
+    }
+  }
+
+  /// Callback quando usuário toca na notificação
+  static void _onNotificationTapped(NotificationResponse response) {
+    // Aqui pode adicionar navegação quando o usuário clicar na notificação
+    // Por exemplo: abrir a tela da atividade específica
+    // O payload pode conter informações de roteamento
+  }
+
+  /// Agenda uma notificação para data/hora específica
+  ///
+  /// Parâmetros:
+  /// - [id]: ID único da notificação (0 a 2147483647)
+  /// - [title]: Título da notificação (1-65 caracteres)
+  /// - [body]: Corpo da notificação (1-240 caracteres)
+  /// - [scheduledDate]: Data e hora para exibir a notificação
+  /// - [payload]: Dados adicionais (opcional)
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se parâmetros forem inválidos
+  /// - [GenericException]: Se falhar ao agendar
   static Future<void> scheduleNotification({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledDate,
+    String? payload,
   }) async {
-    if (scheduledDate.isBefore(DateTime.now())) return;
+    _ensureInitialized();
+    _validateNotificationId(id);
+    _validateTitle(title);
+    _validateBody(body);
+    _validateScheduledDate(scheduledDate);
 
-    await _notifications.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'travel_channel_v1',
-          'Roteiro de Viagem',
-          channelDescription: 'Alarmes das atividades do seu roteiro',
-          importance: Importance.max,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+    try {
+      await _notifications.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'travel_channel_v1',
+            'Roteiro de Viagem',
+            channelDescription: 'Alarmes das atividades do seu roteiro',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
+      );
+    } catch (e) {
+      throw GenericException(
+        'Falha ao agendar notificação',
+        originalError: e,
+      );
+    }
   }
 
+  /// Exibe notificação imediatamente
+  ///
+  /// Parâmetros:
+  /// - [id]: ID único da notificação
+  /// - [title]: Título da notificação
+  /// - [body]: Corpo da notificação
+  /// - [payload]: Dados adicionais (opcional)
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se parâmetros forem inválidos
+  /// - [GenericException]: Se falhar ao exibir
+  static Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    _ensureInitialized();
+    _validateNotificationId(id);
+    _validateTitle(title);
+    _validateBody(body);
+
+    try {
+      await _notifications.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'travel_channel_v1',
+            'Roteiro de Viagem',
+            channelDescription: 'Notificações do aplicativo de viagens',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        payload: payload,
+      );
+    } catch (e) {
+      throw GenericException(
+        'Falha ao exibir notificação',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Cancela uma notificação agendada
+  ///
+  /// Parâmetros:
+  /// - [id]: ID da notificação a ser cancelada
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se ID for inválido
+  /// - [GenericException]: Se falhar ao cancelar
   static Future<void> cancelNotification(int id) async {
-    await _notifications.cancel(id: id);
+    _ensureInitialized();
+    _validateNotificationId(id);
+
+    try {
+      await _notifications.cancel(id: id);
+    } catch (e) {
+      throw GenericException(
+        'Falha ao cancelar notificação',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Cancela todas as notificações agendadas
+  ///
+  /// Lança:
+  /// - [GenericException]: Se falhar ao cancelar
+  static Future<void> cancelAllNotifications() async {
+    _ensureInitialized();
+
+    try {
+      await _notifications.cancelAll();
+    } catch (e) {
+      throw GenericException(
+        'Falha ao cancelar todas as notificações',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Retorna lista de notificações pendentes
+  ///
+  /// Retorna: Lista de notificações agendadas
+  ///
+  /// Lança:
+  /// - [GenericException]: Se falhar ao obter lista
+  static Future<List<PendingNotificationRequest>>
+      getPendingNotifications() async {
+    _ensureInitialized();
+
+    try {
+      return await _notifications.pendingNotificationRequests();
+    } catch (e) {
+      throw GenericException(
+        'Falha ao obter notificações pendentes',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Verifica se o serviço está inicializado
+  static bool get isInitialized => _isInitialized;
+
+  // ========== MÉTODOS PRIVADOS DE VALIDAÇÃO ==========
+
+  /// Garante que o serviço foi inicializado
+  static void _ensureInitialized() {
+    if (!_isInitialized) {
+      throw GenericException(
+        'Serviço de notificações não foi inicializado. Chame NotificationService.init() primeiro',
+      );
+    }
+  }
+
+  /// Valida ID da notificação
+  static void _validateNotificationId(int id) {
+    if (id < _minNotificationId || id > _maxNotificationId) {
+      throw ValidationException(
+        'ID de notificação inválido: $id. Deve estar entre $_minNotificationId e $_maxNotificationId',
+      );
+    }
+  }
+
+  /// Valida título da notificação
+  static void _validateTitle(String title) {
+    if (title.trim().isEmpty) {
+      throw ValidationException('Título da notificação não pode estar vazio');
+    }
+
+    if (title.trim().length < _minTitleLength) {
+      throw ValidationException(
+        'Título muito curto: ${title.length} caracteres. Mínimo: $_minTitleLength',
+      );
+    }
+
+    if (title.length > _maxTitleLength) {
+      throw ValidationException(
+        'Título muito longo: ${title.length} caracteres. Máximo: $_maxTitleLength',
+      );
+    }
+  }
+
+  /// Valida corpo da notificação
+  static void _validateBody(String body) {
+    if (body.trim().isEmpty) {
+      throw ValidationException('Corpo da notificação não pode estar vazio');
+    }
+
+    if (body.trim().length < _minBodyLength) {
+      throw ValidationException(
+        'Corpo muito curto: ${body.length} caracteres. Mínimo: $_minBodyLength',
+      );
+    }
+
+    if (body.length > _maxBodyLength) {
+      throw ValidationException(
+        'Corpo muito longo: ${body.length} caracteres. Máximo: $_maxBodyLength',
+      );
+    }
+  }
+
+  /// Valida data agendada
+  static void _validateScheduledDate(DateTime scheduledDate) {
+    final now = DateTime.now();
+
+    if (scheduledDate.isBefore(now)) {
+      throw ValidationException(
+        'Data agendada não pode estar no passado: ${scheduledDate.toIso8601String()}',
+      );
+    }
+
+    // Validar que não está muito longe no futuro (máximo 1 ano)
+    final oneYearFromNow = now.add(const Duration(days: 365));
+    if (scheduledDate.isAfter(oneYearFromNow)) {
+      throw ValidationException(
+        'Data agendada muito distante: ${scheduledDate.toIso8601String()}. Máximo: 1 ano no futuro',
+      );
+    }
   }
 }
+
+// Made with Bob
