@@ -1,107 +1,227 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../core/exceptions/app_exceptions.dart';
 import '../models/expense.dart';
 import '../models/trip.dart';
 
+/// Serviço de análise estatística e financeira de viagens.
+///
+/// Fornece cálculos avançados para análise de gastos, incluindo:
+/// - Índices de eficiência e burn rate
+/// - Estatísticas descritivas (média, mediana, desvio padrão)
+/// - Detecção de outliers
+/// - Projeções de gastos futuros
+/// - Recomendações inteligentes
 class AnalyticsService {
-
+  /// Calcula o índice de eficiência de gastos.
+  ///
+  /// Compara a taxa de uso do orçamento com a taxa de tempo decorrido.
+  /// - Valor < 1.0: Gastando menos que o planejado
+  /// - Valor = 1.0: Gastando conforme planejado
+  /// - Valor > 1.0: Gastando mais que o planejado
+  ///
+  /// Parameters:
+  /// - [totalSpent]: Total gasto até o momento
+  /// - [totalBudget]: Orçamento total da viagem
+  /// - [daysElapsed]: Dias decorridos desde o início
+  /// - [totalDays]: Total de dias da viagem
+  ///
+  /// Returns: Índice de eficiência (0.0 se parâmetros inválidos)
+  ///
+  /// Throws:
+  /// - [ValidationException] se os valores forem negativos
   static double calculateEfficiencyIndex({
     required double totalSpent,
     required double totalBudget,
     required int daysElapsed,
     required int totalDays,
   }) {
+    _validatePositiveDouble(totalSpent, 'Total gasto');
+    _validatePositiveDouble(totalBudget, 'Orçamento total');
+    _validatePositiveInt(daysElapsed, 'Dias decorridos');
+    _validatePositiveInt(totalDays, 'Total de dias');
+
     if (totalDays == 0 || totalBudget == 0) return 0;
-    double timeElapsed = daysElapsed / totalDays;
-    double budgetUsed = totalSpent / totalBudget;
-    return budgetUsed / timeElapsed;
+
+    final timeElapsed = daysElapsed / totalDays;
+    final budgetUsed = totalSpent / totalBudget;
+
+    return timeElapsed > 0 ? budgetUsed / timeElapsed : 0;
   }
 
+  /// Calcula a taxa de queima de orçamento (burn rate).
+  ///
+  /// Indica quanto está sendo gasto por dia em média.
+  ///
+  /// Parameters:
+  /// - [totalSpent]: Total gasto até o momento
+  /// - [daysElapsed]: Dias decorridos
+  ///
+  /// Returns: Gasto médio por dia
+  ///
+  /// Throws:
+  /// - [ValidationException] se os valores forem negativos
   static double calculateBurnRate({
     required double totalSpent,
     required int daysElapsed,
   }) {
+    _validatePositiveDouble(totalSpent, 'Total gasto');
+    _validatePositiveInt(daysElapsed, 'Dias decorridos');
+
     return daysElapsed > 0 ? totalSpent / daysElapsed : 0;
   }
 
-  /// Projeta gastos futur
+  /// Projeta gastos futuros baseado no burn rate atual.
+  ///
+  /// Parameters:
+  /// - [burnRate]: Taxa de queima atual
+  /// - [daysRemaining]: Dias restantes da viagem
+  ///
+  /// Returns: Projeção de gastos futuros
+  ///
+  /// Throws:
+  /// - [ValidationException] se os valores forem negativos
   static double projectFutureSpending({
     required double burnRate,
     required int daysRemaining,
   }) {
+    _validatePositiveDouble(burnRate, 'Burn rate');
+    _validatePositiveInt(daysRemaining, 'Dias restantes');
+
     return burnRate * daysRemaining;
   }
 
+  /// Calcula quantos dias faltam até o orçamento acabar.
+  ///
+  /// Parameters:
+  /// - [budgetRemaining]: Orçamento restante
+  /// - [burnRate]: Taxa de queima atual
+  ///
+  /// Returns: Dias até acabar o orçamento (999999 se burn rate for 0)
+  ///
+  /// Throws:
+  /// - [ValidationException] se os valores forem negativos
   static int daysUntilBudgetEnds({
     required double budgetRemaining,
     required double burnRate,
   }) {
+    _validatePositiveDouble(budgetRemaining, 'Orçamento restante');
+    _validatePositiveDouble(burnRate, 'Burn rate');
+
     if (burnRate == 0) return 999999;
     return (budgetRemaining / burnRate).ceil();
   }
 
+  /// Calcula a mediana de uma lista de valores.
+  ///
+  /// Parameters:
+  /// - [values]: Lista de valores numéricos
+  ///
+  /// Returns: Mediana (0.0 se lista vazia)
   static double calculateMedian(List<double> values) {
     if (values.isEmpty) return 0;
-    List<double> sorted = List.from(values)..sort();
-    int middle = sorted.length ~/ 2;
+
+    final sorted = List<double>.from(values)..sort();
+    final middle = sorted.length ~/ 2;
+
     if (sorted.length % 2 == 0) {
       return (sorted[middle - 1] + sorted[middle]) / 2;
     }
     return sorted[middle];
   }
 
+  /// Calcula a média aritmética de uma lista de valores.
+  ///
+  /// Parameters:
+  /// - [values]: Lista de valores numéricos
+  ///
+  /// Returns: Média (0.0 se lista vazia)
   static double calculateMean(List<double> values) {
     if (values.isEmpty) return 0;
     return values.reduce((a, b) => a + b) / values.length;
   }
 
-  /// Calcula padrão
+  /// Calcula o desvio padrão de uma lista de valores.
+  ///
+  /// Mede a dispersão dos valores em relação à média.
+  ///
+  /// Parameters:
+  /// - [values]: Lista de valores numéricos
+  ///
+  /// Returns: Desvio padrão (0.0 se lista vazia)
   static double calculateStdDev(List<double> values) {
     if (values.isEmpty) return 0;
-    double mean = calculateMean(values);
-    double variance = values.fold(
+
+    final mean = calculateMean(values);
+    final variance = values.fold(
           0.0,
           (sum, value) => sum + pow(value - mean, 2),
         ) /
         values.length;
+
     return sqrt(variance);
   }
 
+  /// Identifica gastos outliers (valores atípicos).
+  ///
+  /// Usa o critério de 2 desvios padrão da média.
+  ///
+  /// Parameters:
+  /// - [expenses]: Lista de despesas
+  ///
+  /// Returns: Lista de despesas outliers (vazia se menos de 3 despesas)
   static List<Expense> findOutliers(List<Expense> expenses) {
     if (expenses.length < 3) return [];
 
-    List<double> values = expenses.map((e) => e.value).toList();
-    double mean = calculateMean(values);
-    double stdDev = calculateStdDev(values);
+    final values = expenses.map((e) => e.value).toList();
+    final mean = calculateMean(values);
+    final stdDev = calculateStdDev(values);
 
     return expenses.where((e) => (e.value - mean).abs() > 2 * stdDev).toList();
   }
 
-  /// Calcula quartis (Q1, Q2/Mediana, Q3)
+  /// Calcula os quartis (Q1, Q2/Mediana, Q3) de uma lista de valores.
+  ///
+  /// Parameters:
+  /// - [values]: Lista de valores numéricos
+  ///
+  /// Returns: Map com Q1, Q2 e Q3 (zeros se lista vazia)
   static Map<String, double> calculateQuartiles(List<double> values) {
     if (values.isEmpty) {
       return {'Q1': 0, 'Q2': 0, 'Q3': 0};
     }
 
-    List<double> sorted = List.from(values)..sort();
-    int n = sorted.length;
+    final sorted = List<double>.from(values)..sort();
+    final n = sorted.length;
 
-    double q2 = calculateMedian(sorted);
-    double q1 = calculateMedian(sorted.sublist(0, n ~/ 2));
-    double q3 = calculateMedian(sorted.sublist((n + 1) ~/ 2));
+    final q2 = calculateMedian(sorted);
+    final q1 = calculateMedian(sorted.sublist(0, n ~/ 2));
+    final q3 = calculateMedian(sorted.sublist((n + 1) ~/ 2));
 
     return {'Q1': q1, 'Q2': q2, 'Q3': q3};
   }
 
+  /// Agrupa despesas por categoria.
+  ///
+  /// Parameters:
+  /// - [expenses]: Lista de despesas
+  ///
+  /// Returns: Map com total por categoria
   static Map<String, double> groupByCategory(List<Expense> expenses) {
-    Map<String, double> categories = {};
-    for (var expense in expenses) {
+    final categories = <String, double>{};
+    for (final expense in expenses) {
       categories[expense.category] =
           (categories[expense.category] ?? 0) + expense.value;
     }
     return categories;
   }
 
+  /// Agrupa despesas por dia da semana.
+  ///
+  /// Parameters:
+  /// - [expenses]: Lista de despesas
+  ///
+  /// Returns: Map com total por dia da semana
   static Map<String, double> groupByWeekday(List<Expense> expenses) {
     Map<String, double> weekdays = {
       'Segunda': 0,
@@ -228,7 +348,7 @@ class AnalyticsService {
       );
     }
 
-    // Categoria 
+    // Categoria
     if (plannedBudget.isNotEmpty) {
       var overBudgetCategories = categorySpending.entries
           .where((e) =>
@@ -246,7 +366,6 @@ class AnalyticsService {
       }
     }
 
-    
     if (plannedBudget.isNotEmpty) {
       var underBudgetCategories = categorySpending.entries
           .where((e) =>
@@ -349,6 +468,20 @@ class AnalyticsService {
       ),
     );
   }
+
+  // ==================== VALIDAÇÕES ====================
+
+  static void _validatePositiveDouble(double value, String fieldName) {
+    if (value < 0) {
+      throw ValidationException('$fieldName não pode ser negativo');
+    }
+  }
+
+  static void _validatePositiveInt(int value, String fieldName) {
+    if (value < 0) {
+      throw ValidationException('$fieldName não pode ser negativo');
+    }
+  }
 }
 
 /// Classe para armazenar estatísticas de uma viagem
@@ -397,10 +530,23 @@ class TripStatistics {
   }
 
   Color get efficiencyColor {
-    if (efficiencyIndex < 0.8) return const Color(0xFF4CAF50); 
-    if (efficiencyIndex < 1.0) return const Color(0xFF8BC34A); 
-    if (efficiencyIndex < 1.2) return const Color(0xFFFFC107); 
-    return const Color(0xFFF44336); 
+    if (efficiencyIndex < 0.8) return const Color(0xFF4CAF50);
+    if (efficiencyIndex < 1.0) return const Color(0xFF8BC34A);
+    if (efficiencyIndex < 1.2) return const Color(0xFFFFC107);
+    return const Color(0xFFF44336);
+  }
+
+  // ==================== VALIDAÇÕES ====================
+
+  static void _validatePositiveDouble(double value, String fieldName) {
+    if (value < 0) {
+      throw ValidationException('$fieldName não pode ser negativo');
+    }
+  }
+
+  static void _validatePositiveInt(int value, String fieldName) {
+    if (value < 0) {
+      throw ValidationException('$fieldName não pode ser negativo');
+    }
   }
 }
-
