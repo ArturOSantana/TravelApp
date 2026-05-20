@@ -1,11 +1,39 @@
 import 'dart:convert';
 import '../config/api_keys.dart';
+import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
+/// Serviço de integração com OpenWeatherMap API
+///
+/// Responsabilidades:
+/// - Buscar clima atual por cidade ou coordenadas
+/// - Buscar previsão do tempo (5 dias)
+/// - Processar e formatar dados meteorológicos
+///
+/// API: https://openweathermap.org/api
 class OpenWeatherMapService {
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
 
-  static Future<Map<String, dynamic>?> getCurrentWeather(String city) async {
+  // Constantes de validação
+  static const double _minLatitude = -90.0;
+  static const double _maxLatitude = 90.0;
+  static const double _minLongitude = -180.0;
+  static const double _maxLongitude = 180.0;
+  static const int _minCityNameLength = 2;
+
+  /// Busca clima atual por nome da cidade
+  ///
+  /// Parâmetros:
+  /// - [city]: Nome da cidade (mínimo 2 caracteres)
+  ///
+  /// Retorna: Mapa com dados do clima atual
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se cidade for inválida
+  /// - [NetworkException]: Se houver erro na requisição
+  static Future<Map<String, dynamic>> getCurrentWeather(String city) async {
+    _validateCityName(city);
+
     try {
       final url = Uri.parse(
         '$_baseUrl/weather?q=$city&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
@@ -17,43 +45,56 @@ class OpenWeatherMapService {
         cacheDuration: const Duration(minutes: 30),
       );
 
-      if (response == null) return null;
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        return {
-          'temp': data['main']['temp'].round(),
-          'feels_like': data['main']['feels_like'].round(),
-          'temp_min': data['main']['temp_min'].round(),
-          'temp_max': data['main']['temp_max'].round(),
-          'humidity': data['main']['humidity'],
-          'pressure': data['main']['pressure'],
-          'description': data['weather'][0]['description'],
-          'icon': data['weather'][0]['icon'],
-          'wind_speed': data['wind']['speed'],
-          'wind_deg': data['wind']['deg'],
-          'clouds': data['clouds']['all'],
-          'sunrise': DateTime.fromMillisecondsSinceEpoch(
-            data['sys']['sunrise'] * 1000,
-          ),
-          'sunset': DateTime.fromMillisecondsSinceEpoch(
-            data['sys']['sunset'] * 1000,
-          ),
-          'city_name': data['name'],
-          'country': data['sys']['country'],
-        };
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return _parseWeatherData(data);
+      } else if (response.statusCode == 401) {
+        throw NetworkException.apiKeyInvalid();
+      } else if (response.statusCode == 404) {
+        throw NetworkException(
+          'Cidade não encontrada: $city',
+          statusCode: 404,
+          code: 'city_not_found',
+        );
+      } else if (response.statusCode == 429) {
+        throw NetworkException.rateLimitExceeded();
       } else {
-        print('Erro OpenWeatherMap: ${response.statusCode}');
-        return null;
+        throw NetworkException(
+          'Erro ao buscar clima: ${response.statusCode}',
+          statusCode: response.statusCode,
+          code: 'weather_fetch_failed',
+        );
       }
+    } on NetworkException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar clima atual: $e');
-      return null;
+      throw NetworkException(
+        'Erro inesperado ao buscar clima',
+        code: 'unexpected_error',
+        originalError: e,
+      );
     }
   }
 
-  static Future<List<Map<String, dynamic>>?> getForecast(String city) async {
+  /// Busca previsão do tempo por nome da cidade (5 dias, intervalos de 3h)
+  ///
+  /// Parâmetros:
+  /// - [city]: Nome da cidade (mínimo 2 caracteres)
+  ///
+  /// Retorna: Lista de previsões
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se cidade for inválida
+  /// - [NetworkException]: Se houver erro na requisição
+  static Future<List<Map<String, dynamic>>> getForecast(String city) async {
+    _validateCityName(city);
+
     try {
       final url = Uri.parse(
         '$_baseUrl/forecast?q=$city&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
@@ -65,41 +106,69 @@ class OpenWeatherMapService {
         cacheDuration: const Duration(hours: 1),
       );
 
-      if (response == null) return null;
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> list = data['list'];
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final List<dynamic> list = data['list'] ?? [];
 
-        return list.map((item) {
-          return {
-            'dt': DateTime.fromMillisecondsSinceEpoch(item['dt'] * 1000),
-            'temp': item['main']['temp'].round(),
-            'feels_like': item['main']['feels_like'].round(),
-            'temp_min': item['main']['temp_min'].round(),
-            'temp_max': item['main']['temp_max'].round(),
-            'humidity': item['main']['humidity'],
-            'description': item['weather'][0]['description'],
-            'icon': item['weather'][0]['icon'],
-            'wind_speed': item['wind']['speed'],
-            'clouds': item['clouds']['all'],
-            'pop': (item['pop'] * 100).round(),
-          };
-        }).toList();
+        if (list.isEmpty) {
+          throw NetworkException(
+            'Nenhuma previsão disponível',
+            code: 'no_forecast_data',
+          );
+        }
+
+        return list.map((item) => _parseForecastItem(item)).toList();
+      } else if (response.statusCode == 401) {
+        throw NetworkException.apiKeyInvalid();
+      } else if (response.statusCode == 404) {
+        throw NetworkException(
+          'Cidade não encontrada: $city',
+          statusCode: 404,
+          code: 'city_not_found',
+        );
+      } else if (response.statusCode == 429) {
+        throw NetworkException.rateLimitExceeded();
       } else {
-        print('Erro OpenWeatherMap Forecast: ${response.statusCode}');
-        return null;
+        throw NetworkException(
+          'Erro ao buscar previsão: ${response.statusCode}',
+          statusCode: response.statusCode,
+          code: 'forecast_fetch_failed',
+        );
       }
+    } on NetworkException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar previsão: $e');
-      return null;
+      throw NetworkException(
+        'Erro inesperado ao buscar previsão',
+        code: 'unexpected_error',
+        originalError: e,
+      );
     }
   }
 
-  static Future<Map<String, dynamic>?> getCurrentWeatherByCoords(
+  /// Busca clima atual por coordenadas geográficas
+  ///
+  /// Parâmetros:
+  /// - [lat]: Latitude (-90 a 90)
+  /// - [lon]: Longitude (-180 a 180)
+  ///
+  /// Retorna: Mapa com dados do clima atual
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se coordenadas forem inválidas
+  /// - [NetworkException]: Se houver erro na requisição
+  static Future<Map<String, dynamic>> getCurrentWeatherByCoords(
     double lat,
     double lon,
   ) async {
+    _validateCoordinates(lat, lon);
+
     try {
       final url = Uri.parse(
         '$_baseUrl/weather?lat=$lat&lon=$lon&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
@@ -111,46 +180,58 @@ class OpenWeatherMapService {
         cacheDuration: const Duration(minutes: 30),
       );
 
-      if (response == null) return null;
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        return {
-          'temp': data['main']['temp'].round(),
-          'feels_like': data['main']['feels_like'].round(),
-          'temp_min': data['main']['temp_min'].round(),
-          'temp_max': data['main']['temp_max'].round(),
-          'humidity': data['main']['humidity'],
-          'pressure': data['main']['pressure'],
-          'description': data['weather'][0]['description'],
-          'icon': data['weather'][0]['icon'],
-          'wind_speed': data['wind']['speed'],
-          'wind_deg': data['wind']['deg'],
-          'clouds': data['clouds']['all'],
-          'sunrise': DateTime.fromMillisecondsSinceEpoch(
-            data['sys']['sunrise'] * 1000,
-          ),
-          'sunset': DateTime.fromMillisecondsSinceEpoch(
-            data['sys']['sunset'] * 1000,
-          ),
-          'city_name': data['name'],
-          'country': data['sys']['country'],
-        };
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return _parseWeatherData(data);
+      } else if (response.statusCode == 401) {
+        throw NetworkException.apiKeyInvalid();
+      } else if (response.statusCode == 400) {
+        throw ValidationException(
+          'Coordenadas inválidas: lat=$lat, lon=$lon',
+        );
+      } else if (response.statusCode == 429) {
+        throw NetworkException.rateLimitExceeded();
       } else {
-        print('Erro OpenWeatherMap Coords: ${response.statusCode}');
-        return null;
+        throw NetworkException(
+          'Erro ao buscar clima por coordenadas: ${response.statusCode}',
+          statusCode: response.statusCode,
+          code: 'weather_coords_fetch_failed',
+        );
       }
+    } on NetworkException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar clima por coordenadas: $e');
-      return null;
+      throw NetworkException(
+        'Erro inesperado ao buscar clima por coordenadas',
+        code: 'unexpected_error',
+        originalError: e,
+      );
     }
   }
 
-  static Future<List<Map<String, dynamic>>?> getForecastByCoords(
+  /// Busca previsão do tempo por coordenadas (5 dias, intervalos de 3h)
+  ///
+  /// Parâmetros:
+  /// - [lat]: Latitude (-90 a 90)
+  /// - [lon]: Longitude (-180 a 180)
+  ///
+  /// Retorna: Lista de previsões
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se coordenadas forem inválidas
+  /// - [NetworkException]: Se houver erro na requisição
+  static Future<List<Map<String, dynamic>>> getForecastByCoords(
     double lat,
     double lon,
   ) async {
+    _validateCoordinates(lat, lon);
+
     try {
       final url = Uri.parse(
         '$_baseUrl/forecast?lat=$lat&lon=$lon&appid=${ApiKeys.openWeatherMap}&units=metric&lang=pt_br',
@@ -162,41 +243,69 @@ class OpenWeatherMapService {
         cacheDuration: const Duration(hours: 1),
       );
 
-      if (response == null) return null;
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> list = data['list'];
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final List<dynamic> list = data['list'] ?? [];
 
-        return list.map((item) {
-          return {
-            'dt': DateTime.fromMillisecondsSinceEpoch(item['dt'] * 1000),
-            'temp': item['main']['temp'].round(),
-            'feels_like': item['main']['feels_like'].round(),
-            'temp_min': item['main']['temp_min'].round(),
-            'temp_max': item['main']['temp_max'].round(),
-            'humidity': item['main']['humidity'],
-            'description': item['weather'][0]['description'],
-            'icon': item['weather'][0]['icon'],
-            'wind_speed': item['wind']['speed'],
-            'clouds': item['clouds']['all'],
-            'pop': (item['pop'] * 100).round(), // Probabilidade de chuva em %
-          };
-        }).toList();
+        if (list.isEmpty) {
+          throw NetworkException(
+            'Nenhuma previsão disponível',
+            code: 'no_forecast_data',
+          );
+        }
+
+        return list.map((item) => _parseForecastItem(item)).toList();
+      } else if (response.statusCode == 401) {
+        throw NetworkException.apiKeyInvalid();
+      } else if (response.statusCode == 400) {
+        throw ValidationException(
+          'Coordenadas inválidas: lat=$lat, lon=$lon',
+        );
+      } else if (response.statusCode == 429) {
+        throw NetworkException.rateLimitExceeded();
       } else {
-        print('Erro OpenWeatherMap Forecast Coords: ${response.statusCode}');
-        return null;
+        throw NetworkException(
+          'Erro ao buscar previsão por coordenadas: ${response.statusCode}',
+          statusCode: response.statusCode,
+          code: 'forecast_coords_fetch_failed',
+        );
       }
+    } on NetworkException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar previsão por coordenadas: $e');
-      return null;
+      throw NetworkException(
+        'Erro inesperado ao buscar previsão por coordenadas',
+        code: 'unexpected_error',
+        originalError: e,
+      );
     }
   }
 
+  /// Retorna URL do ícone do clima
+  ///
+  /// Parâmetros:
+  /// - [iconCode]: Código do ícone retornado pela API
+  ///
+  /// Retorna: URL completa do ícone
   static String getIconUrl(String iconCode) {
+    if (iconCode.isEmpty) {
+      return 'https://openweathermap.org/img/wn/01d@2x.png'; // fallback
+    }
     return 'https://openweathermap.org/img/wn/$iconCode@2x.png';
   }
 
+  /// Retorna emoji correspondente ao código do clima
+  ///
+  /// Parâmetros:
+  /// - [iconCode]: Código do ícone retornado pela API
+  ///
+  /// Retorna: Emoji representando o clima
   static String getWeatherEmoji(String iconCode) {
     switch (iconCode) {
       case '01d':
@@ -231,8 +340,17 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Retorna descrição da direção do vento
+  /// Retorna descrição textual da direção do vento
+  ///
+  /// Parâmetros:
+  /// - [degrees]: Direção do vento em graus (0-360)
+  ///
+  /// Retorna: Descrição da direção (Norte, Sul, etc.)
   static String getWindDirection(int degrees) {
+    if (degrees < 0 || degrees > 360) {
+      return 'Desconhecido';
+    }
+
     if (degrees >= 337.5 || degrees < 22.5) return 'Norte';
     if (degrees >= 22.5 && degrees < 67.5) return 'Nordeste';
     if (degrees >= 67.5 && degrees < 112.5) return 'Leste';
@@ -244,15 +362,25 @@ class OpenWeatherMapService {
     return 'Desconhecido';
   }
 
-  /// Agrupa previsões por dia (pega a média do dia)
+  /// Agrupa previsões por dia (calcula médias diárias)
+  ///
+  /// Parâmetros:
+  /// - [forecast]: Lista de previsões horárias
+  ///
+  /// Retorna: Lista de previsões agrupadas por dia
   static List<Map<String, dynamic>> groupForecastByDay(
     List<Map<String, dynamic>> forecast,
   ) {
+    if (forecast.isEmpty) {
+      return [];
+    }
+
     final Map<String, List<Map<String, dynamic>>> grouped = {};
 
     for (var item in forecast) {
       final date = item['dt'] as DateTime;
-      final dateKey = '${date.year}-${date.month}-${date.day}';
+      final dateKey =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
       if (!grouped.containsKey(dateKey)) {
         grouped[dateKey] = [];
@@ -277,4 +405,110 @@ class OpenWeatherMapService {
       };
     }).toList();
   }
+
+  // ========== MÉTODOS PRIVADOS ==========
+
+  /// Valida nome da cidade
+  static void _validateCityName(String city) {
+    if (city.trim().isEmpty) {
+      throw ValidationException('Nome da cidade não pode estar vazio');
+    }
+
+    if (city.trim().length < _minCityNameLength) {
+      throw ValidationException(
+        'Nome da cidade deve ter pelo menos $_minCityNameLength caracteres',
+      );
+    }
+  }
+
+  /// Valida coordenadas geográficas
+  static void _validateCoordinates(double lat, double lon) {
+    if (lat < _minLatitude || lat > _maxLatitude) {
+      throw ValidationException(
+        'Latitude inválida: $lat. Deve estar entre $_minLatitude e $_maxLatitude',
+      );
+    }
+
+    if (lon < _minLongitude || lon > _maxLongitude) {
+      throw ValidationException(
+        'Longitude inválida: $lon. Deve estar entre $_minLongitude e $_maxLongitude',
+      );
+    }
+  }
+
+  /// Processa dados do clima atual da API
+  static Map<String, dynamic> _parseWeatherData(Map<String, dynamic> data) {
+    try {
+      final main = data['main'] as Map<String, dynamic>;
+      final weather = (data['weather'] as List).first as Map<String, dynamic>;
+      final wind = data['wind'] as Map<String, dynamic>;
+      final clouds = data['clouds'] as Map<String, dynamic>;
+      final sys = data['sys'] as Map<String, dynamic>;
+
+      return {
+        'temp': (main['temp'] as num).round(),
+        'feels_like': (main['feels_like'] as num).round(),
+        'temp_min': (main['temp_min'] as num).round(),
+        'temp_max': (main['temp_max'] as num).round(),
+        'humidity': main['humidity'] as int,
+        'pressure': main['pressure'] as int,
+        'description': weather['description'] as String,
+        'icon': weather['icon'] as String,
+        'wind_speed': (wind['speed'] as num).toDouble(),
+        'wind_deg': (wind['deg'] as num?)?.toInt() ?? 0,
+        'clouds': clouds['all'] as int,
+        'sunrise': DateTime.fromMillisecondsSinceEpoch(
+          (sys['sunrise'] as int) * 1000,
+        ),
+        'sunset': DateTime.fromMillisecondsSinceEpoch(
+          (sys['sunset'] as int) * 1000,
+        ),
+        'city_name': data['name'] as String,
+        'country': sys['country'] as String,
+      };
+    } catch (e) {
+      throw NetworkException(
+        'Erro ao processar dados do clima',
+        code: 'parse_error',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Processa item individual da previsão
+  static Map<String, dynamic> _parseForecastItem(dynamic item) {
+    try {
+      final itemMap = item as Map<String, dynamic>;
+      final main = itemMap['main'] as Map<String, dynamic>;
+      final weather =
+          (itemMap['weather'] as List).first as Map<String, dynamic>;
+      final wind = itemMap['wind'] as Map<String, dynamic>;
+      final clouds = itemMap['clouds'] as Map<String, dynamic>;
+
+      return {
+        'dt': DateTime.fromMillisecondsSinceEpoch(
+          (itemMap['dt'] as int) * 1000,
+        ),
+        'temp': (main['temp'] as num).round(),
+        'feels_like': (main['feels_like'] as num).round(),
+        'temp_min': (main['temp_min'] as num).round(),
+        'temp_max': (main['temp_max'] as num).round(),
+        'humidity': main['humidity'] as int,
+        'description': weather['description'] as String,
+        'icon': weather['icon'] as String,
+        'wind_speed': (wind['speed'] as num).toDouble(),
+        'clouds': clouds['all'] as int,
+        'pop': ((itemMap['pop'] as num) * 100)
+            .round(), // Probabilidade de chuva em %
+      };
+    } catch (e) {
+      throw NetworkException(
+        'Erro ao processar item da previsão',
+        code: 'parse_error',
+        originalError: e,
+      );
+    }
+  }
 }
+
+// Made with Bob

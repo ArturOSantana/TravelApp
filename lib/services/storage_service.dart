@@ -2,53 +2,115 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+import '../core/exceptions/app_exceptions.dart';
 
+/// Serviço de gerenciamento de armazenamento de arquivos no Firebase Storage
+///
+/// Responsabilidades:
+/// - Upload e download de fotos
+/// - Validação de arquivos (tamanho, tipo)
+/// - Gerenciamento de metadados
+/// - Exclusão de arquivos
+/// - Seleção de imagens da galeria/câmera
 class StorageService {
   static final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  /// Upload de foto para o Storage
+  // Constantes de validação
+  static const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
+  static const List<String> _allowedExtensions = [
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
+    'heic'
+  ];
+  static const int _maxImageWidth = 1920;
+  static const int _maxImageHeight = 1080;
+  static const int _imageQuality = 85;
+
+  /// Upload de foto para o Storage com validações robustas
+  ///
+  /// Parâmetros:
+  /// - [photo]: Arquivo da foto a ser enviada
+  /// - [tripId]: ID da viagem (obrigatório e não vazio)
+  /// - [folder]: Pasta de destino (padrão: 'journal')
+  /// - [onProgress]: Callback opcional para progresso do upload
+  ///
+  /// Retorna: URL de download da foto
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se validações falharem
+  /// - [StorageException]: Se houver erro no Firebase Storage
   static Future<String> uploadPhoto({
     required File photo,
     required String tripId,
     String folder = 'journal',
+    Function(double progress)? onProgress,
   }) async {
+    // Validações de entrada
+    _validateTripId(tripId);
+    await _validateFile(photo);
+
     try {
-      final String fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${path.basename(photo.path)}';
+      final String fileName = _generateFileName(photo.path);
       final String storagePath = 'trips/$tripId/$folder/$fileName';
 
       final Reference ref = _storage.ref().child(storagePath);
 
       final SettableMetadata metadata = SettableMetadata(
-        contentType: 'image/jpeg',
+        contentType: _getContentType(photo.path),
         customMetadata: {
           'tripId': tripId,
           'uploadedAt': DateTime.now().toIso8601String(),
+          'folder': folder,
         },
       );
 
       final UploadTask uploadTask = ref.putFile(photo, metadata);
 
-      final TaskSnapshot snapshot = await uploadTask;
+      // Monitorar progresso se callback fornecido
+      if (onProgress != null) {
+        uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+          final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+          onProgress(progress);
+        });
+      }
 
+      final TaskSnapshot snapshot = await uploadTask;
       final String downloadUrl = await snapshot.ref.getDownloadURL();
 
-      print('Foto enviada com sucesso: $downloadUrl');
       return downloadUrl;
+    } on FirebaseException catch (e) {
+      throw _handleFirebaseStorageException(e);
     } catch (e) {
-      print('Erro ao enviar foto: $e');
-      rethrow;
+      throw StorageException(
+        'Erro inesperado ao enviar foto',
+        code: 'upload_error',
+        originalError: e,
+      );
     }
   }
 
-  /// Upload de múltiplas fotos -> Vê se funciona dps
+  /// Upload de múltiplas fotos com controle de erros individual
+  ///
+  /// Continua o upload mesmo se algumas fotos falharem.
+  /// Retorna apenas as URLs das fotos enviadas com sucesso.
   static Future<List<String>> uploadMultiplePhotos({
     required List<File> photos,
     required String tripId,
     String folder = 'journal',
     Function(int current, int total)? onProgress,
+    Function(int index, String error)? onError,
   }) async {
-    List<String> urls = [];
+    if (photos.isEmpty) {
+      throw ValidationException('Lista de fotos não pode estar vazia');
+    }
+
+    _validateTripId(tripId);
+
+    final List<String> urls = [];
+    final List<String> errors = [];
 
     for (int i = 0; i < photos.length; i++) {
       try {
@@ -63,109 +125,377 @@ class StorageService {
           onProgress(i + 1, photos.length);
         }
       } catch (e) {
-        print('[ERROR] Erro ao enviar foto ${i + 1}: $e');
+        final errorMsg = 'Erro ao enviar foto ${i + 1}: ${e.toString()}';
+        errors.add(errorMsg);
+
+        if (onError != null) {
+          onError(i, e.toString());
+        }
       }
+    }
+
+    // Se nenhuma foto foi enviada com sucesso, lançar exceção
+    if (urls.isEmpty && errors.isNotEmpty) {
+      throw StorageException(
+        'Falha ao enviar todas as fotos: ${errors.join("; ")}',
+        code: 'all_uploads_failed',
+      );
     }
 
     return urls;
   }
 
+  /// Deleta uma foto do Storage
+  ///
+  /// Parâmetros:
+  /// - [photoUrl]: URL completa da foto no Firebase Storage
+  ///
+  /// Lança:
+  /// - [ValidationException]: Se URL for inválida
+  /// - [StorageException]: Se houver erro ao deletar
   static Future<void> deletePhoto(String photoUrl) async {
+    _validatePhotoUrl(photoUrl);
+
     try {
       final Reference ref = _storage.refFromURL(photoUrl);
       await ref.delete();
-      print(' Foto deletada com sucesso');
+    } on FirebaseException catch (e) {
+      throw _handleFirebaseStorageException(e);
     } catch (e) {
-      print(' Erro ao deletar foto: $e');
-      rethrow;
+      throw StorageException(
+        'Erro ao deletar foto',
+        code: 'delete_error',
+        originalError: e,
+      );
     }
   }
 
-  static Future<void> deleteMultiplePhotos(List<String> photoUrls) async {
-    for (String url in photoUrls) {
+  /// Deleta múltiplas fotos do Storage
+  ///
+  /// Continua a exclusão mesmo se algumas falharem.
+  /// Retorna lista de URLs que falharam ao deletar.
+  static Future<List<String>> deleteMultiplePhotos(
+    List<String> photoUrls, {
+    Function(int current, int total)? onProgress,
+  }) async {
+    if (photoUrls.isEmpty) {
+      return [];
+    }
+
+    final List<String> failedUrls = [];
+
+    for (int i = 0; i < photoUrls.length; i++) {
       try {
-        await deletePhoto(url);
+        await deletePhoto(photoUrls[i]);
+
+        if (onProgress != null) {
+          onProgress(i + 1, photoUrls.length);
+        }
       } catch (e) {
-        print(' Erro ao deletar foto: $e');
+        failedUrls.add(photoUrls[i]);
       }
     }
+
+    return failedUrls;
   }
 
-  /// Selecionar foto da galeria -> deu erro em uma versoes atras
+  /// Seleciona foto da galeria com validações
+  ///
+  /// Retorna: File da imagem selecionada ou null se cancelado
+  ///
+  /// Lança:
+  /// - [PermissionException]: Se permissão for negada
+  /// - [StorageException]: Se houver erro ao selecionar
   static Future<File?> pickImageFromGallery() async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
+        maxWidth: _maxImageWidth.toDouble(),
+        maxHeight: _maxImageHeight.toDouble(),
+        imageQuality: _imageQuality,
       );
 
       if (image != null) {
-        return File(image.path);
+        final file = File(image.path);
+        await _validateFile(file);
+        return file;
       }
       return null;
     } catch (e) {
-      print('[ERROR] Erro ao selecionar imagem: $e');
-      return null;
+      if (e is ValidationException) {
+        rethrow;
+      }
+      throw StorageException(
+        'Erro ao selecionar imagem da galeria',
+        code: 'gallery_pick_error',
+        originalError: e,
+      );
     }
   }
 
-  /// Tirar foto com a câmera -> deu erro em uma versoes atras
+  /// Tira foto com a câmera com validações
+  ///
+  /// Retorna: File da foto tirada ou null se cancelado
+  ///
+  /// Lança:
+  /// - [PermissionException]: Se permissão for negada
+  /// - [StorageException]: Se houver erro ao tirar foto
   static Future<File?> takePhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
+        maxWidth: _maxImageWidth.toDouble(),
+        maxHeight: _maxImageHeight.toDouble(),
+        imageQuality: _imageQuality,
       );
 
       if (image != null) {
-        return File(image.path);
+        final file = File(image.path);
+        await _validateFile(file);
+        return file;
       }
       return null;
     } catch (e) {
-      print('[ERROR] Erro ao tirar foto: $e');
-      return null;
+      if (e is ValidationException) {
+        rethrow;
+      }
+      throw StorageException(
+        'Erro ao tirar foto',
+        code: 'camera_error',
+        originalError: e,
+      );
     }
   }
 
-  /// Selecionar múltiplas fotos
+  /// Seleciona múltiplas fotos da galeria
+  ///
+  /// Retorna: Lista de Files das imagens selecionadas
+  ///
+  /// Lança:
+  /// - [StorageException]: Se houver erro ao selecionar
   static Future<List<File>> pickMultipleImages() async {
     try {
       final ImagePicker picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage(
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
+        maxWidth: _maxImageWidth.toDouble(),
+        maxHeight: _maxImageHeight.toDouble(),
+        imageQuality: _imageQuality,
       );
 
-      return images.map((xFile) => File(xFile.path)).toList();
+      final List<File> validFiles = [];
+
+      for (final xFile in images) {
+        try {
+          final file = File(xFile.path);
+          await _validateFile(file);
+          validFiles.add(file);
+        } catch (e) {
+          // Ignora arquivos inválidos e continua
+          continue;
+        }
+      }
+
+      return validFiles;
     } catch (e) {
-      print('Erro ao selecionar imagens: $e');
-      return [];
+      throw StorageException(
+        'Erro ao selecionar múltiplas imagens',
+        code: 'multi_pick_error',
+        originalError: e,
+      );
     }
   }
 
+  /// Alias para pickMultipleImages (compatibilidade)
   static Future<List<File>> pickMultiplePhotos() async {
     return pickMultipleImages();
   }
 
+  /// Gera URL de thumbnail a partir da URL original
+  ///
+  /// Nota: Esta função apenas gera a URL, não cria o thumbnail.
+  /// O thumbnail deve ser criado por Cloud Functions ou outro processo.
   static String getThumbnailUrl(String originalUrl, {String size = '200x200'}) {
-    final uri = Uri.parse(originalUrl);
-    final pathSegments = uri.pathSegments.toList();
-    final lastSegment = pathSegments.last;
-    final parts = lastSegment.split('.');
+    try {
+      final uri = Uri.parse(originalUrl);
+      final pathSegments = uri.pathSegments.toList();
+      final lastSegment = pathSegments.last;
+      final parts = lastSegment.split('.');
 
-    if (parts.length > 1) {
-      final name = parts.sublist(0, parts.length - 1).join('.');
-      final extension = parts.last;
-      pathSegments[pathSegments.length - 1] = '${name}_${size}.$extension';
+      if (parts.length > 1) {
+        final name = parts.sublist(0, parts.length - 1).join('.');
+        final extension = parts.last;
+        pathSegments[pathSegments.length - 1] = '${name}_${size}.$extension';
+      }
+
+      return uri.replace(pathSegments: pathSegments).toString();
+    } catch (e) {
+      // Se falhar ao gerar thumbnail URL, retorna original
+      return originalUrl;
+    }
+  }
+
+  // ========== MÉTODOS PRIVADOS DE VALIDAÇÃO ==========
+
+  /// Valida o ID da viagem
+  static void _validateTripId(String tripId) {
+    if (tripId.trim().isEmpty) {
+      throw ValidationException('ID da viagem não pode estar vazio');
+    }
+  }
+
+  /// Valida a URL da foto
+  static void _validatePhotoUrl(String photoUrl) {
+    if (photoUrl.trim().isEmpty) {
+      throw ValidationException('URL da foto não pode estar vazia');
     }
 
-    return uri.replace(pathSegments: pathSegments).toString();
+    try {
+      final uri = Uri.parse(photoUrl);
+      if (!uri.isAbsolute) {
+        throw ValidationException('URL da foto deve ser absoluta');
+      }
+    } catch (e) {
+      throw ValidationException('URL da foto inválida: ${e.toString()}');
+    }
+  }
+
+  /// Valida arquivo antes do upload
+  static Future<void> _validateFile(File file) async {
+    // Verifica se arquivo existe
+    if (!await file.exists()) {
+      throw ValidationException('Arquivo não existe');
+    }
+
+    // Verifica tamanho do arquivo
+    final fileSize = await file.length();
+    if (fileSize > _maxFileSizeBytes) {
+      final sizeMB = (fileSize / (1024 * 1024)).toStringAsFixed(2);
+      throw ValidationException(
+        'Arquivo muito grande: ${sizeMB}MB. Máximo permitido: ${_maxFileSizeBytes ~/ (1024 * 1024)}MB',
+      );
+    }
+
+    if (fileSize == 0) {
+      throw ValidationException('Arquivo está vazio');
+    }
+
+    // Verifica extensão do arquivo
+    final extension =
+        path.extension(file.path).toLowerCase().replaceAll('.', '');
+    if (!_allowedExtensions.contains(extension)) {
+      throw ValidationException(
+        'Tipo de arquivo não permitido: .$extension. Permitidos: ${_allowedExtensions.join(", ")}',
+      );
+    }
+  }
+
+  /// Gera nome único para o arquivo
+  static String _generateFileName(String originalPath) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final basename = path.basename(originalPath);
+    return '${timestamp}_$basename';
+  }
+
+  /// Determina o content type baseado na extensão
+  static String _getContentType(String filePath) {
+    final extension = path.extension(filePath).toLowerCase();
+
+    switch (extension) {
+      case '.jpg':
+      case '.jpeg':
+        return 'image/jpeg';
+      case '.png':
+        return 'image/png';
+      case '.gif':
+        return 'image/gif';
+      case '.webp':
+        return 'image/webp';
+      case '.heic':
+        return 'image/heic';
+      default:
+        return 'image/jpeg'; // fallback
+    }
+  }
+
+  /// Converte exceções do Firebase Storage em exceções customizadas
+  static StorageException _handleFirebaseStorageException(FirebaseException e) {
+    switch (e.code) {
+      case 'unauthorized':
+        return StorageException(
+          'Sem permissão para acessar o arquivo',
+          code: 'unauthorized',
+          originalError: e,
+        );
+      case 'canceled':
+        return StorageException(
+          'Upload cancelado',
+          code: 'canceled',
+          originalError: e,
+        );
+      case 'unknown':
+        return StorageException(
+          'Erro desconhecido no armazenamento',
+          code: 'unknown',
+          originalError: e,
+        );
+      case 'object-not-found':
+        return StorageException(
+          'Arquivo não encontrado',
+          code: 'not_found',
+          originalError: e,
+        );
+      case 'bucket-not-found':
+        return StorageException(
+          'Bucket de armazenamento não encontrado',
+          code: 'bucket_not_found',
+          originalError: e,
+        );
+      case 'project-not-found':
+        return StorageException(
+          'Projeto Firebase não encontrado',
+          code: 'project_not_found',
+          originalError: e,
+        );
+      case 'quota-exceeded':
+        return StorageException(
+          'Cota de armazenamento excedida',
+          code: 'quota_exceeded',
+          originalError: e,
+        );
+      case 'unauthenticated':
+        return StorageException(
+          'Usuário não autenticado',
+          code: 'unauthenticated',
+          originalError: e,
+        );
+      case 'retry-limit-exceeded':
+        return StorageException(
+          'Limite de tentativas excedido',
+          code: 'retry_limit_exceeded',
+          originalError: e,
+        );
+      case 'invalid-checksum':
+        return StorageException(
+          'Checksum do arquivo inválido',
+          code: 'invalid_checksum',
+          originalError: e,
+        );
+      case 'canceled':
+        return StorageException(
+          'Operação cancelada',
+          code: 'canceled',
+          originalError: e,
+        );
+      default:
+        return StorageException(
+          'Erro no Firebase Storage: ${e.message ?? e.code}',
+          code: e.code,
+          originalError: e,
+        );
+    }
   }
 }
+
+// Made with Bob

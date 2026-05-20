@@ -175,6 +175,14 @@ class NetworkException extends AppException {
       code: 'invalid-api-key',
     );
   }
+
+  factory NetworkException.rateLimitExceeded() {
+    return NetworkException(
+      'Limite de requisições excedido. Tente novamente mais tarde',
+      statusCode: 429,
+      code: 'rate-limit-exceeded',
+    );
+  }
 }
 
 /// Exceções de armazenamento

@@ -3,27 +3,50 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'http_client_service.dart';
 import 'permission_service.dart';
+import '../core/exceptions/app_exceptions.dart';
 
-/// - Nominatim (OpenStreetMap) para geocoding
-/// - Geolocator para localização em tempo real
+/// Serviço de localização e geocoding
+///
+/// Usa Nominatim (OpenStreetMap) para geocoding e
+/// Geolocator para localização em tempo real do dispositivo.
 class LocationService {
   static const String _nominatimBase = 'https://nominatim.openstreetmap.org';
   static const String _userAgent = 'TravelPlannerApp/1.0';
+  static const int _minQueryLength = 3;
 
+  /// Busca lugares por nome/endereço
+  ///
+  /// [query] deve ter pelo menos 3 caracteres
+  /// Retorna lista vazia se não encontrar resultados
+  ///
+  /// Throws [ValidationException] se query for muito curta
+  /// Throws [NetworkException] em caso de erro de rede
   static Future<List<Map<String, dynamic>>> searchPlaces(String query) async {
-    if (query.length < 3) return [];
+    // Validar query
+    if (query.trim().isEmpty) {
+      throw ValidationException.emptyField('query');
+    }
+
+    if (query.trim().length < _minQueryLength) {
+      throw ValidationException.invalidValue(
+        'query',
+        'A busca deve ter pelo menos $_minQueryLength caracteres',
+      );
+    }
 
     try {
       final response = await HttpClientService.get(
         Uri.parse(
-          '$_nominatimBase/search?q=$query&format=json&limit=10&accept-language=pt-BR',
+          '$_nominatimBase/search?q=${Uri.encodeComponent(query.trim())}&format=json&limit=10&accept-language=pt-BR',
         ),
         headers: {'User-Agent': _userAgent},
         timeout: const Duration(seconds: 8),
         cacheDuration: const Duration(hours: 24),
       );
 
-      if (response == null) return [];
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -39,17 +62,44 @@ class LocationService {
               },
             )
             .toList();
+      } else if (response.statusCode == 429) {
+        throw NetworkException(
+          'Muitas requisições. Aguarde um momento',
+          statusCode: 429,
+          code: 'rate-limit',
+        );
+      } else {
+        throw NetworkException.serverError(response.statusCode);
       }
+    } on AppException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar lugares: $e');
+      throw NetworkException(
+        'Erro ao buscar lugares',
+        code: 'search-failed',
+        originalError: e,
+      );
     }
-    return [];
   }
 
-  static Future<Map<String, dynamic>?> getAddressFromCoordinates(
+  /// Obtém endereço a partir de coordenadas (geocoding reverso)
+  ///
+  /// Throws [ValidationException] se coordenadas forem inválidas
+  /// Throws [NetworkException] em caso de erro de rede
+  static Future<Map<String, dynamic>> getAddressFromCoordinates(
     double lat,
     double lon,
   ) async {
+    // Validar coordenadas
+    if (lat < -90 || lat > 90) {
+      throw ValidationException.invalidValue(
+          'latitude', 'Latitude deve estar entre -90 e 90');
+    }
+    if (lon < -180 || lon > 180) {
+      throw ValidationException.invalidValue(
+          'longitude', 'Longitude deve estar entre -180 e 180');
+    }
+
     try {
       final response = await HttpClientService.get(
         Uri.parse(
@@ -60,51 +110,78 @@ class LocationService {
         cacheDuration: const Duration(hours: 12),
       );
 
-      if (response == null) return null;
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
+        if (data['error'] != null) {
+          throw NetworkException(
+            'Endereço não encontrado para estas coordenadas',
+            code: 'address-not-found',
+          );
+        }
+
         return {
           'display_name': data['display_name'] as String,
           'address': data['address'] as Map<String, dynamic>?,
           'lat': lat,
           'lon': lon,
         };
+      } else if (response.statusCode == 429) {
+        throw NetworkException(
+          'Muitas requisições. Aguarde um momento',
+          statusCode: 429,
+          code: 'rate-limit',
+        );
+      } else {
+        throw NetworkException.serverError(response.statusCode);
       }
+    } on AppException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar endereço: $e');
+      throw NetworkException(
+        'Erro ao buscar endereço',
+        code: 'reverse-geocoding-failed',
+        originalError: e,
+      );
     }
-    return null;
   }
 
   /// Obtém localização atual do dispositivo em tempo real
-  /// Requer BuildContext para mostrar diálogos de permissão
-  static Future<Position?> getCurrentLocation({BuildContext? context}) async {
+  ///
+  /// [context] Opcional - para mostrar diálogos de permissão
+  ///
+  /// Throws [PermissionException] se permissão for negada
+  /// Throws [GenericException] se serviço estiver desabilitado ou houver erro
+  static Future<Position> getCurrentLocation({BuildContext? context}) async {
     try {
-      // Se o contexto foi fornecido, verifica permissão com UI
+      // Verificar e solicitar permissão
       if (context != null) {
         final hasPermission = await PermissionService.hasLocationPermission();
         if (!hasPermission) {
           final granted =
               await PermissionService.requestLocationPermission(context);
           if (!granted) {
-            return null;
+            throw PermissionException.locationDenied();
           }
         }
       } else {
-        // Fallback: verifica permissão sem UI
         final hasPermission = await PermissionService.hasLocationPermission();
         if (!hasPermission) {
-          print('Permissão de localização não concedida');
-          return null;
+          throw PermissionException.locationDenied();
         }
       }
 
-      // Verifica se o serviço de localização está habilitado
+      // Verificar se o serviço de localização está habilitado
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        print('Serviço de localização desabilitado');
-        return null;
+        throw GenericException(
+          'Serviço de localização desabilitado. Ative o GPS nas configurações',
+          code: 'location-service-disabled',
+        );
       }
 
       // Obtém posição atual
@@ -114,9 +191,14 @@ class LocationService {
           distanceFilter: 10,
         ),
       );
+    } on AppException {
+      rethrow;
     } catch (e) {
-      print('Erro ao obter localização: $e');
-      return null;
+      throw GenericException(
+        'Erro ao obter localização',
+        code: 'get-location-failed',
+        originalError: e,
+      );
     }
   }
 
@@ -142,17 +224,32 @@ class LocationService {
   }
 
   /// Busca lugares próximos a uma coordenada
+  ///
+  /// [category] Tipo de lugar (ex: 'restaurant', 'hotel', 'tourism')
+  ///
+  /// Throws [ValidationException] se coordenadas ou categoria forem inválidas
+  /// Throws [NetworkException] em caso de erro de rede
   static Future<List<Map<String, dynamic>>> searchNearby(
     double lat,
     double lon,
-    String category, // ex: 'restaurant', 'hotel', 'tourism'
+    String category,
   ) async {
+    // Validar coordenadas
+    if (lat < -90 || lat > 90) {
+      throw ValidationException.invalidValue('latitude', 'Latitude inválida');
+    }
+    if (lon < -180 || lon > 180) {
+      throw ValidationException.invalidValue('longitude', 'Longitude inválida');
+    }
+    if (category.trim().isEmpty) {
+      throw ValidationException.emptyField('category');
+    }
+
     try {
-      // Nominatim não tem busca por categoria diretamente, mas podemos buscar por tipo
       final response = await HttpClientService.get(
         Uri.parse(
           '$_nominatimBase/search?'
-          'q=$category&'
+          'q=${Uri.encodeComponent(category.trim())}&'
           'format=json&'
           'limit=20&'
           'viewbox=${lon - 0.1},${lat - 0.1},${lon + 0.1},${lat + 0.1}&'
@@ -164,7 +261,9 @@ class LocationService {
         cacheDuration: const Duration(hours: 6),
       );
 
-      if (response == null) return [];
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -186,11 +285,24 @@ class LocationService {
             (a, b) =>
                 (a['distance'] as double).compareTo(b['distance'] as double),
           );
+      } else if (response.statusCode == 429) {
+        throw NetworkException(
+          'Muitas requisições. Aguarde um momento',
+          statusCode: 429,
+          code: 'rate-limit',
+        );
+      } else {
+        throw NetworkException.serverError(response.statusCode);
       }
+    } on AppException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar lugares próximos: $e');
+      throw NetworkException(
+        'Erro ao buscar lugares próximos',
+        code: 'search-nearby-failed',
+        originalError: e,
+      );
     }
-    return [];
   }
 
   /// Formata distância para exibição
@@ -202,11 +314,22 @@ class LocationService {
     }
   }
 
-  /// Obtém detalhes de um lugar específico
-  static Future<Map<String, dynamic>?> getPlaceDetails(
+  /// Obtém detalhes completos de um lugar específico
+  ///
+  /// Throws [ValidationException] se coordenadas forem inválidas
+  /// Throws [NetworkException] em caso de erro de rede
+  static Future<Map<String, dynamic>> getPlaceDetails(
     double lat,
     double lon,
   ) async {
+    // Validar coordenadas
+    if (lat < -90 || lat > 90) {
+      throw ValidationException.invalidValue('latitude', 'Latitude inválida');
+    }
+    if (lon < -180 || lon > 180) {
+      throw ValidationException.invalidValue('longitude', 'Longitude inválida');
+    }
+
     try {
       final response = await HttpClientService.get(
         Uri.parse(
@@ -223,10 +346,20 @@ class LocationService {
         cacheDuration: const Duration(hours: 12),
       );
 
-      if (response == null) return null;
+      if (response == null) {
+        throw NetworkException.timeout();
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
+        if (data['error'] != null) {
+          throw NetworkException(
+            'Detalhes não encontrados para estas coordenadas',
+            code: 'details-not-found',
+          );
+        }
+
         return {
           'display_name': data['display_name'] as String,
           'address': data['address'] as Map<String, dynamic>?,
@@ -236,10 +369,23 @@ class LocationService {
           'category': data['category'] as String?,
           'extratags': data['extratags'] as Map<String, dynamic>?,
         };
+      } else if (response.statusCode == 429) {
+        throw NetworkException(
+          'Muitas requisições. Aguarde um momento',
+          statusCode: 429,
+          code: 'rate-limit',
+        );
+      } else {
+        throw NetworkException.serverError(response.statusCode);
       }
+    } on AppException {
+      rethrow;
     } catch (e) {
-      print('Erro ao buscar detalhes do lugar: $e');
+      throw NetworkException(
+        'Erro ao buscar detalhes do lugar',
+        code: 'get-details-failed',
+        originalError: e,
+      );
     }
-    return null;
   }
 }
