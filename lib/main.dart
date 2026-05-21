@@ -23,39 +23,65 @@ import 'controllers/theme_controller.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa a formatação de datas para Português (Brasil)
-  await initializeDateFormatting('pt_BR', null);
+  try {
+    await initializeDateFormatting('pt_BR', null);
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
 
-  // Inicializa o gerenciador de memória
-  // Detecta automaticamente dispositivos antigos e ajusta configurações
-  await MemoryManagerService().initialize();
+    await MemoryManagerService().initialize();
 
-  if (!kIsWeb) {
-    // Configura o Firestore com cache otimizado para o dispositivo
-    final gerenciadorMemoria = MemoryManagerService();
-    final configuracoes = gerenciadorMemoria.getOptimizedSettings();
+    if (!kIsWeb) {
+      final gerenciadorMemoria = MemoryManagerService();
+      final configuracoes = gerenciadorMemoria.getOptimizedSettings();
+      final tamanhoCache = configuracoes['cacheSize'] as int;
+      final tamanhoCacheValido = tamanhoCache.clamp(1048576, 104857600);
 
-    // Firebase exige cache entre 1MB e 100MB
-    // Dispositivos antigos recebem valores menores automaticamente
-    final tamanhoCache = configuracoes['cacheSize'] as int;
-    final tamanhoCacheValido = tamanhoCache.clamp(1048576, 104857600);
+      FirebaseFirestore.instance.settings = Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: tamanhoCacheValido,
+      );
+    }
 
-    FirebaseFirestore.instance.settings = Settings(
-      persistenceEnabled: true,
-      cacheSizeBytes: tamanhoCacheValido,
-    );
+    await CacheService.initialize();
+
+    if (!kIsWeb) {
+      await NotificationService.init();
+      await PushNotificationService.initialize();
+    }
+
+    runApp(const MyApp());
+  } catch (e, stackTrace) {
+    debugPrint('Erro fatal na inicialização: $e');
+    debugPrint('Stack trace: $stackTrace');
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Erro ao inicializar o aplicativo',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  e.toString(),
+                  style: const TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ));
   }
-
-  await CacheService.initialize();
-
-  if (!kIsWeb) {
-    await NotificationService.init();
-    await PushNotificationService.initialize();
-  }
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -153,26 +179,58 @@ class _AppInitializerState extends State<AppInitializer> {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Se ainda está carregando o estado do Firebase
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final bool onboardingConcluido = CacheService.isOnboardingCompleted();
-
-        // Fluxo de navegação inicial do app
-        if (!onboardingConcluido) {
-          return const OnboardingPage();
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Erro de autenticação',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      snapshot.error.toString(),
+                      style: const TextStyle(fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
 
-        if (snapshot.hasData && snapshot.data != null) {
-          _requestLocationPermission();
-          return const DashboardPage();
-        }
+        try {
+          final bool onboardingConcluido = CacheService.isOnboardingCompleted();
 
-        return const LoginPage();
+          if (!onboardingConcluido) {
+            return const OnboardingPage();
+          }
+
+          if (snapshot.hasData && snapshot.data != null) {
+            _requestLocationPermission();
+            return const DashboardPage();
+          }
+
+          return const LoginPage();
+        } catch (e) {
+          debugPrint('Erro no AppInitializer: $e');
+          return const LoginPage();
+        }
       },
     );
   }
