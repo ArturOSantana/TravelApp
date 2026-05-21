@@ -73,11 +73,8 @@ class NotificationService {
     }
   }
 
-  static void _onNotificationTapped(NotificationResponse response) {
-  
-  }
+  static void _onNotificationTapped(NotificationResponse response) {}
 
-  
   static Future<void> scheduleNotification({
     required int id,
     required String title,
@@ -123,7 +120,6 @@ class NotificationService {
     }
   }
 
-
   static Future<void> showNotification({
     required int id,
     required String title,
@@ -165,14 +161,6 @@ class NotificationService {
     }
   }
 
-  /// Cancela uma notificação agendada
-  ///
-  /// Parâmetros:
-  /// - [id]: ID da notificação a ser cancelada
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se ID for inválido
-  /// - [GenericException]: Se falhar ao cancelar
   static Future<void> cancelNotification(int id) async {
     _ensureInitialized();
     _validateNotificationId(id);
@@ -187,10 +175,6 @@ class NotificationService {
     }
   }
 
-  /// Cancela todas as notificações agendadas
-  ///
-  /// Lança:
-  /// - [GenericException]: Se falhar ao cancelar
   static Future<void> cancelAllNotifications() async {
     _ensureInitialized();
 

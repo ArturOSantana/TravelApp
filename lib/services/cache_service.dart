@@ -156,16 +156,6 @@ class CacheService {
     return _prefs!.containsKey(key);
   }
 
-  /// Remove uma chave do cache.
-  ///
-  /// Parameters:
-  /// - [key]: Chave a remover
-  ///
-  /// Returns: `true` se removeu com sucesso
-  ///
-  /// Throws:
-  /// - [ValidationException] se a chave for inválida
-  /// - [CacheException] se houver erro ao remover
   static Future<bool> removeKey(String key) async {
     _validateKey(key);
 
@@ -185,7 +175,6 @@ class CacheService {
     }
   }
 
-
   static Future<bool> clearAll() async {
     try {
       if (_prefs == null) await initialize();
@@ -203,50 +192,40 @@ class CacheService {
     return getData('onboarding_completed', defaultValue: false) as bool;
   }
 
-  /// Marca o onboarding  concluído.
   static Future<bool> setOnboardingCompleted() {
     return saveData('onboarding_completed', true);
   }
 
-  /// Salva dados do usuário no cache.
   static Future<bool> cacheUserData(Map<String, dynamic> userData) {
     return saveData('user_data', userData);
   }
 
-  /// Recupera dados do usuário do cache.
   static Map<String, dynamic>? getCachedUserData() {
     return getJsonData('user_data');
   }
 
-  /// Salva timestamp da última sincronização.
   static Future<bool> saveLastSync() {
     return saveData('last_sync', DateTime.now().toIso8601String());
   }
 
-  /// Recupera timestamp da última sincronização.
   static DateTime? getLastSync() {
     final syncString = getData('last_sync') as String?;
     if (syncString == null) return null;
     return DateTime.tryParse(syncString);
   }
 
-  /// Verifica se precisa sincronizar (última sync há mais de 1 hora).
   static bool needsSync() {
     final lastSync = getLastSync();
     if (lastSync == null) return true;
     return DateTime.now().difference(lastSync).inHours >= 1;
   }
 
-  // ==================== MÉTODOS AUXILIARES ====================
-
-  /// Verifica se uma chave expirou.
   static bool _isExpired(String key) {
     final expiryTime = _prefs?.getInt('${key}_expiry');
     if (expiryTime == null) return false;
     return DateTime.now().millisecondsSinceEpoch > expiryTime;
   }
 
-  /// Limpa cache expirado.
   static Future<void> _cleanExpiredCache() async {
     try {
       if (_prefs == null) return;
