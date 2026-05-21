@@ -139,7 +139,10 @@ class _CommunityPageState extends State<CommunityPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isSaved ? 'Post removido dos salvos' : 'Post salvo!'),
+            content: Semantics(
+              liveRegion: true,
+              child: Text(isSaved ? 'Post removido dos salvos' : 'Post salvo!'),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );

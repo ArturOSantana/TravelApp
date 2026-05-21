@@ -25,7 +25,10 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Checklist da Viagem'),
+        title: Semantics(
+          header: true,
+          child: const Text('Checklist da Viagem'),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         actions: [
           IconButton(
@@ -40,11 +43,15 @@ class _PackingChecklistPageState extends State<PackingChecklistPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddItemDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Novo item'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+      floatingActionButton: Semantics(
+        button: true,
+        label: 'Adicionar novo item ao checklist',
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddItemDialog(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Novo item'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
       ),
       body: SafeArea(
         child: StreamBuilder<PackingChecklistViewData>(

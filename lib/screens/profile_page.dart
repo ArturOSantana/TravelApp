@@ -147,7 +147,12 @@ class _ProfilePageState extends State<ProfilePage> {
           setState(() => _isSaving = false);
           if (error == null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Perfil atualizado com sucesso!')),
+              SnackBar(
+                content: Semantics(
+                  liveRegion: true,
+                  child: const Text('Perfil atualizado com sucesso!'),
+                ),
+              ),
             );
             _loadUserData();
           } else {

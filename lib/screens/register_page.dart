@@ -106,60 +106,66 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 30),
 
-                    // NOME COMPLETO
-                    TextFormField(
-                      controller: nameController,
-                      autofillHints: const [AutofillHints.name],
-                      textInputAction: TextInputAction.next,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
+                    Semantics(
+                      textField: true,
+                      label: "Campo de nome completo",
+                      child: TextFormField(
+                        controller: nameController,
+                        autofillHints: const [AutofillHints.name],
+                        textInputAction: TextInputAction.next,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: "Nome Completo",
+                          prefixIcon: const Icon(Icons.person_outline),
+                          border: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(12))),
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty)
+                            return "Informe seu nome";
+                          if (value.trim().split(' ').length < 2)
+                            return "Informe nome e sobrenome";
+                          return null;
+                        },
                       ),
-                      decoration: InputDecoration(
-                        labelText: "Nome Completo",
-                        prefixIcon: const Icon(Icons.person_outline),
-                        border: const OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(12))),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty)
-                          return "Informe seu nome";
-                        if (value.trim().split(' ').length < 2)
-                          return "Informe nome e sobrenome";
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 15),
 
-                    // E-MAIL
-                    TextFormField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
+                    Semantics(
+                      textField: true,
+                      label: "Campo de e-mail",
+                      child: TextFormField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        textInputAction: TextInputAction.next,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: "E-mail",
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(12))),
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty)
+                            return "Informe seu e-mail";
+                          final emailRegex =
+                              RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          if (!emailRegex.hasMatch(value))
+                            return "E-mail inválido";
+                          return null;
+                        },
                       ),
-                      decoration: InputDecoration(
-                        labelText: "E-mail",
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: const OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(12))),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty)
-                          return "Informe seu e-mail";
-                        final emailRegex =
-                            RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                        if (!emailRegex.hasMatch(value))
-                          return "E-mail inválido";
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 15),
 

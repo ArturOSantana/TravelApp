@@ -40,10 +40,13 @@ class _TripsPageState extends State<TripsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Minhas Viagens",
-          style: TextStyle(fontWeight: FontWeight.bold),
-          overflow: TextOverflow.ellipsis,
+        title: Semantics(
+          header: true,
+          child: const Text(
+            "Minhas Viagens",
+            style: TextStyle(fontWeight: FontWeight.bold),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -113,16 +116,20 @@ class _TripsPageState extends State<TripsPage>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateTripPage()),
-          );
-        },
+      floatingActionButton: Semantics(
+        button: true,
+        label: 'Criar nova viagem',
+        child: FloatingActionButton(
+          backgroundColor: Colors.deepPurple,
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CreateTripPage()),
+            );
+          },
+        ),
       ),
       body: TabBarView(
         controller: _tabController,
