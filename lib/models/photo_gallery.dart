@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 class PhotoAlbum {
   final String id;
@@ -15,7 +16,14 @@ class PhotoAlbum {
     required this.photos,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(tripId, 'Trip ID');
+    ModelValidators.validateNonEmpty(folderName, 'Nome da pasta');
+  }
 
   factory PhotoAlbum.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -23,8 +31,7 @@ class PhotoAlbum {
       id: doc.id,
       tripId: data['tripId'] ?? '',
       folderName: data['folderName'] ?? 'Sem Nome',
-      photos:
-          (data['photos'] as List<dynamic>?)
+      photos: (data['photos'] as List<dynamic>?)
               ?.map((p) => PhotoItem.fromMap(p as Map<String, dynamic>))
               .toList() ??
           [],
@@ -60,6 +67,21 @@ class PhotoAlbum {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PhotoAlbum &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          tripId == other.tripId;
+
+  @override
+  int get hashCode => id.hashCode ^ tripId.hashCode;
+
+  @override
+  String toString() =>
+      'PhotoAlbum(id: $id, folder: $folderName, photos: ${photos.length})';
 }
 
 class PhotoItem {
@@ -79,7 +101,13 @@ class PhotoItem {
     this.location,
     required this.takenAt,
     this.isPublic = false,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(url, 'URL da foto');
+  }
 
   factory PhotoItem.fromMap(Map<String, dynamic> map) {
     return PhotoItem(
@@ -124,6 +152,20 @@ class PhotoItem {
       isPublic: isPublic ?? this.isPublic,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PhotoItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          url == other.url;
+
+  @override
+  int get hashCode => id.hashCode ^ url.hashCode;
+
+  @override
+  String toString() => 'PhotoItem(id: $id, location: $location)';
 }
 
 // Pastas pré-definidas
@@ -138,15 +180,15 @@ class PhotoFolders {
   static const String other = 'Outras';
 
   static List<String> get all => [
-    highlights,
-    landscapes,
-    food,
-    people,
-    activities,
-    accommodation,
-    transport,
-    other,
-  ];
+        highlights,
+        landscapes,
+        food,
+        people,
+        activities,
+        accommodation,
+        transport,
+        other,
+      ];
 
   static String getIcon(String folder) {
     switch (folder) {
@@ -171,4 +213,3 @@ class PhotoFolders {
     }
   }
 }
-

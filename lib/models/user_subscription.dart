@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 enum SubscriptionTier {
   free,
@@ -23,7 +24,20 @@ class UserSubscription {
     this.isActive = false,
     this.paymentMethod,
     this.monthlyPrice,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(userId, 'User ID');
+    if (monthlyPrice != null) {
+      ModelValidators.validatePositiveNumber(monthlyPrice!, 'Preço mensal');
+    }
+    if (subscriptionStartDate != null && subscriptionEndDate != null) {
+      ModelValidators.validateDateRange(
+          subscriptionStartDate, subscriptionEndDate);
+    }
+  }
 
   bool get isPremium => tier == SubscriptionTier.premium && isActive;
   bool get isBusiness => tier == SubscriptionTier.business && isActive;
@@ -84,8 +98,12 @@ class UserSubscription {
     return {
       'userId': userId,
       'tier': tier.name,
-      'subscriptionStartDate': subscriptionStartDate,
-      'subscriptionEndDate': subscriptionEndDate,
+      'subscriptionStartDate': subscriptionStartDate != null
+          ? Timestamp.fromDate(subscriptionStartDate!)
+          : null,
+      'subscriptionEndDate': subscriptionEndDate != null
+          ? Timestamp.fromDate(subscriptionEndDate!)
+          : null,
       'isActive': isActive,
       'paymentMethod': paymentMethod,
       'monthlyPrice': monthlyPrice,
@@ -130,5 +148,20 @@ class UserSubscription {
       monthlyPrice: monthlyPrice ?? this.monthlyPrice,
     );
   }
-}
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserSubscription &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          tier == other.tier &&
+          isActive == other.isActive;
+
+  @override
+  int get hashCode => userId.hashCode ^ tier.hashCode ^ isActive.hashCode;
+
+  @override
+  String toString() =>
+      'UserSubscription(userId: $userId, tier: ${tier.name}, isActive: $isActive)';
+}
