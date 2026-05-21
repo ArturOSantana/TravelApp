@@ -23,14 +23,23 @@ class _ExpensesPageState extends State<ExpensesPage> {
   final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
   double _exchangeRate = 1.0;
 
-  // Cache de nomes para evitar múltiplas consultas ao Firestore
   final Map<String, String> _memberNamesCache = {};
 
-  final NumberFormat _currencyFormat = NumberFormat.currency(
-    locale: 'pt_BR',
-    symbol: 'R\$',
-    decimalDigits: 2,
-  );
+  NumberFormat _getCurrencyFormat(String currency) {
+    final symbols = {
+      'BRL': 'R\$',
+      'USD': '\$',
+      'EUR': '€',
+      'GBP': '£',
+      'ARS': '\$',
+    };
+
+    return NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: symbols[currency] ?? currency,
+      decimalDigits: 2,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,15 +144,16 @@ class _ExpensesPageState extends State<ExpensesPage> {
           children: [
             Semantics(
               label:
-                  "Resumo financeiro. Total gasto: R\$ ${totalGasto.toStringAsFixed(2)}. Orçamento total: R\$ ${trip.budget.toStringAsFixed(2)}",
-              child: _buildBudgetHeader(totalGasto, trip.budget, progresso),
+                  "Resumo financeiro. Total gasto: ${_getCurrencyFormat(trip.baseCurrency).format(totalGasto)}. Orçamento total: ${_getCurrencyFormat(trip.baseCurrency).format(trip.budget)}",
+              child: _buildBudgetHeader(
+                  totalGasto, trip.budget, progresso, trip.baseCurrency),
             ),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) =>
-                    _buildExpenseCard(snapshot.data![index]),
+                    _buildExpenseCard(snapshot.data![index], trip),
               ),
             ),
           ],
@@ -152,9 +162,10 @@ class _ExpensesPageState extends State<ExpensesPage> {
     );
   }
 
-  Widget _buildBudgetHeader(double gasto, double orcamento, double progresso) {
-    // Calcula quanto ainda tem disponível
+  Widget _buildBudgetHeader(
+      double gasto, double orcamento, double progresso, String currency) {
     final disponivel = orcamento - gasto;
+    final currencyFormat = _getCurrencyFormat(currency);
 
     return Container(
       width: double.infinity,
@@ -175,7 +186,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       style: TextStyle(
                           color: AppColors.textOnPrimary.withOpacity(0.7),
                           fontSize: 14)),
-                  Text("R\$ ${gasto.toStringAsFixed(2)}",
+                  Text(currencyFormat.format(gasto),
                       style: const TextStyle(
                           color: AppColors.textOnPrimary,
                           fontSize: 24,
@@ -189,8 +200,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                       style: TextStyle(
                           color: AppColors.textOnPrimary.withOpacity(0.7),
                           fontSize: 14)),
-                  // ATENÇÃO: Pode ficar negativo se estourar o orçamento!
-                  Text("R\$ ${disponivel.toStringAsFixed(2)}",
+                  Text(currencyFormat.format(disponivel),
                       style: const TextStyle(
                           color: AppColors.textOnPrimary,
                           fontSize: 20,
@@ -211,13 +221,14 @@ class _ExpensesPageState extends State<ExpensesPage> {
     );
   }
 
-  Widget _buildExpenseCard(Expense expense) {
+  Widget _buildExpenseCard(Expense expense, Trip trip) {
+    final currencyFormat = _getCurrencyFormat(trip.baseCurrency);
     final bool isPayment = expense.category == 'payment';
     final bool isDifferentCurrency = expense.currency != 'BRL';
 
     return Semantics(
       label:
-          "Gasto: ${expense.title}. Valor: R\$ ${expense.value.toStringAsFixed(2)}. Data: ${DateFormat('dd/MM').format(expense.date)}",
+          "Gasto: ${expense.title}. Valor: ${currencyFormat.format(expense.value)}. Data: ${DateFormat('dd/MM').format(expense.date)}",
       child: Card(
         key: ValueKey('card_${expense.id}'),
         margin: const EdgeInsets.only(bottom: 12),
@@ -299,11 +310,11 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   icon: const Icon(Icons.more_vert, size: 20),
                   onSelected: (value) {
                     if (value == 'reconvert') {
-                      _showReconvertDialog(expense);
+                      _showReconvertDialog(expense, trip);
                     } else if (value == 'edit') {
                       _editExpense(expense);
                     } else if (value == 'delete') {
-                      _deleteExpense(expense);
+                      _deleteExpense(expense, trip);
                     }
                   },
                   itemBuilder: (context) => [
@@ -350,6 +361,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
   }
 
   Widget _buildSplitTab(Trip trip) {
+    final currencyFormat = _getCurrencyFormat(trip.baseCurrency);
+
     return StreamBuilder<List<Expense>>(
       stream: _controller.getExpenses(widget.tripId),
       builder: (context, snapshot) {
@@ -390,17 +403,16 @@ class _ExpensesPageState extends State<ExpensesPage> {
           );
         }
 
-        // Calcular balanço de cada membro
         final balances = _calculateBalances(expenses, trip);
 
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildBalanceSummaryCard(balances, trip),
+            _buildBalanceSummaryCard(balances, trip, currencyFormat),
             const SizedBox(height: 20),
-            _buildSettlementSuggestions(balances, trip),
+            _buildSettlementSuggestions(balances, trip, currencyFormat),
             const SizedBox(height: 20),
-            _buildDetailedBreakdown(expenses, trip),
+            _buildDetailedBreakdown(expenses, trip, currencyFormat),
           ],
         );
       },
@@ -441,7 +453,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
     return roundedBalances;
   }
 
-  Widget _buildBalanceSummaryCard(Map<String, double> balances, Trip trip) {
+  Widget _buildBalanceSummaryCard(
+      Map<String, double> balances, Trip trip, NumberFormat currencyFormat) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -501,7 +514,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '${balance >= 0 ? '+' : ''}${_currencyFormat.format(balance)}',
+                            '${balance >= 0 ? '+' : ''}${currencyFormat.format(balance)}',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -525,7 +538,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
     );
   }
 
-  Widget _buildSettlementSuggestions(Map<String, double> balances, Trip trip) {
+  Widget _buildSettlementSuggestions(
+      Map<String, double> balances, Trip trip, NumberFormat currencyFormat) {
     final settlements = _calculateSettlements(balances);
 
     if (settlements.isEmpty) {
@@ -619,9 +633,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
                                 ),
                                 const TextSpan(text: ' deve pagar '),
                                 TextSpan(
-                                  text: _currencyFormat
+                                  text: currencyFormat
                                       .format(double.parse(amount)),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.info,
                                   ),
@@ -723,7 +737,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
     return settlements;
   }
 
-  Widget _buildDetailedBreakdown(List<Expense> expenses, Trip trip) {
+  Widget _buildDetailedBreakdown(
+      List<Expense> expenses, Trip trip, NumberFormat currencyFormat) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -764,7 +779,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                           color: AppColors.textSecondary, fontSize: 13),
                     ),
                     trailing: Text(
-                      _currencyFormat.format(expense.value),
+                      currencyFormat.format(expense.value),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -800,7 +815,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                                       children: [
                                         Text('  • $memberName'),
                                         Text(
-                                          _currencyFormat.format(split.value),
+                                          currencyFormat.format(split.value),
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -856,11 +871,13 @@ class _ExpensesPageState extends State<ExpensesPage> {
     return 'Membro';
   }
 
-  Future<void> _showReconvertDialog(Expense expense) async {
+  Future<void> _showReconvertDialog(Expense expense, Trip trip) async {
+    final currencyFormat = _getCurrencyFormat(trip.baseCurrency);
+
     try {
       final newRate = await ExchangeRateService.getExchangeRate(
         from: expense.currency,
-        to: 'BRL',
+        to: trip.baseCurrency,
       );
 
       if (newRate == null) {
@@ -907,11 +924,11 @@ class _ExpensesPageState extends State<ExpensesPage> {
               const Divider(height: 24),
               _buildInfoRow(
                 'Taxa antiga:',
-                '1 ${expense.currency} = ${expense.exchangeRateUsed.toStringAsFixed(4)} BRL',
+                '1 ${expense.currency} = ${expense.exchangeRateUsed.toStringAsFixed(4)} ${trip.baseCurrency}',
               ),
               _buildInfoRow(
                 'Valor convertido:',
-                _currencyFormat.format(expense.value),
+                currencyFormat.format(expense.value),
               ),
               if (expense.conversionDate != null)
                 _buildInfoRow(
@@ -922,12 +939,12 @@ class _ExpensesPageState extends State<ExpensesPage> {
               const Divider(height: 24),
               _buildInfoRow(
                 'Taxa atual:',
-                '1 ${expense.currency} = ${newRate.toStringAsFixed(4)} BRL',
+                '1 ${expense.currency} = ${newRate.toStringAsFixed(4)} ${trip.baseCurrency}',
                 highlight: true,
               ),
               _buildInfoRow(
                 'Novo valor:',
-                _currencyFormat.format(newValue),
+                currencyFormat.format(newValue),
                 highlight: true,
               ),
               const SizedBox(height: 12),
@@ -952,7 +969,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Diferença: ${_currencyFormat.format(difference.abs())} (${percentChange.toStringAsFixed(1)}%)',
+                        'Diferença: ${currencyFormat.format(difference.abs())} (${percentChange.toStringAsFixed(1)}%)',
                         style: TextStyle(
                           color: difference >= 0
                               ? AppColors.error
@@ -1065,7 +1082,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
     }
   }
 
-  void _deleteExpense(Expense expense) async {
+  void _deleteExpense(Expense expense, Trip trip) async {
+    final currencyFormat = _getCurrencyFormat(trip.baseCurrency);
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1094,7 +1113,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Valor: ${_currencyFormat.format(expense.value)}',
+                    'Valor: ${currencyFormat.format(expense.value)}',
                     style: const TextStyle(fontSize: 14),
                   ),
                   Text(
