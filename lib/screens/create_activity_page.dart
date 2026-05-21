@@ -108,7 +108,12 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     if (titleController.text.isEmpty) return;
     if (categoryController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Defina uma categoria!")),
+        SnackBar(
+          content: Semantics(
+            liveRegion: true,
+            child: const Text("Defina uma categoria!"),
+          ),
+        ),
       );
       return;
     }
@@ -159,7 +164,14 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red));
+          SnackBar(
+            content: Semantics(
+              liveRegion: true,
+              child: Text("Erro: $e"),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 
@@ -167,8 +179,11 @@ class _CreateActivityPageState extends State<CreateActivityPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            widget.activity != null ? "Editar Atividade" : "Nova Atividade"),
+        title: Semantics(
+          header: true,
+          child: Text(
+              widget.activity != null ? "Editar Atividade" : "Nova Atividade"),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

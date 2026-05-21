@@ -285,10 +285,13 @@ class _SafetyPageState extends State<SafetyPage> {
     }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("✅ Você chegou em segurança!"),
+        SnackBar(
+          content: Semantics(
+            liveRegion: true,
+            child: const Text("✅ Você chegou em segurança!"),
+          ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -307,7 +310,10 @@ class _SafetyPageState extends State<SafetyPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("⚠️ Grupo notificado sobre desvio de rota"),
+            content: Semantics(
+              liveRegion: true,
+              child: const Text("⚠️ Grupo notificado sobre desvio de rota"),
+            ),
             backgroundColor: Theme.of(context).colorScheme.secondary,
             duration: const Duration(seconds: 2),
           ),

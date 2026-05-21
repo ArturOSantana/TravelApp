@@ -60,8 +60,11 @@ class _ReportsPageState extends State<ReportsPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Relatório PDF exportado com sucesso!'),
+          SnackBar(
+            content: Semantics(
+              liveRegion: true,
+              child: const Text('Relatório PDF exportado com sucesso!'),
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -70,7 +73,10 @@ class _ReportsPageState extends State<ReportsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao exportar PDF: $e'),
+            content: Semantics(
+              liveRegion: true,
+              child: Text('Erro ao exportar PDF: $e'),
+            ),
             backgroundColor: Colors.red,
           ),
         );
