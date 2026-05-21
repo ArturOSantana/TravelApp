@@ -27,6 +27,7 @@ class AppTextStyles {
       fontFamily: _fontFamily,
     );
   }
+
   static TextStyle h3(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 24),
@@ -71,7 +72,6 @@ class AppTextStyles {
     );
   }
 
-
   static TextStyle bodyLarge(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 18),
@@ -107,10 +107,6 @@ class AppTextStyles {
     );
   }
 
-  // ========== LABELS E BOTÕES ==========
-
-  /// Label Large - Label grande (16sp)
-  /// Uso: Botões principais, labels importantes
   static TextStyle labelLarge(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 16),
@@ -148,10 +144,6 @@ class AppTextStyles {
     );
   }
 
-  // ========== CAPTION E OVERLINE ==========
-
-  /// Caption - Texto de legenda (12sp)
-  /// Uso: Legendas, timestamps, metadados
   static TextStyle caption(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 12),
@@ -176,9 +168,6 @@ class AppTextStyles {
     );
   }
 
-  // ========== ESTILOS ESPECIAIS ==========
-
-  /// Button - Estilo para botões (16sp)
   static TextStyle button(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 16),
@@ -227,10 +216,6 @@ class AppTextStyles {
     );
   }
 
-  // ========== MÉTODOS AUXILIARES ==========
-
-  /// Calcula tamanho de fonte escalável respeitando preferências do usuário
-  /// Limita o fator de escala para manter legibilidade
   static double _scaledSize(BuildContext context, double baseSize) {
     final textScaleFactor = MediaQuery.of(context).textScaleFactor;
     final clampedFactor = textScaleFactor.clamp(
@@ -274,9 +259,6 @@ class AppTextStyles {
     );
   }
 
-  // ========== VALIDAÇÃO DE ACESSIBILIDADE ==========
-
-  /// Verifica se o tamanho de fonte é acessível (mínimo 12sp)
   static bool isAccessibleSize(double fontSize) {
     return fontSize >= 12.0;
   }
@@ -294,10 +276,9 @@ class AppTextStyles {
       case 'body':
         return 16.0; // Texto de corpo deve ter no mínimo 16sp
       case 'caption':
-        return 12.0; // Legendas podem ter no mínimo 12sp
+        return 12.0; 
       default:
         return 14.0; // Padrão seguro
     }
   }
 }
-

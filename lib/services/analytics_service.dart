@@ -469,8 +469,6 @@ class AnalyticsService {
     );
   }
 
-  // ==================== VALIDAÇÕES ====================
-
   static void _validatePositiveDouble(double value, String fieldName) {
     if (value < 0) {
       throw ValidationException('$fieldName não pode ser negativo');
@@ -535,8 +533,6 @@ class TripStatistics {
     if (efficiencyIndex < 1.2) return const Color(0xFFFFC107);
     return const Color(0xFFF44336);
   }
-
-  // ==================== VALIDAÇÕES ====================
 
   static void _validatePositiveDouble(double value, String fieldName) {
     if (value < 0) {

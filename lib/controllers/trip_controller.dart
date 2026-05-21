@@ -593,9 +593,6 @@ class TripController {
     });
   }
 
-  // ==================== JOURNAL REACTIONS ====================
-
-  /// Adiciona ou remove uma reação de um usuário em um registro de diário
   Future<void> addReactionToJournalEntry({
     required String tripId,
     required String entryId,
@@ -713,9 +710,6 @@ class TripController {
         .map((doc) => JournalEntry.fromFirestore(doc));
   }
 
-  // ==================== PLACE RATINGS ====================
-
-  /// Busca todas as avaliações públicas de um lugar específico
   Stream<List<PlaceRating>> getPlaceRatings(String placeId) {
     return _db
         .collection('place_ratings')
@@ -918,9 +912,6 @@ class TripController {
     }
   }
 
-  // ==================== SAVED POSTS ====================
-
-  /// Salva um post (serviço ou avaliação de destino) na lista do usuário
   Future<void> savePost(String postId, String postType) async {
     try {
       final uid = _auth.currentUser?.uid ?? '';
