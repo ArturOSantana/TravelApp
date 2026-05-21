@@ -4,29 +4,14 @@ import 'dart:convert';
 import 'dart:async';
 import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço de cache local usando SharedPreferences.
-///
-/// Fornece armazenamento persistente com suporte a:
-/// - Expiração automática de dados
-/// - Limite de tamanho do cache
-/// - Limpeza periódica
-/// - Múltiplos tipos de dados
 class CacheService {
   static SharedPreferences? _prefs;
   static Timer? _cleanupTimer;
 
-  // Configurações
   static const int _maxCacheSize = 50;
   static const Duration _cleanupInterval = Duration(hours: 6);
   static const int _batchRemoveSize = 10;
 
-  /// Inicializa o serviço de cache.
-  ///
-  /// Deve ser chamado antes de usar qualquer outro método.
-  /// Configura limpeza automática periódica.
-  ///
-  /// Throws:
-  /// - [CacheException] se houver erro na inicialização
   static Future<void> initialize() async {
     try {
       _prefs = await SharedPreferences.getInstance();
@@ -62,12 +47,6 @@ class CacheService {
   /// - [key]: Chave única para o dado (não pode estar vazia)
   /// - [data]: Dado a ser salvo
   /// - [expiration]: Duração até expiração (opcional)
-  ///
-  /// Returns: `true` se salvou com sucesso
-  ///
-  /// Throws:
-  /// - [ValidationException] se a chave for inválida
-  /// - [CacheException] se houver erro ao salvar
   static Future<bool> saveData(
     String key,
     dynamic data, {
@@ -111,18 +90,6 @@ class CacheService {
     }
   }
 
-  /// Recupera dados do cache.
-  ///
-  /// Remove automaticamente se expirado.
-  ///
-  /// Parameters:
-  /// - [key]: Chave do dado
-  /// - [defaultValue]: Valor padrão se não encontrado
-  ///
-  /// Returns: Dado armazenado ou defaultValue
-  ///
-  /// Throws:
-  /// - [ValidationException] se a chave for inválida
   static dynamic getData(String key, {dynamic defaultValue}) {
     _validateKey(key);
 
@@ -146,16 +113,6 @@ class CacheService {
     }
   }
 
-  /// Recupera dados JSON do cache.
-  ///
-  /// Parameters:
-  /// - [key]: Chave do dado JSON
-  ///
-  /// Returns: Map com dados ou null se não encontrado
-  ///
-  /// Throws:
-  /// - [ValidationException] se a chave for inválida
-  /// - [CacheException] se houver erro ao decodificar JSON
   static Map<String, dynamic>? getJsonData(String key) {
     _validateKey(key);
 
@@ -228,12 +185,7 @@ class CacheService {
     }
   }
 
-  /// Limpa todo o cache.
-  ///
-  /// Returns: `true` se limpou com sucesso
-  ///
-  /// Throws:
-  /// - [CacheException] se houver erro ao limpar
+
   static Future<bool> clearAll() async {
     try {
       if (_prefs == null) await initialize();
@@ -247,14 +199,11 @@ class CacheService {
     }
   }
 
-  // ==================== MÉTODOS DE CONVENIÊNCIA ====================
-
-  /// Verifica se o onboarding foi concluído.
   static bool isOnboardingCompleted() {
     return getData('onboarding_completed', defaultValue: false) as bool;
   }
 
-  /// Marca o onboarding como concluído.
+  /// Marca o onboarding  concluído.
   static Future<bool> setOnboardingCompleted() {
     return saveData('onboarding_completed', true);
   }

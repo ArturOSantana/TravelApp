@@ -1,25 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço de autenticação com Firebase
-///
-/// Gerencia login, registro, recuperação de senha e outras
-/// operações relacionadas à autenticação de usuários.
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// Retorna o usuário atualmente autenticado
   User? get currentUser => _auth.currentUser;
 
-  /// Stream de mudanças no estado de autenticação
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  /// Realiza login com email e senha
-  ///
-  /// Throws [AuthException] em caso de erro
   Future<User> login(String email, String password) async {
     try {
-      // Validação básica
       if (email.trim().isEmpty || password.isEmpty) {
         throw AuthException.invalidCredentials();
       }
@@ -46,12 +36,8 @@ class AuthService {
     }
   }
 
-  /// Registra novo usuário com email e senha
-  ///
-  /// Throws [AuthException] em caso de erro
   Future<User> register(String email, String password) async {
     try {
-      // Validação básica
       if (email.trim().isEmpty) {
         throw AuthException.invalidEmail();
       }
@@ -68,7 +54,6 @@ class AuthService {
         throw AuthException('Falha ao criar conta', code: 'register-failed');
       }
 
-      // Enviar email de verificação
       await result.user!.sendEmailVerification();
 
       return result.user!;
@@ -84,9 +69,6 @@ class AuthService {
     }
   }
 
-  /// Envia email de recuperação de senha
-  ///
-  /// Throws [AuthException] em caso de erro
   Future<void> resetPassword(String email) async {
     try {
       if (email.trim().isEmpty) {
@@ -106,7 +88,6 @@ class AuthService {
     }
   }
 
-  /// Faz logout do usuário atual
   Future<void> logout() async {
     try {
       await _auth.signOut();
@@ -145,7 +126,6 @@ class AuthService {
     }
   }
 
-  /// Atualiza o nome de exibição do usuário
   Future<void> updateDisplayName(String displayName) async {
     try {
       final user = currentUser;
@@ -165,9 +145,6 @@ class AuthService {
     }
   }
 
-  /// Atualiza a senha do usuário
-  ///
-  /// Requer reautenticação recente
   Future<void> updatePassword(String newPassword) async {
     try {
       final user = currentUser;

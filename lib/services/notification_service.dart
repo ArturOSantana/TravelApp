@@ -4,42 +4,23 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'dart:io';
 import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço de notificações locais
-///
-/// Responsabilidades:
-/// - Inicialização do sistema de notificações
-/// - Agendamento de notificações
-/// - Cancelamento de notificações
-/// - Gerenciamento de permissões
-///
-/// Usa: flutter_local_notifications
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
   static bool _isInitialized = false;
 
-  // Constantes de validação
   static const int _minNotificationId = 0;
-  static const int _maxNotificationId = 2147483647; // Max int32
+  static const int _maxNotificationId = 2147483647;
   static const int _minTitleLength = 1;
   static const int _maxTitleLength = 65;
   static const int _minBodyLength = 1;
   static const int _maxBodyLength = 240;
 
-  /// Inicializa o serviço de notificações
-  ///
-  /// Deve ser chamado uma vez no início do app
-  ///
-  /// Lança:
-  /// - [GenericException]: Se falhar ao inicializar
   static Future<void> init() async {
-    if (_isInitialized) {
-      return; // Já inicializado
-    }
+    if (_isInitialized) return;
 
     try {
-      // Inicializar timezones
       tz_data.initializeTimeZones();
       tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
 
@@ -59,13 +40,11 @@ class NotificationService {
         iOS: initializationSettingsIOS,
       );
 
-      // Inicializa o sistema de notificações locais
       await _notifications.initialize(
         settings: initializationSettings,
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
-      // Solicitar permissões no Android
       if (Platform.isAndroid) {
         await _requestAndroidPermissions();
       }
@@ -79,7 +58,6 @@ class NotificationService {
     }
   }
 
-  /// Solicita permissões necessárias no Android
   static Future<void> _requestAndroidPermissions() async {
     try {
       final androidPlugin =
@@ -91,30 +69,15 @@ class NotificationService {
         await androidPlugin.requestExactAlarmsPermission();
       }
     } catch (e) {
-      // Não lançar exceção se falhar permissões, apenas logar
-      // O app pode continuar funcionando sem notificações
+      // Permissões opcionais
     }
   }
 
-  /// Callback quando usuário toca na notificação
   static void _onNotificationTapped(NotificationResponse response) {
-    // Aqui pode adicionar navegação quando o usuário clicar na notificação
-    // Por exemplo: abrir a tela da atividade específica
-    // O payload pode conter informações de roteamento
+  
   }
 
-  /// Agenda uma notificação para data/hora específica
-  ///
-  /// Parâmetros:
-  /// - [id]: ID único da notificação (0 a 2147483647)
-  /// - [title]: Título da notificação (1-65 caracteres)
-  /// - [body]: Corpo da notificação (1-240 caracteres)
-  /// - [scheduledDate]: Data e hora para exibir a notificação
-  /// - [payload]: Dados adicionais (opcional)
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [GenericException]: Se falhar ao agendar
+  
   static Future<void> scheduleNotification({
     required int id,
     required String title,
@@ -160,17 +123,7 @@ class NotificationService {
     }
   }
 
-  /// Exibe notificação imediatamente
-  ///
-  /// Parâmetros:
-  /// - [id]: ID único da notificação
-  /// - [title]: Título da notificação
-  /// - [body]: Corpo da notificação
-  /// - [payload]: Dados adicionais (opcional)
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [GenericException]: Se falhar ao exibir
+
   static Future<void> showNotification({
     required int id,
     required String title,

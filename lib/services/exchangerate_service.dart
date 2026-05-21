@@ -3,38 +3,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
-/// Serviço de integração com ExchangeRate API
-///
-/// Responsabilidades:
-/// - Conversão de moedas
-/// - Obtenção de taxas de câmbio
-/// - Cache de taxas para reduzir requisições
-/// - Cálculo de orçamentos multi-moeda
-///
-/// API: https://www.exchangerate-api.com/
 class ExchangeRateService {
   static const String _baseUrl = 'https://api.exchangerate-api.com/v4/latest';
   static const String _cacheKey = 'exchange_rates_cache';
   static const String _cacheTimeKey = 'exchange_rates_cache_time';
-  static const int _cacheDurationHours = 24; // Cache por 24 horas
+  static const int _cacheDurationHours = 24;
 
-  // Constantes de validação
   static const int _currencyCodeLength = 3;
   static const double _minAmount = 0.0;
   static const double _maxAmount = 999999999.99;
 
-  /// Converte valor entre duas moedas
-  ///
-  /// Parâmetros:
-  /// - [amount]: Valor a ser convertido (deve ser positivo)
-  /// - [from]: Código da moeda de origem (3 letras, ex: BRL)
-  /// - [to]: Código da moeda de destino (3 letras, ex: USD)
-  ///
-  /// Retorna: Valor convertido
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<double> convert({
     required double amount,
     required String from,
@@ -60,17 +38,6 @@ class ExchangeRateService {
     }
   }
 
-  /// Obtém taxa de câmbio entre duas moedas
-  ///
-  /// Parâmetros:
-  /// - [from]: Código da moeda de origem (3 letras)
-  /// - [to]: Código da moeda de destino (3 letras)
-  ///
-  /// Retorna: Taxa de câmbio
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se códigos de moeda forem inválidos
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<double> getExchangeRate({
     required String from,
     required String to,
@@ -102,17 +69,6 @@ class ExchangeRateService {
     }
   }
 
-  /// Converte múltiplos valores para uma moeda alvo
-  ///
-  /// Parâmetros:
-  /// - [amounts]: Lista de mapas com 'amount', 'currency' e 'description'
-  /// - [targetCurrency]: Código da moeda de destino
-  ///
-  /// Retorna: Lista de conversões realizadas
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [NetworkException]: Se houver erro nas conversões
   static Future<List<Map<String, dynamic>>> convertMultiple({
     required List<Map<String, dynamic>> amounts,
     required String targetCurrency,
@@ -168,17 +124,6 @@ class ExchangeRateService {
     return results;
   }
 
-  /// Obtém múltiplas taxas de câmbio de uma vez
-  ///
-  /// Parâmetros:
-  /// - [baseCurrency]: Moeda base
-  /// - [targetCurrencies]: Lista de moedas de destino
-  ///
-  /// Retorna: Mapa com taxas de câmbio
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<Map<String, double>> getMultipleRates({
     required String baseCurrency,
     required List<String> targetCurrencies,
@@ -218,24 +163,11 @@ class ExchangeRateService {
     }
   }
 
-  /// Formata valor monetário com símbolo da moeda
-  ///
-  /// Parâmetros:
-  /// - [amount]: Valor a ser formatado
-  /// - [currency]: Código da moeda
-  ///
-  /// Retorna: String formatada (ex: "R$ 100.00")
   static String formatCurrency(double amount, String currency) {
     final symbol = getCurrencySymbol(currency);
     return '$symbol ${amount.toStringAsFixed(2)}';
   }
 
-  /// Retorna símbolo da moeda
-  ///
-  /// Parâmetros:
-  /// - [currencyCode]: Código da moeda (3 letras)
-  ///
-  /// Retorna: Símbolo da moeda ou o próprio código se não encontrado
   static String getCurrencySymbol(String currencyCode) {
     final symbols = {
       'BRL': 'R\$',
@@ -262,17 +194,6 @@ class ExchangeRateService {
     return symbols[currencyCode.toUpperCase()] ?? currencyCode;
   }
 
-  /// Calcula orçamento total convertendo múltiplas despesas para uma moeda
-  ///
-  /// Parâmetros:
-  /// - [expenses]: Lista de despesas com amount, currency e description
-  /// - [targetCurrency]: Moeda de destino
-  ///
-  /// Retorna: Mapa com total, breakdown e formatação
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [NetworkException]: Se houver erro nas conversões
   static Future<Map<String, dynamic>> calculateTotalBudget({
     required List<Map<String, dynamic>> expenses,
     required String targetCurrency,
@@ -343,7 +264,6 @@ class ExchangeRateService {
     };
   }
 
-  /// Retorna lista de moedas populares
   static List<Map<String, String>> getPopularCurrencies() {
     return [
       {
@@ -380,7 +300,6 @@ class ExchangeRateService {
     ];
   }
 
-  /// Limpa cache de taxas de câmbio
   static Future<void> clearCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -399,9 +318,6 @@ class ExchangeRateService {
     }
   }
 
-  // ========== MÉTODOS PRIVADOS ==========
-
-  /// Valida valor monetário
   static void _validateAmount(double amount) {
     if (amount < _minAmount) {
       throw ValidationException(
@@ -416,7 +332,6 @@ class ExchangeRateService {
     }
   }
 
-  /// Valida código da moeda
   static void _validateCurrencyCode(String code, String context) {
     if (code.trim().isEmpty) {
       throw ValidationException(
@@ -429,7 +344,6 @@ class ExchangeRateService {
       );
     }
 
-    // Verificar se contém apenas letras
     if (!RegExp(r'^[A-Za-z]+$').hasMatch(code)) {
       throw ValidationException(
         'Código de moeda de $context deve conter apenas letras: $code',
@@ -437,21 +351,18 @@ class ExchangeRateService {
     }
   }
 
-  /// Obtém todas as taxas de câmbio para uma moeda base
   static Future<Map<String, dynamic>> _getRates(String baseCurrency) async {
     try {
-      // Tentar obter do cache primeiro
       final cachedRates = await _getCachedRates(baseCurrency);
       if (cachedRates != null) {
         return cachedRates;
       }
 
-      // Buscar da API
       final url = Uri.parse('$_baseUrl/$baseCurrency');
       final response = await HttpClientService.get(
         url,
         timeout: const Duration(seconds: 10),
-        useCache: false, // Usa cache próprio do serviço
+        useCache: false,
       );
 
       if (response == null) {
@@ -469,7 +380,6 @@ class ExchangeRateService {
           );
         }
 
-        // Salvar no cache
         await _cacheRates(baseCurrency, rates);
 
         return rates;
@@ -501,7 +411,6 @@ class ExchangeRateService {
     }
   }
 
-  /// Salva taxas no cache
   static Future<void> _cacheRates(
     String baseCurrency,
     Map<String, dynamic> rates,
@@ -522,13 +431,9 @@ class ExchangeRateService {
         '${_cacheTimeKey}_$baseCurrency',
         DateTime.now().millisecondsSinceEpoch,
       );
-    } catch (e) {
-      // Não lançar exceção se falhar ao salvar cache
-      // O serviço continua funcionando sem cache
-    }
+    } catch (e) {}
   }
 
-  /// Obtém taxas do cache se ainda válidas
   static Future<Map<String, dynamic>?> _getCachedRates(
     String baseCurrency,
   ) async {
@@ -552,10 +457,7 @@ class ExchangeRateService {
 
       return null;
     } catch (e) {
-      // Se falhar ao ler cache, retorna null para buscar da API
       return null;
     }
   }
 }
-
-// Made with Bob
