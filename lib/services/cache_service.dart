@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:async';
 import '../core/exceptions/app_exceptions.dart';
@@ -29,13 +30,22 @@ class CacheService {
   static Future<void> initialize() async {
     try {
       _prefs = await SharedPreferences.getInstance();
-      await _cleanExpiredCache();
+
+      try {
+        await _cleanExpiredCache();
+      } catch (e) {
+        debugPrint('[CacheService] Erro ao limpar cache expirado: $e');
+      }
 
       _cleanupTimer?.cancel();
       _cleanupTimer = Timer.periodic(_cleanupInterval, (_) {
-        _cleanExpiredCache();
+        _cleanExpiredCache().catchError((e) {
+          debugPrint('[CacheService] Erro no cleanup periódico: $e');
+        });
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[CacheService] Erro fatal na inicialização: $e');
+      debugPrint('[CacheService] Stack trace: $stackTrace');
       throw CacheException(
         'Erro ao inicializar cache',
         code: 'initialization_failed',
