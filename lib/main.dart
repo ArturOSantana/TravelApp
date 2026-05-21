@@ -47,7 +47,12 @@ void main() async {
 
     if (!kIsWeb) {
       await NotificationService.init();
-      await PushNotificationService.initialize();
+
+      try {
+        await PushNotificationService.initialize();
+      } catch (e) {
+        debugPrint('[Main] Push notifications não disponíveis: $e');
+      }
     }
 
     runApp(const MyApp());
