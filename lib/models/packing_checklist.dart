@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 class PackingItem {
   final String id;
@@ -137,7 +138,32 @@ class PackingChecklist {
     this.items = const [],
     required this.createdAt,
     this.lastModified,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(tripId, 'Trip ID');
+    ModelValidators.validateNonEmpty(userId, 'User ID');
+  }
+
+  PackingChecklist copyWith({
+    String? id,
+    String? tripId,
+    String? userId,
+    List<PackingItem>? items,
+    DateTime? createdAt,
+    DateTime? lastModified,
+  }) {
+    return PackingChecklist(
+      id: id ?? this.id,
+      tripId: tripId ?? this.tripId,
+      userId: userId ?? this.userId,
+      items: items ?? this.items,
+      createdAt: createdAt ?? this.createdAt,
+      lastModified: lastModified ?? this.lastModified,
+    );
+  }
 
   double get progress {
     if (items.isEmpty) return 0.0;
@@ -177,4 +203,20 @@ class PackingChecklist {
       lastModified: (data['lastModified'] as Timestamp?)?.toDate(),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PackingChecklist &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          tripId == other.tripId &&
+          userId == other.userId;
+
+  @override
+  int get hashCode => id.hashCode ^ tripId.hashCode ^ userId.hashCode;
+
+  @override
+  String toString() =>
+      'PackingChecklist(id: $id, items: ${items.length}, progress: ${(progress * 100).toStringAsFixed(1)}%)';
 }
