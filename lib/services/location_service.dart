@@ -5,24 +5,12 @@ import 'http_client_service.dart';
 import 'permission_service.dart';
 import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço de localização e geocoding
-///
-/// Usa Nominatim (OpenStreetMap) para geocoding e
-/// Geolocator para localização em tempo real do dispositivo.
 class LocationService {
   static const String _nominatimBase = 'https://nominatim.openstreetmap.org';
   static const String _userAgent = 'TravelPlannerApp/1.0';
   static const int _minQueryLength = 3;
 
-  /// Busca lugares por nome/endereço
-  ///
-  /// [query] deve ter pelo menos 3 caracteres
-  /// Retorna lista vazia se não encontrar resultados
-  ///
-  /// Throws [ValidationException] se query for muito curta
-  /// Throws [NetworkException] em caso de erro de rede
   static Future<List<Map<String, dynamic>>> searchPlaces(String query) async {
-    // Validar query
     if (query.trim().isEmpty) {
       throw ValidationException.emptyField('query');
     }

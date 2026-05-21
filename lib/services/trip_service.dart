@@ -3,10 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'subscription_service.dart';
 
-/// Serviço para gerenciamento de viagens
-///
-/// Responsável por criar, atualizar, deletar e buscar viagens
-/// no Firestore, com validações e controle de permissões.
 class TripService {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
@@ -17,16 +13,8 @@ class TripService {
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance;
 
-  /// Retorna o ID do usuário atual
   String? get _currentUserId => auth.currentUser?.uid;
 
-  /// Cria uma nova viagem no Firestore
-  ///
-  /// Valida todos os dados antes de criar e verifica limites do plano.
-  ///
-  /// Throws [ValidationException] se os dados forem inválidos
-  /// Throws [AuthException] se o usuário não estiver autenticado
-  /// Throws [SubscriptionException] se o limite de viagens for atingido
   Future<String> createTrip({
     required String destination,
     required DateTime startDate,
@@ -35,13 +23,11 @@ class TripService {
     String? description,
     List<String>? members,
   }) async {
-    // Validar autenticação
     final userId = _currentUserId;
     if (userId == null) {
       throw AuthException('Usuário não autenticado', code: 'not-authenticated');
     }
 
-    // Validar dados
     _validateTripData(
       destination: destination,
       startDate: startDate,
@@ -49,14 +35,12 @@ class TripService {
       budget: budget,
     );
 
-    // Verificar limite de viagens (plano free)
     final canCreate = await SubscriptionService.canCreateTrip();
     if (!canCreate) {
       throw SubscriptionException.limitReached('viagens');
     }
 
     try {
-      // Preparar dados
       final tripData = {
         'destination': destination.trim(),
         'startDate': Timestamp.fromDate(startDate),
@@ -67,11 +51,10 @@ class TripService {
         'createdBy': userId,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        'status': 'planned', // planned, active, completed, cancelled
+        'status': 'planned',
         'isGroup': members != null && members.isNotEmpty,
       };
 
-      // Criar viagem
       final docRef = await firestore.collection('trips').add(tripData);
 
       return docRef.id;

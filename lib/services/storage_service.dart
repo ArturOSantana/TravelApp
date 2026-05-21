@@ -4,19 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço de gerenciamento de armazenamento de arquivos no Firebase Storage
-///
-/// Responsabilidades:
-/// - Upload e download de fotos
-/// - Validação de arquivos (tamanho, tipo)
-/// - Gerenciamento de metadados
-/// - Exclusão de arquivos
-/// - Seleção de imagens da galeria/câmera
 class StorageService {
   static final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // Constantes de validação
-  static const int _maxFileSizeBytes = 10 * 1024 * 1024; // 10MB
+  static const int _maxFileSizeBytes = 10 * 1024 * 1024;
   static const List<String> _allowedExtensions = [
     'jpg',
     'jpeg',
@@ -29,26 +20,12 @@ class StorageService {
   static const int _maxImageHeight = 1080;
   static const int _imageQuality = 85;
 
-  /// Upload de foto para o Storage com validações robustas
-  ///
-  /// Parâmetros:
-  /// - [photo]: Arquivo da foto a ser enviada
-  /// - [tripId]: ID da viagem (obrigatório e não vazio)
-  /// - [folder]: Pasta de destino (padrão: 'journal')
-  /// - [onProgress]: Callback opcional para progresso do upload
-  ///
-  /// Retorna: URL de download da foto
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se validações falharem
-  /// - [StorageException]: Se houver erro no Firebase Storage
   static Future<String> uploadPhoto({
     required File photo,
     required String tripId,
     String folder = 'journal',
     Function(double progress)? onProgress,
   }) async {
-    // Validações de entrada
     _validateTripId(tripId);
     await _validateFile(photo);
 
@@ -69,7 +46,6 @@ class StorageService {
 
       final UploadTask uploadTask = ref.putFile(photo, metadata);
 
-      // Monitorar progresso se callback fornecido
       if (onProgress != null) {
         uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
           final progress = snapshot.bytesTransferred / snapshot.totalBytes;
