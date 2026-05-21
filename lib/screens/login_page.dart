@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
-import '../theme/app_text_styles.dart';
-import '../widgets/accessible_button.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,7 +19,13 @@ class _LoginPageState extends State<LoginPage> {
   final AuthController _authController = AuthController();
 
   bool _isLoading = false;
-  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
@@ -37,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Semantics(liveRegion: true, child: Text(error)),
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: TravelColors.error,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -54,37 +62,38 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Semantics(header: true, child: const Text("Recuperar Senha")),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Semantics(
+          header: true,
+          child: Text(
+            "Recuperar Senha",
+            style: TravelTextStyles.headlineSmall(context),
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TravelSpacing.radiusXl),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               "Insira seu e-mail abaixo e enviaremos um link de recuperação se a conta existir.",
-              style: AppTextStyles.bodySmall(context),
+              style: TravelTextStyles.bodyMedium(context),
             ),
-            const SizedBox(height: 20),
-            TextFormField(
+            SizedBox(height: TravelSpacing.lg),
+            TravelTextField.email(
               controller: resetEmailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: "E-mail cadastrado",
-                prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
-              ),
+              label: "E-mail cadastrado",
             ),
           ],
         ),
         actions: [
-          AccessibleButton(
+          TravelButton.text(
             label: "Cancelar",
             onPressed: () => Navigator.pop(context),
-            type: ButtonType.text,
             semanticLabel: "Cancelar recuperação de senha",
           ),
-          AccessibleButton(
+          TravelButton.primary(
             label: "Enviar Link",
-            type: ButtonType.primary,
             semanticLabel: "Enviar link de recuperação de senha",
             onPressed: () async {
               final email = resetEmailController.text.trim();
@@ -100,10 +109,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 );
 
-                // Envia email diretamente - Firebase Auth lida com verificação
-                final String? error = await _authController.resetPassword(
-                  email,
-                );
+                final String? error =
+                    await _authController.resetPassword(email);
 
                 if (mounted) {
                   if (error == null) {
@@ -115,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                             "Se este e-mail estiver cadastrado, você receberá um link de recuperação. Verifique sua caixa de entrada e a pasta de SPAM.",
                           ),
                         ),
-                        backgroundColor: Colors.green[700],
+                        backgroundColor: TravelColors.success,
                         duration: const Duration(seconds: 6),
                       ),
                     );
@@ -126,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                           liveRegion: true,
                           child: Text(error),
                         ),
-                        backgroundColor: Theme.of(context).colorScheme.error,
+                        backgroundColor: TravelColors.error,
                       ),
                     );
                   }
@@ -141,194 +148,173 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final double screenWidth = MediaQuery.of(context).size.width;
     final double formWidth = screenWidth > 600 ? 450 : screenWidth;
+    final bool isMobile = TravelSpacing.isMobile(screenWidth);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: Container(
-            width: formWidth,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Semantics(
-                    label: "Logo do aplicativo Travel Planner",
-                    image: true,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      child: Image.asset(
-                        'assets/images/app_logo.png',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      "Bem-vindo",
-                      style: AppTextStyles.h1(context).copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Acesse sua conta para continuar",
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.7),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-
-                  // E-MAIL
-                  Semantics(
-                    textField: true,
-                    label: "Campo de e-mail",
-                    child: TextFormField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                      style: AppTextStyles.body(
-                        context,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: "E-mail",
-                        labelStyle: AppTextStyles.body(
-                          context,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+      backgroundColor: TravelColors.cloudWhite,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              TravelColors.skyBlueLight.withOpacity(0.1),
+              TravelColors.cloudWhite,
+            ],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(
+              isMobile ? TravelSpacing.lg : TravelSpacing.xl,
+            ),
+            child: Container(
+              width: formWidth,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo com animação sutil
+                    Hero(
+                      tag: 'app_logo',
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        padding: EdgeInsets.all(TravelSpacing.md),
+                        decoration: BoxDecoration(
+                          color: TravelColors.cloudWhiteLight,
+                          shape: BoxShape.circle,
+                          boxShadow: TravelColors.softShadow,
                         ),
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? "Informe seu e-mail"
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // SENHA
-                  Semantics(
-                    textField: true,
-                    label: "Campo de senha",
-                    obscured: _obscurePassword,
-                    child: TextFormField(
-                      controller: passwordController,
-                      obscureText: _obscurePassword,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleLogin(),
-                      style: AppTextStyles.body(
-                        context,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: "Senha",
-                        labelStyle: AppTextStyles.body(
-                          context,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.lock_outline,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        suffixIcon: AccessibleIconButton(
-                          icon: _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
+                        child: Semantics(
+                          label: "Logo do aplicativo Travel Planner",
+                          image: true,
+                          child: Image.asset(
+                            'assets/images/app_logo.png',
+                            fit: BoxFit.contain,
                           ),
-                          tooltip: _obscurePassword
-                              ? "Mostrar senha"
-                              : "Ocultar senha",
-                          semanticLabel: _obscurePassword
-                              ? "Mostrar senha digitada"
-                              : "Ocultar senha digitada",
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
                       ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? "Informe sua senha"
-                          : null,
                     ),
-                  ),
 
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: AccessibleButton(
-                      label: "Esqueci minha senha",
-                      onPressed: _showForgotPasswordDialog,
-                      type: ButtonType.text,
-                      semanticLabel: "Recuperar senha esquecida",
+                    SizedBox(height: TravelSpacing.xl),
+
+                    // Título personalizado (não "Bem-vindo" genérico)
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        "Suas viagens começam aqui",
+                        style: TravelTextStyles.displaySmall(context),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 32),
+                    SizedBox(height: TravelSpacing.sm),
 
-                  // BOTÃO ENTRAR
-                  SizedBox(
-                    width: double.infinity,
-                    child: AccessibleButton(
+                    Text(
+                      "Entre para planejar sua próxima aventura",
+                      style: TravelTextStyles.bodyMedium(context).copyWith(
+                        color: TravelColors.stoneGray,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    SizedBox(height: TravelSpacing.xxl),
+
+                    // Campo de E-mail usando TravelTextField
+                    TravelTextField.email(
+                      controller: emailController,
+                      semanticLabel: "Campo de e-mail para login",
+                    ),
+
+                    SizedBox(height: TravelSpacing.md),
+
+                    // Campo de Senha usando TravelTextField
+                    TravelTextField.password(
+                      controller: passwordController,
+                      onSubmitted: (_) => _handleLogin(),
+                      semanticLabel: "Campo de senha para login",
+                    ),
+
+                    // Link "Esqueci minha senha"
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TravelButton.text(
+                        label: "Esqueci minha senha",
+                        onPressed: _showForgotPasswordDialog,
+                        semanticLabel: "Recuperar senha esquecida",
+                      ),
+                    ),
+
+                    SizedBox(height: TravelSpacing.xl),
+
+                    // Botão Entrar usando TravelButton
+                    TravelButton.primary(
                       label: "Entrar",
                       onPressed: _isLoading ? null : _handleLogin,
-                      type: ButtonType.primary,
-                      size: ButtonSize.large,
+                      size: TravelButtonSize.large,
                       isLoading: _isLoading,
+                      fullWidth: true,
+                      icon: Icons.login,
                       semanticLabel: "Fazer login na sua conta",
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    SizedBox(height: TravelSpacing.lg),
 
-                  Semantics(
-                    label: "Não tem uma conta? Cadastre-se",
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    // Divider com texto
+                    Row(
                       children: [
-                        Text(
-                          "Não tem uma conta?",
-                          style: AppTextStyles.body(context).copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
+                        Expanded(
+                          child: Divider(
+                            color: TravelColors.stoneGrayLight,
+                            thickness: 1,
                           ),
                         ),
-                        AccessibleButton(
-                          label: "Cadastre-se",
-                          onPressed: () =>
-                              Navigator.pushNamed(context, '/register'),
-                          type: ButtonType.text,
-                          semanticLabel: "Ir para página de cadastro",
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: TravelSpacing.md,
+                          ),
+                          child: Text(
+                            "ou",
+                            style: TravelTextStyles.labelSmall(context),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: TravelColors.stoneGrayLight,
+                            thickness: 1,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+
+                    SizedBox(height: TravelSpacing.lg),
+
+                    // Link para cadastro
+                    Semantics(
+                      label: "Não tem uma conta? Cadastre-se",
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Primeira vez aqui?",
+                            style: TravelTextStyles.bodyMedium(context),
+                          ),
+                          SizedBox(width: TravelSpacing.xs),
+                          TravelButton.text(
+                            label: "Criar conta",
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/register'),
+                            semanticLabel: "Ir para página de cadastro",
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -337,3 +323,5 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+// Made with Bob

@@ -3,6 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/trip.dart';
 import '../models/service_model.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 import 'create_trip_page.dart';
 import 'trip_dashboard_page.dart';
 import 'community_page.dart';
@@ -29,6 +33,12 @@ class _TripsPageState extends State<TripsPage>
     _loadLastViewed();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadLastViewed() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -39,18 +49,11 @@ class _TripsPageState extends State<TripsPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Semantics(
-          header: true,
-          child: const Text(
-            "Minhas Viagens",
-            style: TextStyle(fontWeight: FontWeight.bold),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        centerTitle: false,
+      backgroundColor: TravelColors.cloudWhite,
+      appBar: TravelAppBar.standard(
+        title: "Minhas Viagens",
         actions: [
-          // Widget do Planeta com Notificação
+          // Badge de comunidade com notificação
           StreamBuilder<List<ServiceModel>>(
             stream: _controller.getCommunityServices(),
             builder: (context, snapshot) {
@@ -74,9 +77,10 @@ class _TripsPageState extends State<TripsPage>
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const CommunityPage()),
+                          builder: (context) => const CommunityPage(),
+                        ),
                       );
-                      _loadLastViewed(); // Atualiza o estado local ao voltar
+                      _loadLastViewed();
                     },
                   ),
                   if (hasNewPosts)
@@ -84,15 +88,15 @@ class _TripsPageState extends State<TripsPage>
                       right: 12,
                       top: 12,
                       child: Container(
-                        padding: const EdgeInsets.all(2),
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 10,
-                          minHeight: 10,
+                          color: TravelColors.error,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: TravelColors.cloudWhite,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
@@ -109,6 +113,9 @@ class _TripsPageState extends State<TripsPage>
         bottom: TabBar(
           controller: _tabController,
           isScrollable: false,
+          indicatorColor: TravelColors.skyBlue,
+          labelColor: TravelColors.skyBlue,
+          unselectedLabelColor: TravelColors.stoneGray,
           tabs: const [
             Tab(text: "Ativas", icon: Icon(Icons.play_circle_outline)),
             Tab(text: "Planejadas", icon: Icon(Icons.calendar_today)),
@@ -119,10 +126,11 @@ class _TripsPageState extends State<TripsPage>
       floatingActionButton: Semantics(
         button: true,
         label: 'Criar nova viagem',
-        child: FloatingActionButton(
-          backgroundColor: Colors.deepPurple,
-          foregroundColor: Colors.white,
-          child: const Icon(Icons.add),
+        child: FloatingActionButton.extended(
+          backgroundColor: TravelColors.skyBlue,
+          foregroundColor: TravelColors.cloudWhite,
+          icon: const Icon(Icons.add),
+          label: const Text("Nova Viagem"),
           onPressed: () {
             Navigator.push(
               context,
@@ -148,36 +156,44 @@ class _TripsPageState extends State<TripsPage>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Entrar em um Grupo"),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TravelSpacing.radiusXl),
+        ),
+        title: Semantics(
+          header: true,
+          child: Text(
+            "Entrar em um Grupo",
+            style: TravelTextStyles.headlineSmall(context),
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               "Cole o código da viagem que seu amigo compartilhou com você:",
+              style: TravelTextStyles.bodyMedium(context),
             ),
-            const SizedBox(height: 15),
-            TextField(
+            SizedBox(height: TravelSpacing.md),
+            TravelTextField.standard(
               controller: codeController,
-              decoration: const InputDecoration(
-                labelText: "Código da Viagem",
-                border: OutlineInputBorder(),
-                hintText: "Ex: ID_DA_VIAGEM",
-              ),
+              label: "Código da Viagem",
+              hint: "Ex: ID_DA_VIAGEM",
             ),
           ],
         ),
         actions: [
-          TextButton(
+          TravelButton.text(
+            label: "Cancelar",
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
           ),
-          ElevatedButton(
+          TravelButton.primary(
+            label: "Entrar",
             onPressed: () async {
               if (codeController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Por favor, insira o código da viagem"),
-                    backgroundColor: Colors.orange,
+                  SnackBar(
+                    content: const Text("Por favor, insira o código da viagem"),
+                    backgroundColor: TravelColors.warning,
                   ),
                 );
                 return;
@@ -188,10 +204,11 @@ class _TripsPageState extends State<TripsPage>
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("✅ Você entrou no grupo com sucesso!"),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 3),
+                    SnackBar(
+                      content:
+                          const Text("✅ Você entrou no grupo com sucesso!"),
+                      backgroundColor: TravelColors.success,
+                      duration: const Duration(seconds: 3),
                     ),
                   );
                 }
@@ -219,14 +236,13 @@ class _TripsPageState extends State<TripsPage>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(errorMessage),
-                      backgroundColor: Colors.red,
+                      backgroundColor: TravelColors.error,
                       duration: const Duration(seconds: 4),
                     ),
                   );
                 }
               }
             },
-            child: const Text("Entrar"),
           ),
         ],
       ),
@@ -234,204 +250,263 @@ class _TripsPageState extends State<TripsPage>
   }
 
   Widget _buildTripList(String status) {
-    debugPrint('🖥️ [UI] Construindo lista para status: $status');
     return StreamBuilder<List<Trip>>(
       stream: _controller.getTrips(status: status),
       builder: (context, snapshot) {
-        debugPrint(
-            '🖥️ [UI] StreamBuilder - ConnectionState: ${snapshot.connectionState}');
-        debugPrint('🖥️ [UI] StreamBuilder - HasData: ${snapshot.hasData}');
-        debugPrint(
-            '🖥️ [UI] StreamBuilder - Data length: ${snapshot.data?.length ?? 0}');
-        debugPrint('🖥️ [UI] StreamBuilder - HasError: ${snapshot.hasError}');
-        if (snapshot.hasError) {
-          debugPrint('🖥️ [UI] StreamBuilder - Error: ${snapshot.error}');
-        }
-
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: TravelLoadingIndicator());
         }
 
-        final trips = snapshot.data ?? [];
-        debugPrint('🖥️ [UI] Viagens recebidas para $status: ${trips.length}');
-
-        if (trips.isEmpty) {
-          IconData icon;
-          String message;
-
-          switch (status) {
-            case 'active':
-              icon = Icons.explore_off;
-              message = "Nenhuma viagem ativa.";
-              break;
-            case 'completed':
-              icon = Icons.history_edu;
-              message = "Nenhum histórico de viagens.";
-              break;
-            default:
-              icon = Icons.event_busy;
-              message = "Nenhuma viagem planejada.";
-          }
-
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 60, color: Colors.grey),
-                const SizedBox(height: 10),
-                Text(message),
-              ],
-            ),
+        if (snapshot.hasError) {
+          return TravelEmptyState.error(
+            errorMessage: snapshot.error.toString(),
+            onRetry: () => setState(() {}),
           );
         }
 
+        final trips = snapshot.data ?? [];
+
+        if (trips.isEmpty) {
+          return _buildEmptyState(status);
+        }
+
         return ListView.builder(
+          padding: EdgeInsets.all(TravelSpacing.md),
           itemCount: trips.length,
           itemBuilder: (context, index) {
             final trip = trips[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ListTile(
-                leading: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: trip.photoUrl != null && trip.photoUrl!.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child:
-                              Image.network(trip.photoUrl!, fit: BoxFit.cover),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Image.asset(
-                            'assets/images/icone_aviao.png', //logo do rafa
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                ),
-                title: Text(
-                  trip.destination,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  "Orçamento: R\$ ${trip.budget.toStringAsFixed(2)}",
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (status == 'planned' && trip.isAdmin(_currentUid))
-                      IconButton(
-                        icon: const Icon(Icons.play_arrow, color: Colors.green),
-                        onPressed: () async {
-                          try {
-                            await _controller.updateTripStatus(
-                              trip.id,
-                              'active',
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Viagem iniciada com sucesso.'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Erro ao iniciar viagem: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        tooltip: "Iniciar Viagem",
-                      ),
-                    if (status == 'active' && trip.isAdmin(_currentUid))
-                      IconButton(
-                        icon:
-                            const Icon(Icons.check_circle, color: Colors.blue),
-                        onPressed: () async {
-                          try {
-                            await _controller.updateTripStatus(
-                              trip.id,
-                              'completed',
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text('Viagem finalizada com sucesso!'),
-                                  backgroundColor: Colors.blue,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Erro ao finalizar viagem: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        tooltip: "Finalizar Viagem",
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () => _showDeleteDialog(trip),
-                    ),
-                  ],
-                ),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TripDashboardPage(trip: trip),
-                  ),
-                ),
-              ),
-            );
+            return _buildTripCard(trip, status);
           },
         );
       },
     );
   }
 
+  Widget _buildEmptyState(String status) {
+    switch (status) {
+      case 'active':
+        return TravelEmptyState.noTrips(
+          onCreateTrip: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateTripPage()),
+          ),
+        );
+      case 'completed':
+        return TravelEmptyState(
+          icon: Icons.history_edu,
+          title: 'Nenhuma viagem finalizada',
+          message:
+              'Suas viagens concluídas aparecerão aqui.\nFinalize uma viagem ativa para vê-la no histórico.',
+          type: TravelEmptyStateType.neutral,
+        );
+      default:
+        return TravelEmptyState(
+          icon: Icons.event_busy,
+          title: 'Nenhuma viagem planejada',
+          message:
+              'Comece a planejar sua próxima aventura!\nCrie uma viagem e organize todos os detalhes.',
+          actionLabel: 'Criar Viagem',
+          onAction: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateTripPage()),
+          ),
+          type: TravelEmptyStateType.action,
+        );
+    }
+  }
+
+  Widget _buildTripCard(Trip trip, String status) {
+    return TravelCard.trip(
+      margin: EdgeInsets.only(bottom: TravelSpacing.md),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TripDashboardPage(trip: trip),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Imagem/Ícone da viagem
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: TravelColors.skyBlueLight.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(TravelSpacing.radiusMd),
+            ),
+            child: trip.photoUrl != null && trip.photoUrl!.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(TravelSpacing.radiusMd),
+                    child: Image.network(
+                      trip.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildDefaultTripIcon(),
+                    ),
+                  )
+                : _buildDefaultTripIcon(),
+          ),
+
+          SizedBox(width: TravelSpacing.md),
+
+          // Informações da viagem
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  trip.destination,
+                  style: TravelTextStyles.titleMedium(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: TravelSpacing.xs),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 16,
+                      color: TravelColors.stoneGray,
+                    ),
+                    SizedBox(width: TravelSpacing.xs),
+                    Text(
+                      "R\$ ${trip.budget.toStringAsFixed(2)}",
+                      style: TravelTextStyles.bodySmall(context).copyWith(
+                        color: TravelColors.stoneGray,
+                      ),
+                    ),
+                  ],
+                ),
+                if (trip.members.length > 1) ...[
+                  SizedBox(height: TravelSpacing.xs),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.group_outlined,
+                        size: 16,
+                        color: TravelColors.stoneGray,
+                      ),
+                      SizedBox(width: TravelSpacing.xs),
+                      Text(
+                        "${trip.members.length} membros",
+                        style: TravelTextStyles.bodySmall(context).copyWith(
+                          color: TravelColors.stoneGray,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Ações
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (status == 'planned' && trip.isAdmin(_currentUid))
+                IconButton(
+                  icon: Icon(
+                    Icons.play_arrow,
+                    color: TravelColors.success,
+                  ),
+                  onPressed: () => _updateTripStatus(trip.id, 'active'),
+                  tooltip: "Iniciar Viagem",
+                ),
+              if (status == 'active' && trip.isAdmin(_currentUid))
+                IconButton(
+                  icon: Icon(
+                    Icons.check_circle,
+                    color: TravelColors.skyBlue,
+                  ),
+                  onPressed: () => _updateTripStatus(trip.id, 'completed'),
+                  tooltip: "Finalizar Viagem",
+                ),
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: TravelColors.error,
+                ),
+                onPressed: () => _showDeleteDialog(trip),
+                tooltip: "Excluir Viagem",
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDefaultTripIcon() {
+    return Padding(
+      padding: EdgeInsets.all(TravelSpacing.sm),
+      child: Image.asset(
+        'assets/images/icone_aviao.png',
+        fit: BoxFit.contain,
+      ),
+    );
+  }
+
+  Future<void> _updateTripStatus(String tripId, String newStatus) async {
+    try {
+      await _controller.updateTripStatus(tripId, newStatus);
+      if (mounted) {
+        final message = newStatus == 'active'
+            ? 'Viagem iniciada com sucesso!'
+            : 'Viagem finalizada com sucesso!';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: TravelColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao atualizar viagem: $e'),
+            backgroundColor: TravelColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   void _showDeleteDialog(Trip trip) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Excluir Viagem"),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TravelSpacing.radiusXl),
+        ),
+        title: Semantics(
+          header: true,
+          child: Text(
+            "Excluir Viagem",
+            style: TravelTextStyles.headlineSmall(context),
+          ),
+        ),
         content: Text(
           "Tem certeza que deseja excluir sua viagem para ${trip.destination}?",
+          style: TravelTextStyles.bodyMedium(context),
         ),
         actions: [
-          TextButton(
+          TravelButton.text(
+            label: "Cancelar",
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
           ),
-          TextButton(
+          TravelButton.danger(
+            label: "Excluir",
             onPressed: () {
               _controller.deleteTrip(trip.id);
               Navigator.pop(context);
             },
-            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 }
+
+// Made with Bob

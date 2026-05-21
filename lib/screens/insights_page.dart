@@ -9,6 +9,10 @@ import '../controllers/trip_controller.dart';
 import '../services/analytics_service.dart';
 import '../services/pdf_export_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 import '../widgets/charts/line_chart_widget.dart';
 import '../widgets/charts/gauge_chart_widget.dart';
 import 'premium_upgrade_page.dart';
@@ -104,12 +108,9 @@ class _InsightsPageState extends State<InsightsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Resumo & Análise",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        elevation: 0,
+      backgroundColor: TravelColors.cloudWhite,
+      appBar: TravelAppBar.standard(
+        title: "Resumo & Análise",
         actions: [
           if (!_showGeneral)
             IconButton(
@@ -123,13 +124,17 @@ class _InsightsPageState extends State<InsightsPage> {
         stream: _controller.getTrips(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: TravelLoadingIndicator());
           }
 
           final trips = snapshot.data ?? [];
           if (trips.isEmpty) {
-            return const Center(
-              child: Text("Nenhuma viagem encontrada para análise."),
+            return TravelEmptyState(
+              icon: Icons.analytics_outlined,
+              title: 'Nenhuma viagem para analisar',
+              message:
+                  'Crie uma viagem para ver estatísticas e insights financeiros.',
+              type: TravelEmptyStateType.neutral,
             );
           }
 
@@ -153,42 +158,39 @@ class _InsightsPageState extends State<InsightsPage> {
   }
 
   Widget _buildPremiumBanner() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return TravelCard.gradient(
+      margin: EdgeInsets.all(TravelSpacing.md),
+      gradient: TravelColors.premiumGradient,
       child: Row(
         children: [
-          const Icon(Icons.workspace_premium,
-              color: AppColors.textOnPrimary, size: 32),
-          const SizedBox(width: 12),
+          Icon(
+            Icons.workspace_premium,
+            color: TravelColors.cloudWhite,
+            size: 32,
+          ),
+          SizedBox(width: TravelSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "Desbloqueie Resumos Avançados",
-                  style: TextStyle(
-                    color: AppColors.textOnPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                  style: TravelTextStyles.titleMedium(context).copyWith(
+                    color: TravelColors.cloudWhite,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: TravelSpacing.xs),
                 Text(
                   "Análises, relatórios PDF e muito mais!",
-                  style: TextStyle(
-                    color: AppColors.textOnPrimary.withOpacity(0.9),
-                    fontSize: 12,
+                  style: TravelTextStyles.bodySmall(context).copyWith(
+                    color: TravelColors.cloudWhite.withOpacity(0.9),
                   ),
                 ),
               ],
             ),
           ),
-          ElevatedButton(
+          TravelButton.secondary(
+            label: "Upgrade",
             onPressed: () async {
               final result = await Navigator.push(
                 context,
@@ -200,12 +202,6 @@ class _InsightsPageState extends State<InsightsPage> {
                 _checkPremiumStatus();
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              foregroundColor: Theme.of(context).colorScheme.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: const Text("Upgrade"),
           ),
         ],
       ),
@@ -225,8 +221,7 @@ class _InsightsPageState extends State<InsightsPage> {
             onSelected: (selected) {
               if (selected) setState(() => _showGeneral = true);
             },
-            // a visao geral
-            selectedColor: AppColors.primary,
+            selectedColor: TravelColors.skyBlue,
             labelStyle: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -249,8 +244,7 @@ class _InsightsPageState extends State<InsightsPage> {
                     });
                   }
                 },
-                //os demais
-                selectedColor: AppColors.primary,
+                selectedColor: TravelColors.skyBlue,
                 labelStyle: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -278,7 +272,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 "Viagens",
                 trips.length.toString(),
                 Icons.map,
-                AppColors.info,
+                TravelColors.skyBlue,
               ),
             ),
             const SizedBox(width: 12),
@@ -287,7 +281,7 @@ class _InsightsPageState extends State<InsightsPage> {
                 "Concluídas",
                 completed.length.toString(),
                 Icons.check_circle,
-                AppColors.success,
+                TravelColors.success,
               ),
             ),
           ],
@@ -299,7 +293,7 @@ class _InsightsPageState extends State<InsightsPage> {
           "Total Investido",
           _currencyFormat.format(totalInvested),
           Icons.attach_money,
-          AppColors.primary,
+          TravelColors.forestGreen,
         ),
         const SizedBox(height: 24),
         _buildSectionTitle("Estilo de Viagem"),
@@ -370,8 +364,8 @@ class _InsightsPageState extends State<InsightsPage> {
                         icon: const Icon(Icons.picture_as_pdf, size: 20),
                         label: const Text('Relatório'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
+                          backgroundColor: TravelColors.skyBlue,
+                          foregroundColor: TravelColors.cloudWhite,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
@@ -493,7 +487,7 @@ class _InsightsPageState extends State<InsightsPage> {
           LineChartWidget(
             data: dailySpending,
             title: 'Evolução de Gastos Diários',
-            lineColor: AppColors.primary,
+            lineColor: TravelColors.skyBlue,
             showMovingAverage: true,
             budgetLine: dailyBudget,
           ),

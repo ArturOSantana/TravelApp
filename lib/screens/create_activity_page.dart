@@ -5,6 +5,10 @@ import 'package:http/http.dart' as http;
 import '../models/activity.dart';
 import '../controllers/trip_controller.dart';
 import '../services/notification_service.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 
 class CreateActivityPage extends StatefulWidget {
   final String tripId;

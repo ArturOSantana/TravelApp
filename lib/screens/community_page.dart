@@ -7,6 +7,10 @@ import '../models/service_model.dart';
 import '../models/destination_rating.dart';
 import '../models/community_item.dart';
 import '../controllers/trip_controller.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'add_recommendation_page.dart';
 import 'dart:async';
@@ -196,6 +200,8 @@ class _CommunityPageState extends State<CommunityPage>
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: TravelColors.coral,
+        foregroundColor: TravelColors.cloudWhite,
         onPressed: () {
           Navigator.push(
             context,
@@ -208,12 +214,8 @@ class _CommunityPageState extends State<CommunityPage>
         label: const Text('Nova Postagem'),
         tooltip: 'Criar nova recomendação',
       ),
-      appBar: AppBar(
-        title: Semantics(
-          header: true,
-          child: const Text("Comunidade",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-        ),
+      appBar: TravelAppBar.standard(
+        title: 'Comunidade',
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(168),
           child: Column(
@@ -223,31 +225,11 @@ class _CommunityPageState extends State<CommunityPage>
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Semantics(
                   label: "Campo de busca na comunidade",
-                  child: TextField(
+                  child: TravelTextField.search(
                     controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: "Buscar destino, categoria ou descrição...",
-                      prefixIcon: Icon(Icons.search,
-                          color: Theme.of(context).colorScheme.primary),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              tooltip: 'Limpar busca',
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                              icon: const Icon(Icons.clear),
-                            )
-                          : null,
-                      filled: true,
-                      fillColor:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none),
-                      contentPadding: EdgeInsets.zero,
-                    ),
+                    hint: "Buscar destino, categoria ou descrição...",
                     onChanged: (v) => setState(() => _searchQuery = v),
+                    semanticLabel: "Campo de busca na comunidade",
                   ),
                 ),
               ),
@@ -257,7 +239,7 @@ class _CommunityPageState extends State<CommunityPage>
                   children: [
                     Icon(
                       Icons.filter_list,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: TravelColors.skyBlue,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -290,6 +272,9 @@ class _CommunityPageState extends State<CommunityPage>
               ),
               TabBar(
                 controller: _tabController,
+                indicatorColor: TravelColors.coral,
+                labelColor: TravelColors.coral,
+                unselectedLabelColor: TravelColors.stoneGray,
                 tabs: const [
                   Tab(text: 'Todos'),
                   Tab(text: 'Meus Posts'),
@@ -301,7 +286,11 @@ class _CommunityPageState extends State<CommunityPage>
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: TravelLoadingIndicator(
+                message: 'Carregando comunidade...',
+              ),
+            )
           : TabBarView(
               controller: _tabController,
               children: [
@@ -354,7 +343,7 @@ class _CommunityPageState extends State<CommunityPage>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(TravelSpacing.md),
       itemCount: filteredItems.length,
       itemBuilder: (context, index) =>
           _buildPostCard(context, filteredItems[index]),
@@ -370,284 +359,245 @@ class _CommunityPageState extends State<CommunityPage>
     return Semantics(
       button: true,
       label: "Post sobre ${item.title}. Toque para ver detalhes.",
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-                color: Theme.of(context).shadowColor.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 5))
-          ],
-        ),
-        child: InkWell(
-          onTap: () => _showDetails(context, item),
-          borderRadius: BorderRadius.circular(25),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (item.photos.isNotEmpty)
-                Stack(
-                  children: [
-                    Semantics(
-                      label: "Foto de ${item.title}",
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(25)),
-                        child: Image.network(item.photos.first,
-                            height: 200,
-                            width: double.infinity,
-                            fit: BoxFit.cover),
-                      ),
+      child: TravelCard.elevated(
+        margin: EdgeInsets.only(bottom: TravelSpacing.lg),
+        onTap: () => _showDetails(context, item),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (item.photos.isNotEmpty)
+              Stack(
+                children: [
+                  Semantics(
+                    label: "Foto de ${item.title}",
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(25)),
+                      child: Image.network(item.photos.first,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover),
                     ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Semantics(
-                        label: isSaved ? "Remover dos salvos" : "Salvar post",
-                        button: true,
-                        child: Material(
-                          color: Colors.black.withOpacity(0.5),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Semantics(
+                      label: isSaved ? "Remover dos salvos" : "Salvar post",
+                      button: true,
+                      child: Material(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(20),
+                        child: InkWell(
+                          onTap: () => _toggleSavePost(item.id, item.type),
                           borderRadius: BorderRadius.circular(20),
-                          child: InkWell(
-                            onTap: () => _toggleSavePost(item.id, item.type),
-                            borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Icon(
-                                isSaved
-                                    ? Icons.bookmark
-                                    : Icons.bookmark_border,
-                                color: Colors.white,
-                                size: 24,
-                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              isSaved ? Icons.bookmark : Icons.bookmark_border,
+                              color: Colors.white,
+                              size: 24,
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                            child: Text(item.title,
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold))),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (item.photos.isEmpty)
-                              Semantics(
-                                label: isSaved
-                                    ? "Remover dos salvos"
-                                    : "Salvar post",
-                                button: true,
-                                child: IconButton(
-                                  icon: Icon(
-                                    isSaved
-                                        ? Icons.bookmark
-                                        : Icons.bookmark_border,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+            Padding(
+              padding: EdgeInsets.all(TravelSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                          child: Text(item.title,
+                              style: TravelTextStyles.titleLarge(context))),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (item.photos.isEmpty)
+                            Semantics(
+                              label: isSaved
+                                  ? "Remover dos salvos"
+                                  : "Salvar post",
+                              button: true,
+                              child: IconButton(
+                                icon: Icon(
+                                  isSaved
+                                      ? Icons.bookmark
+                                      : Icons.bookmark_border,
+                                  color: TravelColors.coral,
+                                ),
+                                onPressed: () =>
+                                    _toggleSavePost(item.id, item.type),
+                              ),
+                            ),
+                          if (item.ownerId == _currentUid)
+                            PopupMenuButton<String>(
+                              tooltip: 'Ações do post',
+                              onSelected: (value) async {
+                                if (value == 'delete') {
+                                  await _confirmDeletePost(item);
+                                }
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.delete_outline),
+                                      SizedBox(width: 8),
+                                      Text('Excluir'),
+                                    ],
                                   ),
-                                  onPressed: () =>
-                                      _toggleSavePost(item.id, item.type),
+                                ),
+                              ],
+                            ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                                color: isDestinationRating
+                                    ? TravelColors.skyBlue.withOpacity(0.1)
+                                    : TravelColors.coral.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isDestinationRating
+                                      ? Icons.travel_explore
+                                      : Icons.recommend,
+                                  size: 12,
+                                  color: isDestinationRating
+                                      ? TravelColors.skyBlue
+                                      : TravelColors.coral,
+                                ),
+                                SizedBox(width: TravelSpacing.xs),
+                                Text(
+                                  isDestinationRating ? 'Viagem' : 'Serviço',
+                                  style: TravelTextStyles.labelSmall(context,
+                                      color: isDestinationRating
+                                          ? TravelColors.skyBlue
+                                          : TravelColors.coral),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(item.subtitle,
+                      style: TravelTextStyles.bodySmall(context,
+                          color: TravelColors.stoneGray)),
+                  SizedBox(height: TravelSpacing.sm),
+                  Text(item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TravelTextStyles.bodyMedium(context)),
+                  const SizedBox(height: 20),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FutureBuilder<String>(
+                        future: _getUserName(item.ownerId, item.userName),
+                        builder: (context, snapshot) {
+                          final displayName =
+                              snapshot.data ?? item.userName ?? 'Viajante';
+                          return Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor:
+                                    TravelColors.skyBlue.withOpacity(0.2),
+                                child: Icon(Icons.person,
+                                    size: 18, color: TravelColors.skyBlue),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  displayName,
+                                  style: TravelTextStyles.bodyLarge(context)
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                            if (item.ownerId == _currentUid)
-                              PopupMenuButton<String>(
-                                tooltip: 'Ações do post',
-                                onSelected: (value) async {
-                                  if (value == 'delete') {
-                                    await _confirmDeletePost(item);
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      if (!isDestinationRating)
+                        Row(
+                          children: [
+                            Semantics(
+                              button: true,
+                              label: isLiked
+                                  ? "Descurtir. ${item.likes.length} curtidas"
+                                  : "Curtir. ${item.likes.length} curtidas",
+                              child: InkWell(
+                                onTap: () {
+                                  if (item is CommunityService) {
+                                    _controller.toggleLikeService(
+                                        item.service.id, item.service.likes);
                                   }
                                 },
-                                itemBuilder: (context) => const [
-                                  PopupMenuItem<String>(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.delete_outline),
-                                        SizedBox(width: 8),
-                                        Text('Excluir'),
-                                      ],
-                                    ),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                          isLiked
+                                              ? Icons.favorite
+                                              : Icons.favorite_border,
+                                          size: 18,
+                                          color: isLiked
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .error
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant),
+                                      const SizedBox(width: 4),
+                                      Text('${item.likes.length}',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface)),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                  color: isDestinationRating
-                                      ? Colors.purple.withOpacity(0.1)
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .primaryContainer,
-                                  borderRadius: BorderRadius.circular(8)),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    isDestinationRating
-                                        ? Icons.travel_explore
-                                        : Icons.recommend,
-                                    size: 12,
-                                    color: isDestinationRating
-                                        ? Colors.purple
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onPrimaryContainer,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    isDestinationRating ? 'Viagem' : 'Serviço',
-                                    style: TextStyle(
-                                        color: isDestinationRating
-                                            ? Colors.purple
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .onPrimaryContainer,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
+                            if (item is CommunityService) ...[
+                              const SizedBox(width: 20),
+                              _iconStat(
+                                  Icons.comment_outlined,
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  '${item.service.comments.length}',
+                                  "comentários"),
+                            ],
                           ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(item.subtitle,
-                        style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 13)),
-                    const SizedBox(height: 12),
-                    Text(item.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            height: 1.4)),
-                    const SizedBox(height: 20),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        FutureBuilder<String>(
-                          future: _getUserName(item.ownerId, item.userName),
-                          builder: (context, snapshot) {
-                            final displayName =
-                                snapshot.data ?? item.userName ?? 'Viajante';
-                            return Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer,
-                                  child: Icon(Icons.person,
-                                      size: 18,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        if (!isDestinationRating)
-                          Row(
-                            children: [
-                              Semantics(
-                                button: true,
-                                label: isLiked
-                                    ? "Descurtir. ${item.likes.length} curtidas"
-                                    : "Curtir. ${item.likes.length} curtidas",
-                                child: InkWell(
-                                  onTap: () {
-                                    if (item is CommunityService) {
-                                      _controller.toggleLikeService(
-                                          item.service.id, item.service.likes);
-                                    }
-                                  },
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                            isLiked
-                                                ? Icons.favorite
-                                                : Icons.favorite_border,
-                                            size: 18,
-                                            color: isLiked
-                                                ? Theme.of(context)
-                                                    .colorScheme
-                                                    .error
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurfaceVariant),
-                                        const SizedBox(width: 4),
-                                        Text('${item.likes.length}',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .onSurface)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              if (item is CommunityService) ...[
-                                const SizedBox(width: 20),
-                                _iconStat(
-                                    Icons.comment_outlined,
-                                    Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                    '${item.service.comments.length}',
-                                    "comentários"),
-                              ],
-                            ],
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

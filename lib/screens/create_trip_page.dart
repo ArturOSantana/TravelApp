@@ -4,6 +4,10 @@ import 'package:intl/intl.dart';
 import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 import '../services/subscription_service.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 import 'premium_upgrade_page.dart';
 
 class CreateTripPage extends StatefulWidget {
@@ -80,7 +84,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
           ),
           title: const Row(
             children: [
-              Icon(Icons.verified_outlined, color: Colors.green),
+              Icon(Icons.verified_outlined, color: TravelColors.forestGreen),
               SizedBox(width: 10),
               Text("Confirmar Viagem"),
             ],
@@ -89,9 +93,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 "Deseja criar a viagem com estes detalhes?",
-                style: TextStyle(color: Colors.black54),
+                style: TravelTextStyles.bodyMedium(context,
+                    color: TravelColors.stoneGray),
               ),
               const SizedBox(height: 20),
               _buildSummaryRow(
@@ -116,15 +121,17 @@ class _CreateTripPageState extends State<CreateTripPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Editar", style: TextStyle(color: Colors.grey)),
+              child: Text("Editar",
+                  style: TravelTextStyles.labelLarge(context,
+                      color: TravelColors.stoneGray)),
             ),
             Semantics(
               button: true,
               label: "Confirmar todos os dados e criar viagem no sistema",
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
+                  backgroundColor: TravelColors.skyBlue,
+                  foregroundColor: TravelColors.cloudWhite,
                 ),
                 onPressed: () {
                   Navigator.pop(context);
@@ -144,13 +151,16 @@ class _CreateTripPageState extends State<CreateTripPage> {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.deepPurple),
-          const SizedBox(width: 8),
+          Icon(icon, size: 18, color: TravelColors.skyBlue),
+          SizedBox(width: TravelSpacing.xs),
           Text(
             "$label: ",
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: TravelTextStyles.bodySmall(context,
+                color: TravelColors.stoneGray),
           ),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value,
+              style: TravelTextStyles.bodyMedium(context)
+                  .copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -178,7 +188,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro: $e"), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text("Erro: $e"), backgroundColor: TravelColors.error),
         );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -188,13 +199,17 @@ class _CreateTripPageState extends State<CreateTripPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Semantics(header: true, child: const Text("Planejar Viagem")),
+      appBar: TravelAppBar.standard(
+        title: 'Planejar Viagem',
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: TravelLoadingIndicator(
+                message: 'Criando viagem...',
+              ),
+            )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(TravelSpacing.lg),
               child: Form(
                 key: formKey,
                 child: Column(
@@ -202,25 +217,24 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   children: [
                     Semantics(
                       label: "Campo: Para onde você vai?",
-                      child: const Text(
+                      child: Text(
                         "Destino",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TravelTextStyles.titleMedium(context),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    TextFormField(
+                    TravelTextField.standard(
                       controller: destinationController,
-                      decoration: const InputDecoration(
-                        hintText: "Digite a cidade",
-                        prefixIcon: Icon(Icons.location_on),
-                        border: OutlineInputBorder(),
-                      ),
+                      hint: "Digite a cidade",
+                      prefixIcon: Icons.location_on,
                       validator: (v) => v!.isEmpty ? "Informe o destino" : null,
+                      semanticLabel: "Campo: Para onde você vai?",
                     ),
                     const SizedBox(height: 15),
-                    const Text(
+                    Text(
                       "Sugestões populares:",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TravelTextStyles.bodySmall(context,
+                          color: TravelColors.stoneGray),
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
@@ -234,7 +248,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             button: true,
                             label: "Sugestão: ${_popularDestinations[index]}",
                             child: ActionChip(
+                              backgroundColor:
+                                  TravelColors.skyBlue.withOpacity(0.1),
                               label: Text(_popularDestinations[index]),
+                              labelStyle: TravelTextStyles.labelMedium(context,
+                                  color: TravelColors.skyBlue),
                               onPressed: () => setState(
                                 () => destinationController.text =
                                     _popularDestinations[index],
@@ -367,8 +385,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         label: "Botão para revisar e criar viagem",
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
-                            foregroundColor: Colors.white,
+                            backgroundColor: TravelColors.skyBlue,
+                            foregroundColor: TravelColors.cloudWhite,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           onPressed: _showConfirmationDialog,
                           child: const Text(
@@ -404,13 +425,15 @@ class _CreateTripPageState extends State<CreateTripPage> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  style: TravelTextStyles.labelSmall(context,
+                      color: TravelColors.stoneGray),
                 ),
                 Text(
                   date == null
                       ? "Selecionar"
                       : DateFormat('dd/MM/yyyy').format(date),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: TravelTextStyles.bodyMedium(context)
+                      .copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -440,7 +463,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
         ),
         title: Row(
           children: [
-            Icon(Icons.workspace_premium, color: Colors.amber[700]),
+            Icon(Icons.workspace_premium, color: TravelColors.warmSand),
             const SizedBox(width: 10),
             const Text("Premium Necessário"),
           ],

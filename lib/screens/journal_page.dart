@@ -5,6 +5,10 @@ import 'package:share_plus/share_plus.dart';
 import '../models/journal_entry.dart';
 import '../controllers/trip_controller.dart';
 import '../services/memory_manager_service.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 import '../widgets/optimized_image.dart';
 import 'create_journal_entry_page.dart';
 
@@ -20,10 +24,15 @@ class _JournalPageState extends State<JournalPage> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _shareLiveAlbumLink(BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
 
-    // URL corrigida: usa /album com query parameter tripId
     final String albumUrl =
         "https://travel-app-tcc.web.app/album?tripId=${widget.tripId}";
     final String message = "Confira o álbum de memórias da viagem!\n$albumUrl";
@@ -41,45 +50,28 @@ class _JournalPageState extends State<JournalPage> {
     final controller = TripController();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Semantics(
-          header: true,
-          child: const Text(
-            "Registros da Viagem",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
+      backgroundColor: TravelColors.cloudWhite,
+      appBar: TravelAppBar.standard(
+        title: "Registros da Viagem",
         actions: [
           Semantics(
             label: "Compartilhar álbum de viagem",
             child: IconButton(
               icon: const Icon(Icons.share_outlined),
               onPressed: () => _shareLiveAlbumLink(context),
+              tooltip: "Compartilhar álbum",
             ),
           ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Semantics(
-              label: "Filtrar registros por localização",
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: "Buscar por localização...",
-                  prefixIcon: const Icon(Icons.search_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                onChanged: (value) =>
-                    setState(() => _searchQuery = value.toLowerCase()),
-              ),
+            padding: EdgeInsets.all(TravelSpacing.md),
+            child: TravelTextField.search(
+              controller: _searchController,
+              hint: "Buscar por localização...",
+              onChanged: (value) =>
+                  setState(() => _searchQuery = value.toLowerCase()),
             ),
           ),
         ),
@@ -87,12 +79,13 @@ class _JournalPageState extends State<JournalPage> {
       floatingActionButton: Semantics(
         label: "Adicionar novo registro ou foto à viagem",
         child: FloatingActionButton.extended(
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: TravelColors.sunsetOrange,
+          foregroundColor: TravelColors.cloudWhite,
           label: const Text(
-            "NOVO REGISTRO",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            "Novo Registro",
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          icon: const Icon(Icons.add_a_photo_outlined, color: Colors.white),
+          icon: const Icon(Icons.add_a_photo_outlined),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
@@ -105,8 +98,17 @@ class _JournalPageState extends State<JournalPage> {
       body: StreamBuilder<List<JournalEntry>>(
         stream: controller.getJournalEntries(widget.tripId),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: TravelLoadingIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return TravelEmptyState.error(
+              errorMessage: snapshot.error.toString(),
+              onRetry: () => setState(() {}),
+            );
+          }
+
           final entries = (snapshot.data ?? [])
               .where(
                 (e) =>
@@ -114,19 +116,30 @@ class _JournalPageState extends State<JournalPage> {
               )
               .toList();
 
-          if (entries.isEmpty) return _buildEmptyState();
+          if (entries.isEmpty) {
+            return _searchQuery.isNotEmpty
+                ? TravelEmptyState.noSearchResults(searchTerm: _searchQuery)
+                : TravelEmptyState.noJournalEntries(
+                    onCreateEntry: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            CreateJournalEntryPage(tripId: widget.tripId),
+                      ),
+                    ),
+                  );
+          }
 
           final memoryManager = MemoryManagerService();
           final pageSize = memoryManager.getOptimalPageSize();
 
-          // Carrega apenas os primeiros itens para dispositivos leves
           final displayEntries =
               memoryManager.isLowEndDevice && entries.length > pageSize
                   ? entries.take(pageSize).toList()
                   : entries;
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(TravelSpacing.md),
             itemCount: displayEntries.length +
                 (memoryManager.isLowEndDevice && entries.length > pageSize
                     ? 1
@@ -135,10 +148,12 @@ class _JournalPageState extends State<JournalPage> {
               if (index >= displayEntries.length) {
                 return Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(TravelSpacing.md),
                     child: Text(
                       'Mostrando ${displayEntries.length} de ${entries.length} registros',
-                      style: const TextStyle(color: Colors.grey),
+                      style: TravelTextStyles.bodySmall(context).copyWith(
+                        color: TravelColors.stoneGray,
+                      ),
                     ),
                   ),
                 );
@@ -155,45 +170,35 @@ class _JournalPageState extends State<JournalPage> {
     return Semantics(
       label:
           "Registro de ${entry.userName} em ${entry.locationName ?? 'Local não definido'}. Data: ${DateFormat('dd/MM/yyyy').format(entry.date)}",
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      child: TravelCard.standard(
+        margin: EdgeInsets.only(bottom: TravelSpacing.lg),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header com usuário e mood
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(TravelSpacing.md),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primaryContainer,
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: TravelColors.skyBlueLight.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
                     child: Icon(
                       Icons.person,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                      color: TravelColors.skyBlue,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: TravelSpacing.sm),
                   Expanded(
                     child: Text(
                       entry.userName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                      style: TravelTextStyles.titleSmall(context),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -202,54 +207,64 @@ class _JournalPageState extends State<JournalPage> {
                 ],
               ),
             ),
+
+            // Galeria de fotos
             if (entry.photos.isNotEmpty)
-              ClipRRect(
-                child: entry.photos.length == 1
-                    ? _buildImage(
-                        entry.photos.first,
-                        entry.locationName,
-                        height: 300,
-                      )
-                    : _buildImageGallery(entry.photos, entry.locationName),
-              ),
+              entry.photos.length == 1
+                  ? _buildImage(
+                      entry.photos.first,
+                      entry.locationName,
+                      height: 300,
+                    )
+                  : _buildImageGallery(entry.photos, entry.locationName),
+
+            // Conteúdo
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(TravelSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Localização
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on,
-                        size: 14,
-                        color: Colors.redAccent,
+                        size: 16,
+                        color: TravelColors.error,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        entry.locationName ?? "Localização não informada",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      SizedBox(width: TravelSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          entry.locationName ?? "Localização não informada",
+                          style: TravelTextStyles.labelMedium(context).copyWith(
+                            color: TravelColors.stoneGray,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+
+                  SizedBox(height: TravelSpacing.sm),
+
+                  // Texto do registro
                   Text(
                     entry.content,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.5,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: TravelTextStyles.bodyMedium(context),
                   ),
-                  const SizedBox(height: 16),
+
+                  SizedBox(height: TravelSpacing.md),
+
+                  // Barra de reações
                   _buildReactionBar(entry),
-                  const SizedBox(height: 10),
+
+                  SizedBox(height: TravelSpacing.sm),
+
+                  // Data
                   Text(
                     DateFormat('dd/MM/yyyy HH:mm').format(entry.date),
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TravelTextStyles.labelSmall(context),
                   ),
                 ],
               ),
@@ -261,27 +276,29 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Widget _buildImage(String photoData, String? location, {double? height}) {
-    // Suporte híbrido: Base64 (antigo) e URL (novo Storage)
     final bool isBase64 = !photoData.startsWith('http');
 
     return Semantics(
       label: "Foto registrada em ${location ?? 'viagem'}",
-      child: isBase64
-          ? Image.memory(
-              base64Decode(photoData),
-              width: double.infinity,
-              height: height,
-              fit: BoxFit.cover,
-              cacheWidth: MemoryManagerService().isLowEndDevice ? 800 : null,
-              errorBuilder: (_, __, ___) => _errorImage(),
-            )
-          : OptimizedImage(
-              imageUrl: photoData,
-              width: double.infinity,
-              height: height,
-              fit: BoxFit.cover,
-              errorWidget: _errorImage(),
-            ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.zero,
+        child: isBase64
+            ? Image.memory(
+                base64Decode(photoData),
+                width: double.infinity,
+                height: height,
+                fit: BoxFit.cover,
+                cacheWidth: MemoryManagerService().isLowEndDevice ? 800 : null,
+                errorBuilder: (_, __, ___) => _errorImage(),
+              )
+            : OptimizedImage(
+                imageUrl: photoData,
+                width: double.infinity,
+                height: height,
+                fit: BoxFit.cover,
+                errorWidget: _errorImage(),
+              ),
+      ),
     );
   }
 
@@ -292,7 +309,7 @@ class _JournalPageState extends State<JournalPage> {
         scrollDirection: Axis.horizontal,
         itemCount: photos.length,
         itemBuilder: (context, index) => Padding(
-          padding: const EdgeInsets.only(right: 2),
+          padding: EdgeInsets.only(right: TravelSpacing.xs),
           child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.8,
             child: _buildImage(photos[index], location, height: 250),
@@ -310,27 +327,27 @@ class _JournalPageState extends State<JournalPage> {
     switch (mood) {
       case MoodIcon.veryHappy:
         iconData = Icons.sentiment_very_satisfied;
-        color = Colors.green;
+        color = TravelColors.success;
         label = "Muito Feliz";
         break;
       case MoodIcon.happy:
         iconData = Icons.sentiment_satisfied;
-        color = Colors.lightGreen;
+        color = TravelColors.forestGreen;
         label = "Feliz";
         break;
       case MoodIcon.neutral:
         iconData = Icons.sentiment_neutral;
-        color = Colors.amber;
+        color = TravelColors.sandBeige;
         label = "Neutro";
         break;
       case MoodIcon.sad:
         iconData = Icons.sentiment_dissatisfied;
-        color = Colors.orange;
+        color = TravelColors.warning;
         label = "Triste";
         break;
       case MoodIcon.verySad:
         iconData = Icons.sentiment_very_dissatisfied;
-        color = Colors.red;
+        color = TravelColors.error;
         label = "Muito Triste";
         break;
     }
@@ -338,20 +355,22 @@ class _JournalPageState extends State<JournalPage> {
     return Semantics(
       label: "Humor registrado: $label",
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: TravelSpacing.sm,
+          vertical: TravelSpacing.xs,
+        ),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(TravelSpacing.radiusLg),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(iconData, size: 16, color: color),
-            const SizedBox(width: 4),
+            SizedBox(width: TravelSpacing.xs),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 10,
+              style: TravelTextStyles.labelSmall(context).copyWith(
                 color: color,
                 fontWeight: FontWeight.bold,
               ),
@@ -362,82 +381,71 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.photo_library_outlined, size: 80, color: Colors.grey[300]),
-          const SizedBox(height: 20),
-          const Text(
-            "Nenhum registro encontrado.",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _errorImage() => Container(
         height: 200,
-        color: Colors.grey[100],
-        child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+        color: TravelColors.stoneGrayLight.withOpacity(0.3),
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: TravelColors.stoneGray,
+          size: 48,
+        ),
       );
 
   Widget _buildReactionBar(JournalEntry entry) {
     final controller = TripController();
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: TravelSpacing.sm),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.grey.shade200),
-          bottom: BorderSide(color: Colors.grey.shade200),
+          top: BorderSide(color: TravelColors.stoneGrayLight),
+          bottom: BorderSide(color: TravelColors.stoneGrayLight),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Wrap(
+        spacing: TravelSpacing.sm,
+        runSpacing: TravelSpacing.sm,
         children: [
           _buildReactionButton(
             entry,
             ReactionType.like,
             Icons.favorite,
-            Colors.red,
+            TravelColors.error,
             controller,
           ),
           _buildReactionButton(
             entry,
             ReactionType.love,
             Icons.favorite_border,
-            Colors.pink,
+            TravelColors.sunsetOrange,
             controller,
           ),
           _buildReactionButton(
             entry,
             ReactionType.wow,
             Icons.star,
-            Colors.amber,
+            TravelColors.sandBeige,
             controller,
           ),
           _buildReactionButton(
             entry,
             ReactionType.celebrate,
             Icons.celebration,
-            Colors.orange,
+            TravelColors.sunsetOrange,
             controller,
           ),
           _buildReactionButton(
             entry,
             ReactionType.support,
             Icons.thumb_up,
-            Colors.blue,
+            TravelColors.skyBlue,
             controller,
           ),
           _buildReactionButton(
             entry,
             ReactionType.thanks,
             Icons.volunteer_activism,
-            Colors.purple,
+            TravelColors.forestGreen,
             controller,
           ),
         ],
@@ -467,29 +475,35 @@ class _JournalPageState extends State<JournalPage> {
             reactionType: reactionType,
           );
         },
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(TravelSpacing.radiusLg),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: EdgeInsets.symmetric(
+            horizontal: TravelSpacing.sm,
+            vertical: TravelSpacing.xs,
+          ),
           decoration: BoxDecoration(
             color: hasReacted ? color.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(TravelSpacing.radiusLg),
             border: Border.all(
-              color: hasReacted ? color : Colors.grey.shade300,
+              color: hasReacted ? color : TravelColors.stoneGrayLight,
               width: 1.5,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: hasReacted ? color : Colors.grey),
+              Icon(
+                icon,
+                size: 16,
+                color: hasReacted ? color : TravelColors.stoneGray,
+              ),
               if (count > 0) ...[
-                const SizedBox(width: 4),
+                SizedBox(width: TravelSpacing.xs),
                 Text(
                   count.toString(),
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: TravelTextStyles.labelSmall(context).copyWith(
                     fontWeight: FontWeight.bold,
-                    color: hasReacted ? color : Colors.grey,
+                    color: hasReacted ? color : TravelColors.stoneGray,
                   ),
                 ),
               ],
@@ -500,3 +514,5 @@ class _JournalPageState extends State<JournalPage> {
     );
   }
 }
+
+// Made with Bob

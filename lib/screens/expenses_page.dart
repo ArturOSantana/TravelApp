@@ -7,6 +7,10 @@ import '../models/trip.dart';
 import '../controllers/trip_controller.dart';
 import '../services/exchangerate_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/travel_colors.dart';
+import '../theme/travel_spacing.dart';
+import '../theme/travel_text_styles.dart';
+import '../widgets/core/travel_widgets.dart';
 import 'create_expense_page.dart';
 import 'reports_page.dart';
 
@@ -49,9 +53,15 @@ class _ExpensesPageState extends State<ExpensesPage> {
           .doc(widget.tripId)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
-          return const Scaffold(
-              body: Center(child: CircularProgressIndicator()));
+        if (!snapshot.hasData) {
+          return Scaffold(
+            body: Center(
+              child: TravelLoadingIndicator(
+                message: 'Carregando finanças...',
+              ),
+            ),
+          );
+        }
         final trip = Trip.fromFirestore(snapshot.data!);
         final groupMemberIds = <String>{
           if (trip.ownerId.isNotEmpty) trip.ownerId,
@@ -62,8 +72,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
         return DefaultTabController(
           length: hasRealGroup ? 2 : 1,
           child: Scaffold(
-            appBar: AppBar(
-              title: Semantics(header: true, child: const Text("Finanças")),
+            appBar: TravelAppBar.standard(
+              title: 'Finanças',
               actions: [
                 IconButton(
                   icon: const Icon(Icons.assessment),
@@ -86,6 +96,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
                 ),
               ],
               bottom: TabBar(
+                indicatorColor: TravelColors.forestGreen,
+                labelColor: TravelColors.forestGreen,
+                unselectedLabelColor: TravelColors.stoneGray,
                 tabs: [
                   const Tab(text: "Histórico", icon: Icon(Icons.list_alt)),
                   if (hasRealGroup)
@@ -97,6 +110,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
             floatingActionButton: Semantics(
               label: "Adicionar novo gasto",
               child: FloatingActionButton.extended(
+                backgroundColor: TravelColors.forestGreen,
+                foregroundColor: TravelColors.cloudWhite,
                 icon: const Icon(Icons.add),
                 label: const Text("Novo Gasto"),
                 onPressed: () => Navigator.push(
@@ -169,9 +184,16 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(TravelSpacing.lg),
       decoration: BoxDecoration(
-          color: AppColors.success,
+          gradient: LinearGradient(
+            colors: [
+              TravelColors.forestGreen,
+              TravelColors.forestGreen.withOpacity(0.8)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius:
               const BorderRadius.vertical(bottom: Radius.circular(30))),
       child: Column(
@@ -183,28 +205,22 @@ class _ExpensesPageState extends State<ExpensesPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("Total Gasto",
-                      style: TextStyle(
-                          color: AppColors.textOnPrimary.withOpacity(0.7),
-                          fontSize: 14)),
+                      style: TravelTextStyles.bodyMedium(context,
+                          color: TravelColors.cloudWhite.withOpacity(0.9))),
                   Text(currencyFormat.format(gasto),
-                      style: const TextStyle(
-                          color: AppColors.textOnPrimary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold)),
+                      style: TravelTextStyles.headlineLarge(context,
+                          color: TravelColors.cloudWhite)),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text("Disponível",
-                      style: TextStyle(
-                          color: AppColors.textOnPrimary.withOpacity(0.7),
-                          fontSize: 14)),
+                      style: TravelTextStyles.bodyMedium(context,
+                          color: TravelColors.cloudWhite.withOpacity(0.9))),
                   Text(currencyFormat.format(disponivel),
-                      style: const TextStyle(
-                          color: AppColors.textOnPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold)),
+                      style: TravelTextStyles.headlineMedium(context,
+                          color: TravelColors.cloudWhite)),
                 ],
               ),
             ],
@@ -213,8 +229,8 @@ class _ExpensesPageState extends State<ExpensesPage> {
           // Barra de progresso do orçamento
           LinearProgressIndicator(
               value: progresso,
-              backgroundColor: AppColors.textOnPrimary.withOpacity(0.24),
-              color: AppColors.textOnPrimary,
+              backgroundColor: TravelColors.cloudWhite.withOpacity(0.3),
+              color: TravelColors.cloudWhite,
               minHeight: 8),
         ],
       ),
@@ -455,24 +471,20 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
   Widget _buildBalanceSummaryCard(
       Map<String, double> balances, Trip trip, NumberFormat currencyFormat) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    return TravelCard.elevated(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(TravelSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: const [
-                Icon(Icons.account_balance_wallet, color: AppColors.success),
-                SizedBox(width: 10),
+              children: [
+                Icon(Icons.account_balance_wallet,
+                    color: TravelColors.forestGreen),
+                SizedBox(width: TravelSpacing.sm),
                 Text(
                   'Balanço dos Membros',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TravelTextStyles.titleLarge(context),
                 ),
               ],
             ),
@@ -507,23 +519,22 @@ class _ExpensesPageState extends State<ExpensesPage> {
                           ),
                           decoration: BoxDecoration(
                             color: isPositive
-                                ? AppColors.successBackground
+                                ? TravelColors.forestGreen.withOpacity(0.1)
                                 : isNegative
-                                    ? AppColors.errorBackground
-                                    : AppColors.surfaceVariant,
+                                    ? TravelColors.sunsetOrange.withOpacity(0.1)
+                                    : TravelColors.stoneGray.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '${balance >= 0 ? '+' : ''}${currencyFormat.format(balance)}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                            style: TravelTextStyles.bodyLarge(
+                              context,
                               color: isPositive
-                                  ? AppColors.success
+                                  ? TravelColors.forestGreen
                                   : isNegative
-                                      ? AppColors.error
-                                      : AppColors.textSecondary,
-                            ),
+                                      ? TravelColors.sunsetOrange
+                                      : TravelColors.stoneGray,
+                            ).copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],

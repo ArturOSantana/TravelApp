@@ -17,7 +17,7 @@ import 'services/push_notification_service.dart';
 import 'services/cache_service.dart';
 import 'services/memory_manager_service.dart';
 import 'services/permission_service.dart';
-import 'theme/app_theme.dart';
+import 'theme/travel_theme.dart';
 import 'controllers/theme_controller.dart';
 
 void main() async {
@@ -100,9 +100,9 @@ class MyApp extends StatelessWidget {
         builder: (context, themeController, _) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Travel App',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            title: 'Travel Planner',
+            theme: TravelTheme.lightTheme(context),
+            darkTheme: TravelTheme.darkTheme(context),
             themeMode: themeController.themeMode,
             home: const AppInitializer(),
             onGenerateRoute: (settings) {
