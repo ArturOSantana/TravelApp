@@ -407,9 +407,6 @@ class PushNotificationService {
   /// Verifica se o serviço está inicializado
   static bool get isInitialized => _isInitialized;
 
-  // ========== MÉTODOS PRIVADOS DE VALIDAÇÃO ==========
-
-  /// Garante que o serviço foi inicializado
   static void _ensureInitialized() {
     if (!_isInitialized) {
       throw GenericException(

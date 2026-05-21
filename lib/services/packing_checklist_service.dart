@@ -446,8 +446,6 @@ class PackingChecklistService {
     }
   }
 
-  // ==================== VALIDAÇÕES ====================
-
   static void _validateTripId(String tripId) {
     if (tripId.trim().isEmpty) {
       throw ValidationException('ID da viagem não pode estar vazio');
