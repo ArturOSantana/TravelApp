@@ -70,10 +70,6 @@ class LocationService {
     }
   }
 
-  /// Obtém endereço a partir de coordenadas (geocoding reverso)
-  ///
-  /// Throws [ValidationException] se coordenadas forem inválidas
-  /// Throws [NetworkException] em caso de erro de rede
   static Future<Map<String, dynamic>> getAddressFromCoordinates(
     double lat,
     double lon,
@@ -138,12 +134,6 @@ class LocationService {
     }
   }
 
-  /// Obtém localização atual do dispositivo em tempo real
-  ///
-  /// [context] Opcional - para mostrar diálogos de permissão
-  ///
-  /// Throws [PermissionException] se permissão for negada
-  /// Throws [GenericException] se serviço estiver desabilitado ou houver erro
   static Future<Position> getCurrentLocation({BuildContext? context}) async {
     try {
       // Verificar e solicitar permissão
@@ -190,7 +180,6 @@ class LocationService {
     }
   }
 
-  /// Stream de localização em tempo real
   static Stream<Position> getLocationStream() {
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -201,7 +190,6 @@ class LocationService {
     );
   }
 
-  /// Calcula distância entre dois pontos em metros
   static double calculateDistance(
     double lat1,
     double lon1,
@@ -211,12 +199,6 @@ class LocationService {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
   }
 
-  /// Busca lugares próximos a uma coordenada
-  ///
-  /// [category] Tipo de lugar (ex: 'restaurant', 'hotel', 'tourism')
-  ///
-  /// Throws [ValidationException] se coordenadas ou categoria forem inválidas
-  /// Throws [NetworkException] em caso de erro de rede
   static Future<List<Map<String, dynamic>>> searchNearby(
     double lat,
     double lon,
@@ -293,7 +275,6 @@ class LocationService {
     }
   }
 
-  /// Formata distância para exibição
   static String _formatDistance(double meters) {
     if (meters < 1000) {
       return '${meters.toStringAsFixed(0)}m';
@@ -302,10 +283,6 @@ class LocationService {
     }
   }
 
-  /// Obtém detalhes completos de um lugar específico
-  ///
-  /// Throws [ValidationException] se coordenadas forem inválidas
-  /// Throws [NetworkException] em caso de erro de rede
   static Future<Map<String, dynamic>> getPlaceDetails(
     double lat,
     double lon,

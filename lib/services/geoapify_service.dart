@@ -19,18 +19,6 @@ class GeoapifyService {
   static const int _maxRadius = 50000; // 50km
   static const int _maxPlacesLimit = 500;
 
-  /// Calcula rota entre dois pontos
-  ///
-  /// Parâmetros:
-  /// - [startLat], [startLon]: Coordenadas de início
-  /// - [endLat], [endLon]: Coordenadas de destino
-  /// - [mode]: Modo de transporte (walk, drive, bicycle, transit)
-  ///
-  /// Retorna: Mapa com distância, duração e coordenadas da rota
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se coordenadas forem inválidas
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<Map<String, dynamic>> calculateRoute({
     required double startLat,
     required double startLon,
@@ -107,17 +95,6 @@ class GeoapifyService {
     }
   }
 
-  /// Calcula rota com múltiplos pontos de parada
-  ///
-  /// Parâmetros:
-  /// - [waypoints]: Lista de coordenadas (mínimo 2, máximo 50)
-  /// - [mode]: Modo de transporte
-  ///
-  /// Retorna: Mapa com distância total e duração
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se waypoints forem inválidos
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<Map<String, dynamic>> calculateMultiPointRoute({
     required List<Map<String, double>> waypoints,
     String mode = 'walk',
@@ -215,18 +192,6 @@ class GeoapifyService {
     }
   }
 
-  /// Calcula matriz de distâncias entre múltiplos pontos
-  /// Útil para otimizar ordem de visitas
-  ///
-  /// Parâmetros:
-  /// - [locations]: Lista de coordenadas (mínimo 2)
-  /// - [mode]: Modo de transporte
-  ///
-  /// Retorna: Matriz de distâncias em km
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se locations forem inválidas
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<List<List<double>>> calculateDistanceMatrix({
     required List<Map<String, double>> locations,
     String mode = 'walk',
@@ -319,15 +284,6 @@ class GeoapifyService {
     }
   }
 
-  /// Otimiza ordem de visita de atividades usando algoritmo do vizinho mais próximo
-  ///
-  /// Parâmetros:
-  /// - [activities]: Lista de atividades com lat/lon
-  /// - [mode]: Modo de transporte
-  ///
-  /// Retorna: Lista de atividades ordenada de forma otimizada
-  ///
-  /// Nota: Para 2 ou menos atividades, retorna a lista original
   static Future<List<Map<String, dynamic>>> optimizeRoute({
     required List<Map<String, dynamic>> activities,
     String mode = 'walk',
@@ -408,13 +364,6 @@ class GeoapifyService {
     }
   }
 
-  /// Calcula tempo total de viagem entre atividades ordenadas
-  ///
-  /// Parâmetros:
-  /// - [activities]: Lista de atividades ordenadas
-  /// - [mode]: Modo de transporte
-  ///
-  /// Retorna: Mapa com distância total, duração e segmentos
   static Future<Map<String, dynamic>> calculateTotalTravelTime({
     required List<Map<String, dynamic>> activities,
     String mode = 'walk',
@@ -491,19 +440,6 @@ class GeoapifyService {
     }
   }
 
-  /// Busca pontos turísticos e lugares próximos
-  ///
-  /// Parâmetros:
-  /// - [lat], [lon]: Coordenadas do local de busca
-  /// - [categories]: Categorias de lugares (tourism, entertainment, natural, etc)
-  /// - [radius]: Raio de busca em metros (máximo: 50km)
-  /// - [limit]: Número máximo de resultados (máximo: 500)
-  ///
-  /// Retorna: Lista de lugares encontrados
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<List<Map<String, dynamic>>> searchPlaces({
     required double lat,
     required double lon,
@@ -604,7 +540,6 @@ class GeoapifyService {
     }
   }
 
-  /// Retorna categorias disponíveis para busca de lugares
   static List<Map<String, String>> getPlaceCategories() {
     return [
       {
@@ -638,7 +573,6 @@ class GeoapifyService {
     ];
   }
 
-  /// Retorna modos de transporte disponíveis
   static List<Map<String, String>> getTransportModes() {
     return [
       {'id': 'walk', 'name': 'A pé', 'icon': '🚶'},
@@ -662,7 +596,6 @@ class GeoapifyService {
     }
   }
 
-  /// Valida modo de transporte
   static void _validateTransportMode(String mode) {
     const validModes = ['walk', 'drive', 'bicycle', 'transit'];
 
@@ -673,8 +606,6 @@ class GeoapifyService {
     }
   }
 
-  /// Calcula distância entre dois pontos usando fórmula de Haversine
-  /// Retorna distância em metros
   static double _calculateDistance(
     double lat1,
     double lon1,
@@ -697,7 +628,6 @@ class GeoapifyService {
     return earthRadius * c;
   }
 
-  /// Converte graus para radianos
   static double _toRadians(double degrees) {
     return degrees * pi / 180;
   }

@@ -279,7 +279,6 @@ class AccessibleIconButton extends StatelessWidget {
   }
 }
 
-/// Floating Action Button acessível
 class AccessibleFAB extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;

@@ -3,11 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/user_model.dart';
 
-/// Serviço de gerenciamento de assinaturas e limites de recursos.
-///
-/// Controla o acesso a funcionalidades premium e limites do plano gratuito:
-/// - Plano Free: máximo 3 viagens, 3 membros por viagem
-/// - Plano Premium: recursos ilimitados, insights avançados, exportação de relatórios
 class SubscriptionService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -16,12 +11,6 @@ class SubscriptionService {
   static const int _maxTripsForFree = 3;
   static const int _maxMembersForFree = 3;
 
-  /// Verifica se o usuário atual possui assinatura Premium.
-  ///
-  /// Retorna `false` se o usuário não estiver autenticado ou se houver erro.
-  ///
-  /// Throws:
-  /// - [NetworkException] se houver erro de conexão com Firestore
   static Future<bool> _isPremiumUser() async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -47,16 +36,6 @@ class SubscriptionService {
     }
   }
 
-  /// Verifica se o usuário pode criar uma nova viagem.
-  ///
-  /// Usuários Premium têm viagens ilimitadas.
-  /// Usuários Free estão limitados a 3 viagens.
-  ///
-  /// Returns: `true` se pode criar, `false` caso contrário
-  ///
-  /// Throws:
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
   static Future<bool> canCreateTrip() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -95,21 +74,6 @@ class SubscriptionService {
     }
   }
 
-  /// Verifica se o usuário pode adicionar um membro à viagem.
-  ///
-  /// Usuários Premium têm membros ilimitados.
-  /// Usuários Free estão limitados a 3 membros por viagem.
-  ///
-  /// Parameters:
-  /// - [tripId]: ID da viagem a verificar
-  ///
-  /// Returns: `true` se pode adicionar, `false` caso contrário
-  ///
-  /// Throws:
-  /// - [ValidationException] se o tripId for inválido
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
-  /// - [SubscriptionException] se a viagem não existir
   static Future<bool> canAddMember(String tripId) async {
     _validateTripId(tripId);
 
@@ -158,14 +122,6 @@ class SubscriptionService {
     }
   }
 
-  /// Verifica se o usuário tem acesso a insights avançados (análises com IA).
-  ///
-  /// Funcionalidade exclusiva para usuários Premium.
-  ///
-  /// Returns: `true` se tem acesso, `false` caso contrário
-  ///
-  /// Throws:
-  /// - [NetworkException] se houver erro de conexão
   static Future<bool> hasAdvancedInsights() async {
     try {
       return await _isPremiumUser();
@@ -174,14 +130,6 @@ class SubscriptionService {
     }
   }
 
-  /// Verifica se o usuário tem acesso a funcionalidades de IA.
-  ///
-  /// Funcionalidade exclusiva para usuários Premium.
-  ///
-  /// Returns: `true` se tem acesso, `false` caso contrário
-  ///
-  /// Throws:
-  /// - [NetworkException] se houver erro de conexão
   static Future<bool> hasAIFeatures() async {
     try {
       return await _isPremiumUser();
@@ -190,14 +138,6 @@ class SubscriptionService {
     }
   }
 
-  /// Verifica se o usuário pode exportar relatórios.
-  ///
-  /// Funcionalidade exclusiva para usuários Premium.
-  ///
-  /// Returns: `true` se pode exportar, `false` caso contrário
-  ///
-  /// Throws:
-  /// - [NetworkException] se houver erro de conexão
   static Future<bool> canExportReports() async {
     try {
       return await _isPremiumUser();
@@ -206,12 +146,6 @@ class SubscriptionService {
     }
   }
 
-  /// Atualiza o usuário atual para o plano Premium.
-  ///
-  /// Throws:
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
-  /// - [SubscriptionException] se já for Premium
   static Future<void> upgradeToPremium() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -256,12 +190,6 @@ class SubscriptionService {
     }
   }
 
-  /// Faz downgrade do usuário atual para o plano Free.
-  ///
-  /// Throws:
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
-  /// - [SubscriptionException] se já for Free
   static Future<void> downgradeToFree() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -306,13 +234,6 @@ class SubscriptionService {
     }
   }
 
-  /// Obtém informações detalhadas sobre os limites do usuário.
-  ///
-  /// Returns: Map com informações de uso e limites
-  ///
-  /// Throws:
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
   static Future<Map<String, dynamic>> getUserLimits() async {
     final user = _auth.currentUser;
     if (user == null) {

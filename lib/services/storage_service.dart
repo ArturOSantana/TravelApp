@@ -68,10 +68,6 @@ class StorageService {
     }
   }
 
-  /// Upload de múltiplas fotos com controle de erros individual
-  ///
-  /// Continua o upload mesmo se algumas fotos falharem.
-  /// Retorna apenas as URLs das fotos enviadas com sucesso.
   static Future<List<String>> uploadMultiplePhotos({
     required List<File> photos,
     required String tripId,
@@ -121,14 +117,6 @@ class StorageService {
     return urls;
   }
 
-  /// Deleta uma foto do Storage
-  ///
-  /// Parâmetros:
-  /// - [photoUrl]: URL completa da foto no Firebase Storage
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se URL for inválida
-  /// - [StorageException]: Se houver erro ao deletar
   static Future<void> deletePhoto(String photoUrl) async {
     _validatePhotoUrl(photoUrl);
 
@@ -146,10 +134,6 @@ class StorageService {
     }
   }
 
-  /// Deleta múltiplas fotos do Storage
-  ///
-  /// Continua a exclusão mesmo se algumas falharem.
-  /// Retorna lista de URLs que falharam ao deletar.
   static Future<List<String>> deleteMultiplePhotos(
     List<String> photoUrls, {
     Function(int current, int total)? onProgress,
@@ -175,13 +159,6 @@ class StorageService {
     return failedUrls;
   }
 
-  /// Seleciona foto da galeria com validações
-  ///
-  /// Retorna: File da imagem selecionada ou null se cancelado
-  ///
-  /// Lança:
-  /// - [PermissionException]: Se permissão for negada
-  /// - [StorageException]: Se houver erro ao selecionar
   static Future<File?> pickImageFromGallery() async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -210,13 +187,6 @@ class StorageService {
     }
   }
 
-  /// Tira foto com a câmera com validações
-  ///
-  /// Retorna: File da foto tirada ou null se cancelado
-  ///
-  /// Lança:
-  /// - [PermissionException]: Se permissão for negada
-  /// - [StorageException]: Se houver erro ao tirar foto
   static Future<File?> takePhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -245,12 +215,6 @@ class StorageService {
     }
   }
 
-  /// Seleciona múltiplas fotos da galeria
-  ///
-  /// Retorna: Lista de Files das imagens selecionadas
-  ///
-  /// Lança:
-  /// - [StorageException]: Se houver erro ao selecionar
   static Future<List<File>> pickMultipleImages() async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -283,15 +247,10 @@ class StorageService {
     }
   }
 
-  /// Alias para pickMultipleImages (compatibilidade)
   static Future<List<File>> pickMultiplePhotos() async {
     return pickMultipleImages();
   }
 
-  /// Gera URL de thumbnail a partir da URL original
-  ///
-  /// Nota: Esta função apenas gera a URL, não cria o thumbnail.
-  /// O thumbnail deve ser criado por Cloud Functions ou outro processo.
   static String getThumbnailUrl(String originalUrl, {String size = '200x200'}) {
     try {
       final uri = Uri.parse(originalUrl);
@@ -318,7 +277,6 @@ class StorageService {
     }
   }
 
-  /// Valida a URL da foto
   static void _validatePhotoUrl(String photoUrl) {
     if (photoUrl.trim().isEmpty) {
       throw ValidationException('URL da foto não pode estar vazia');
@@ -334,7 +292,6 @@ class StorageService {
     }
   }
 
-  /// Valida arquivo antes do upload
   static Future<void> _validateFile(File file) async {
     // Verifica se arquivo existe
     if (!await file.exists()) {
@@ -364,14 +321,12 @@ class StorageService {
     }
   }
 
-  /// Gera nome único para o arquivo
   static String _generateFileName(String originalPath) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final basename = path.basename(originalPath);
     return '${timestamp}_$basename';
   }
 
-  /// Determina o content type baseado na extensão
   static String _getContentType(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
 
@@ -392,7 +347,6 @@ class StorageService {
     }
   }
 
-  /// Converte exceções do Firebase Storage em exceções customizadas
   static StorageException _handleFirebaseStorageException(FirebaseException e) {
     switch (e.code) {
       case 'unauthorized':

@@ -14,16 +14,6 @@ class OpenWeatherMapService {
   static const double _maxLongitude = 180.0;
   static const int _minCityNameLength = 2;
 
-  /// Busca clima atual por nome da cidade
-  ///
-  /// Parâmetros:
-  /// - [city]: Nome da cidade (mínimo 2 caracteres)
-  ///
-  /// Retorna: Mapa com dados do clima atual
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se cidade for inválida
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<Map<String, dynamic>> getCurrentWeather(String city) async {
     _validateCityName(city);
 
@@ -75,16 +65,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Busca previsão do tempo por nome da cidade (5 dias, intervalos de 3h)
-  ///
-  /// Parâmetros:
-  /// - [city]: Nome da cidade (mínimo 2 caracteres)
-  ///
-  /// Retorna: Lista de previsões
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se cidade for inválida
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<List<Map<String, dynamic>>> getForecast(String city) async {
     _validateCityName(city);
 
@@ -145,17 +125,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Busca clima atual por coordenadas geográficas
-  ///
-  /// Parâmetros:
-  /// - [lat]: Latitude (-90 a 90)
-  /// - [lon]: Longitude (-180 a 180)
-  ///
-  /// Retorna: Mapa com dados do clima atual
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se coordenadas forem inválidas
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<Map<String, dynamic>> getCurrentWeatherByCoords(
     double lat,
     double lon,
@@ -208,17 +177,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Busca previsão do tempo por coordenadas (5 dias, intervalos de 3h)
-  ///
-  /// Parâmetros:
-  /// - [lat]: Latitude (-90 a 90)
-  /// - [lon]: Longitude (-180 a 180)
-  ///
-  /// Retorna: Lista de previsões
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se coordenadas forem inválidas
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<List<Map<String, dynamic>>> getForecastByCoords(
     double lat,
     double lon,
@@ -280,12 +238,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Retorna URL do ícone do clima
-  ///
-  /// Parâmetros:
-  /// - [iconCode]: Código do ícone retornado pela API
-  ///
-  /// Retorna: URL completa do ícone
   static String getIconUrl(String iconCode) {
     if (iconCode.isEmpty) {
       return 'https://openweathermap.org/img/wn/01d@2x.png'; // fallback
@@ -293,12 +245,6 @@ class OpenWeatherMapService {
     return 'https://openweathermap.org/img/wn/$iconCode@2x.png';
   }
 
-  /// Retorna emoji correspondente ao código do clima
-  ///
-  /// Parâmetros:
-  /// - [iconCode]: Código do ícone retornado pela API
-  ///
-  /// Retorna: Emoji representando o clima
   static String getWeatherEmoji(String iconCode) {
     switch (iconCode) {
       case '01d':
@@ -333,12 +279,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Retorna descrição textual da direção do vento
-  ///
-  /// Parâmetros:
-  /// - [degrees]: Direção do vento em graus (0-360)
-  ///
-  /// Retorna: Descrição da direção (Norte, Sul, etc.)
   static String getWindDirection(int degrees) {
     if (degrees < 0 || degrees > 360) {
       return 'Desconhecido';
@@ -355,12 +295,6 @@ class OpenWeatherMapService {
     return 'Desconhecido';
   }
 
-  /// Agrupa previsões por dia (calcula médias diárias)
-  ///
-  /// Parâmetros:
-  /// - [forecast]: Lista de previsões horárias
-  ///
-  /// Retorna: Lista de previsões agrupadas por dia
   static List<Map<String, dynamic>> groupForecastByDay(
     List<Map<String, dynamic>> forecast,
   ) {
@@ -411,7 +345,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Valida coordenadas geográficas
   static void _validateCoordinates(double lat, double lon) {
     if (lat < _minLatitude || lat > _maxLatitude) {
       throw ValidationException(
@@ -426,7 +359,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Processa dados do clima atual da API
   static Map<String, dynamic> _parseWeatherData(Map<String, dynamic> data) {
     try {
       final main = data['main'] as Map<String, dynamic>;
@@ -465,7 +397,6 @@ class OpenWeatherMapService {
     }
   }
 
-  /// Processa item individual da previsão
   static Map<String, dynamic> _parseForecastItem(dynamic item) {
     try {
       final itemMap = item as Map<String, dynamic>;

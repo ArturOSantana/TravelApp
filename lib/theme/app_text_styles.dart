@@ -94,8 +94,6 @@ class AppTextStyles {
     );
   }
 
-  /// Body Small - Texto pequeno (14sp)
-  /// Uso: Texto secundário, descrições
   static TextStyle bodySmall(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 14),
@@ -118,8 +116,6 @@ class AppTextStyles {
     );
   }
 
-  /// Label - Label padrão (14sp)
-  /// Uso: Botões secundários, labels de formulário
   static TextStyle label(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 14),
@@ -131,8 +127,6 @@ class AppTextStyles {
     );
   }
 
-  /// Label Small - Label pequeno (12sp)
-  /// Uso: Tags, badges, labels mínimos
   static TextStyle labelSmall(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 12),
@@ -155,8 +149,6 @@ class AppTextStyles {
     );
   }
 
-  /// Overline - Texto sobrescrito (10sp)
-  /// Uso: Categorias, seções, headers de tabela
   static TextStyle overline(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 10),
@@ -179,7 +171,6 @@ class AppTextStyles {
     );
   }
 
-  /// Link - Estilo para links (16sp)
   static TextStyle link(BuildContext context, {Color? color}) {
     return TextStyle(
       fontSize: _scaledSize(context, 16),
@@ -192,7 +183,6 @@ class AppTextStyles {
     );
   }
 
-  /// Error - Estilo para mensagens de erro (14sp)
   static TextStyle error(BuildContext context) {
     return TextStyle(
       fontSize: _scaledSize(context, 14),
@@ -204,7 +194,6 @@ class AppTextStyles {
     );
   }
 
-  /// Success - Estilo para mensagens de sucesso (14sp)
   static TextStyle success(BuildContext context) {
     return TextStyle(
       fontSize: _scaledSize(context, 14),
@@ -225,10 +214,8 @@ class AppTextStyles {
     return baseSize * clampedFactor;
   }
 
-  /// Retorna tamanho de fonte sem escala (para casos específicos)
   static double fixedSize(double size) => size;
 
-  /// Calcula altura de linha ideal para um tamanho de fonte
   static double getLineHeight(double fontSize) {
     // Regra geral: fontes menores precisam de mais espaço
     if (fontSize <= 12) return 1.6;
@@ -237,17 +224,14 @@ class AppTextStyles {
     return 1.3;
   }
 
-  /// Retorna estilo com peso customizado
   static TextStyle withWeight(TextStyle style, FontWeight weight) {
     return style.copyWith(fontWeight: weight);
   }
 
-  /// Retorna estilo com cor customizada
   static TextStyle withColor(TextStyle style, Color color) {
     return style.copyWith(color: color);
   }
 
-  /// Retorna estilo com decoração
   static TextStyle withDecoration(
     TextStyle style,
     TextDecoration decoration, {
@@ -263,12 +247,10 @@ class AppTextStyles {
     return fontSize >= 12.0;
   }
 
-  /// Verifica se o contraste entre texto e background é adequado
   static bool hasAccessibleContrast(Color textColor, Color backgroundColor) {
     return AppColors.hasAdequateContrast(textColor, backgroundColor);
   }
 
-  /// Retorna recomendação de tamanho mínimo para um contexto
   static double getMinimumAccessibleSize(String context) {
     switch (context) {
       case 'button':

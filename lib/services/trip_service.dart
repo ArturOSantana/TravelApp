@@ -68,10 +68,6 @@ class TripService {
     }
   }
 
-  /// Atualiza uma viagem existente
-  ///
-  /// Throws [ValidationException] se os dados forem inválidos
-  /// Throws [AuthException] se o usuário não tiver permissão
   Future<void> updateTrip({
     required String tripId,
     String? destination,
@@ -147,9 +143,6 @@ class TripService {
     }
   }
 
-  /// Deleta uma viagem
-  ///
-  /// Throws [AuthException] se o usuário não tiver permissão
   Future<void> deleteTrip(String tripId) async {
     // Validar autenticação
     final userId = _currentUserId;
@@ -183,9 +176,6 @@ class TripService {
     }
   }
 
-  /// Adiciona um membro à viagem
-  ///
-  /// Throws [SubscriptionException] se o limite de membros for atingido
   Future<void> addMember(String tripId, String memberEmail) async {
     // Validar autenticação
     final userId = _currentUserId;
@@ -231,7 +221,6 @@ class TripService {
     }
   }
 
-  /// Remove um membro da viagem
   Future<void> removeMember(String tripId, String memberId) async {
     // Validar autenticação
     final userId = _currentUserId;
@@ -271,7 +260,6 @@ class TripService {
     }
   }
 
-  /// Valida os dados de uma viagem
   void _validateTripData({
     required String destination,
     required DateTime startDate,

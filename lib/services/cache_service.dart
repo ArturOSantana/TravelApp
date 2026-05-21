@@ -39,14 +39,6 @@ class CacheService {
     }
   }
 
-  /// Salva dados no cache com expiração opcional.
-  ///
-  /// Suporta: String, int, double, bool, List<String> e objetos JSON.
-  ///
-  /// Parameters:
-  /// - [key]: Chave única para o dado (não pode estar vazia)
-  /// - [data]: Dado a ser salvo
-  /// - [expiration]: Duração até expiração (opcional)
   static Future<bool> saveData(
     String key,
     dynamic data, {
@@ -240,7 +232,6 @@ class CacheService {
     }
   }
 
-  /// Verifica e limita o tamanho do cache.
   static Future<void> _checkCacheLimit() async {
     try {
       if (_prefs == null) return;
@@ -281,7 +272,6 @@ class CacheService {
     };
   }
 
-  /// Libera recursos do serviço.
   static void dispose() {
     _cleanupTimer?.cancel();
     _cleanupTimer = null;

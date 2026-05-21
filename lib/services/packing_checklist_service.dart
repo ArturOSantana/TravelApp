@@ -3,10 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/packing_checklist.dart';
 
-/// Serviço de gerenciamento de checklists de bagagem.
-///
-/// Permite criar, atualizar e gerenciar itens de bagagem para viagens,
-/// incluindo suporte a templates pré-definidos e detecção de duplicatas.
 class PackingChecklistService {
   PackingChecklistService({FirebaseFirestore? firestore, FirebaseAuth? auth})
       : _db = firestore ?? FirebaseFirestore.instance,
@@ -27,16 +23,6 @@ class PackingChecklistService {
 
   String get currentUserId => _auth.currentUser?.uid ?? '';
 
-  /// Observa mudanças nos itens de bagagem de uma viagem em tempo real.
-  ///
-  /// Parameters:
-  /// - [tripId]: ID da viagem
-  ///
-  /// Returns: Stream com lista de itens ordenados por data de criação
-  ///
-  /// Throws:
-  /// - [ValidationException] se o tripId for inválido
-  /// - [NetworkException] se houver erro de conexão
   Stream<List<PackingItem>> watchItems(String tripId) {
     _validateTripId(tripId);
 
@@ -65,20 +51,6 @@ class PackingChecklistService {
     }
   }
 
-  /// Adiciona um novo item à checklist de bagagem.
-  ///
-  /// Parameters:
-  /// - [tripId]: ID da viagem
-  /// - [name]: Nome do item (máx. 100 caracteres)
-  /// - [category]: Categoria do item (máx. 50 caracteres)
-  /// - [quantity]: Quantidade (1-999)
-  /// - [notes]: Observações opcionais (máx. 500 caracteres)
-  /// - [isPriority]: Se é item prioritário
-  ///
-  /// Throws:
-  /// - [ValidationException] se os parâmetros forem inválidos
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
   Future<void> addItem({
     required String tripId,
     required String name,
@@ -132,20 +104,6 @@ class PackingChecklistService {
     }
   }
 
-  /// Atualiza um item existente da checklist.
-  ///
-  /// Parameters:
-  /// - [itemId]: ID do item a atualizar
-  /// - [name]: Novo nome do item
-  /// - [category]: Nova categoria
-  /// - [quantity]: Nova quantidade
-  /// - [notes]: Novas observações
-  /// - [isPriority]: Novo status de prioridade
-  ///
-  /// Throws:
-  /// - [ValidationException] se os parâmetros forem inválidos
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
   Future<void> updateItem({
     required String itemId,
     required String name,
@@ -201,21 +159,6 @@ class PackingChecklistService {
     }
   }
 
-  /// Adiciona múltiplos itens de um template à checklist.
-  ///
-  /// Evita duplicatas comparando nome e categoria (case-insensitive).
-  /// Usa batch write para melhor performance.
-  ///
-  /// Parameters:
-  /// - [tripId]: ID da viagem
-  /// - [items]: Lista de itens do template (máx. 500 itens)
-  ///
-  /// Returns: Quantidade de itens adicionados (excluindo duplicatas)
-  ///
-  /// Throws:
-  /// - [ValidationException] se os parâmetros forem inválidos
-  /// - [AuthException] se o usuário não estiver autenticado
-  /// - [NetworkException] se houver erro de conexão
   Future<int> addTemplateItems({
     required String tripId,
     required List<Map<String, String>> items,
@@ -300,15 +243,6 @@ class PackingChecklistService {
     }
   }
 
-  /// Marca/desmarca um item como checado.
-  ///
-  /// Parameters:
-  /// - [itemId]: ID do item
-  /// - [isChecked]: Novo estado
-  ///
-  /// Throws:
-  /// - [ValidationException] se o itemId for inválido
-  /// - [NetworkException] se houver erro de conexão
   Future<void> toggleItem({
     required String itemId,
     required bool isChecked,
@@ -337,15 +271,6 @@ class PackingChecklistService {
     }
   }
 
-  /// Marca/desmarca um item como prioritário.
-  ///
-  /// Parameters:
-  /// - [itemId]: ID do item
-  /// - [isPriority]: Novo estado de prioridade
-  ///
-  /// Throws:
-  /// - [ValidationException] se o itemId for inválido
-  /// - [NetworkException] se houver erro de conexão
   Future<void> togglePriority({
     required String itemId,
     required bool isPriority,
@@ -374,14 +299,6 @@ class PackingChecklistService {
     }
   }
 
-  /// Marca todos os itens de uma viagem como checados.
-  ///
-  /// Parameters:
-  /// - [tripId]: ID da viagem
-  ///
-  /// Throws:
-  /// - [ValidationException] se o tripId for inválido
-  /// - [NetworkException] se houver erro de conexão
   Future<void> markAllAsChecked(String tripId) async {
     _validateTripId(tripId);
 
@@ -416,14 +333,6 @@ class PackingChecklistService {
     }
   }
 
-  /// Remove um item da checklist.
-  ///
-  /// Parameters:
-  /// - [itemId]: ID do item a remover
-  ///
-  /// Throws:
-  /// - [ValidationException] se o itemId for inválido
-  /// - [NetworkException] se houver erro de conexão
   Future<void> deleteItem(String itemId) async {
     _validateItemId(itemId);
 

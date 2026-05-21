@@ -3,24 +3,7 @@ import 'dart:io';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/activity.dart';
 
-/// Serviço de integração com aplicativos externos.
-///
-/// Fornece métodos para abrir apps de mapas, calendário e compartilhamento,
-/// com fallbacks automáticos para web quando o app não está instalado.
 class ExternalAppsService {
-  /// Abre localização no app de mapas (Google Maps, Apple Maps ou Waze).
-  ///
-  /// Tenta abrir no app nativo primeiro, com fallback para versão web.
-  ///
-  /// Parameters:
-  /// - [latitude]: Latitude da localização
-  /// - [longitude]: Longitude da localização
-  /// - [label]: Rótulo opcional para o local
-  ///
-  /// Returns: `true` se abriu com sucesso
-  ///
-  /// Throws:
-  /// - [ValidationException] se coordenadas forem inválidas
   static Future<bool> openInMaps({
     required double latitude,
     required double longitude,

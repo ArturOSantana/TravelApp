@@ -102,7 +102,6 @@ class TripController {
     await _db.collection('trips').doc(tripId).update({'status': newStatus});
   }
 
-  /// Atualiza o orçamento e moeda base de uma viagem
   Future<void> updateTripBudget(
       String tripId, double newBudget, String newCurrency) async {
     await _db.collection('trips').doc(tripId).update({
@@ -153,7 +152,6 @@ class TripController {
     });
   }
 
-  /// Busca avaliações de destino públicas para a comunidade
   Stream<List<DestinationRating>> getCommunityDestinationRatings() {
     return _db
         .collection('destination_ratings')
@@ -657,7 +655,6 @@ class TripController {
     debugPrint('Reação $reactionKey atualizada para o registro $entryId');
   }
 
-  /// Gera um token único para compartilhamento público de um registro
   Future<String> generateShareToken(String tripId, String entryId) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final token = '${entryId}_$timestamp';
@@ -671,7 +668,6 @@ class TripController {
     return token;
   }
 
-  /// Obtém um registro de diário público pelo token de compartilhamento
   Future<JournalEntry?> getPublicJournalEntry(String shareToken) async {
     try {
       // Busca em todas as viagens (pode ser otimizado com índice no Firestore)
@@ -699,7 +695,6 @@ class TripController {
     }
   }
 
-  /// Stream para acompanhar reações em tempo real
   Stream<JournalEntry> watchJournalEntry(String tripId, String entryId) {
     return _db
         .collection('trips')
@@ -724,7 +719,6 @@ class TripController {
     });
   }
 
-  /// Busca estatísticas agregadas de um lugar
   Future<PlaceStats?> getPlaceStats(String placeId) async {
     try {
       final snapshot = await _db
@@ -744,7 +738,6 @@ class TripController {
     }
   }
 
-  /// Adiciona uma nova avaliação de lugar
   Future<void> addPlaceRating(PlaceRating rating) async {
     try {
       final user = _auth.currentUser;
@@ -764,7 +757,6 @@ class TripController {
     }
   }
 
-  /// Atualiza uma avaliação existente
   Future<void> updatePlaceRating(PlaceRating rating) async {
     try {
       final user = _auth.currentUser;
@@ -783,7 +775,6 @@ class TripController {
     }
   }
 
-  /// Deleta uma avaliação
   Future<void> deletePlaceRating(String ratingId, String userId) async {
     try {
       final user = _auth.currentUser;
@@ -799,7 +790,6 @@ class TripController {
     }
   }
 
-  /// Adiciona/remove curtida em uma avaliação de lugar
   Future<void> toggleLikePlaceRating(
       String ratingId, List<String> currentLikes) async {
     try {
@@ -829,7 +819,6 @@ class TripController {
     }
   }
 
-  /// Marca uma avaliação como útil
   Future<void> markPlaceRatingAsHelpful(String ratingId) async {
     try {
       await _db.collection('place_ratings').doc(ratingId).update({
@@ -842,7 +831,6 @@ class TripController {
     }
   }
 
-  /// Busca avaliações do usuário atual
   Stream<List<PlaceRating>> getUserPlaceRatings() {
     final uid = _auth.currentUser?.uid ?? '';
     return _db
@@ -857,7 +845,6 @@ class TripController {
     });
   }
 
-  /// Verifica se o usuário já avaliou um lugar específico
   Future<PlaceRating?> getUserRatingForPlace(String placeId) async {
     try {
       final uid = _auth.currentUser?.uid ?? '';
@@ -878,7 +865,6 @@ class TripController {
     }
   }
 
-  /// Busca avaliações por categoria
   Stream<List<PlaceRating>> getPlaceRatingsByCategory(String category) {
     return _db
         .collection('place_ratings')
@@ -893,7 +879,6 @@ class TripController {
     });
   }
 
-  /// Busca top avaliações (melhores notas)
   Future<List<PlaceRating>> getTopRatedPlaces({int limit = 10}) async {
     try {
       final snapshot = await _db
@@ -934,7 +919,6 @@ class TripController {
     }
   }
 
-  /// Remove um post da lista de salvos do usuário
   Future<void> unsavePost(String postId, String postType) async {
     try {
       final uid = _auth.currentUser?.uid ?? '';
@@ -956,7 +940,6 @@ class TripController {
     }
   }
 
-  /// Verifica se um post está salvo pelo usuário
   Future<bool> isPostSaved(String postId, String postType) async {
     try {
       final uid = _auth.currentUser?.uid ?? '';
@@ -976,7 +959,6 @@ class TripController {
     }
   }
 
-  /// Busca todos os posts salvos do usuário (serviços e avaliações)
   Future<Map<String, List<dynamic>>> getSavedPosts() async {
     try {
       final uid = _auth.currentUser?.uid ?? '';
@@ -1034,7 +1016,6 @@ class TripController {
     }
   }
 
-  /// Stream para acompanhar posts salvos em tempo real
   Stream<List<String>> watchSavedPosts() {
     final uid = _auth.currentUser?.uid ?? '';
     if (uid.isEmpty) {

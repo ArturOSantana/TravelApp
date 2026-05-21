@@ -6,15 +6,6 @@ import '../core/exceptions/app_exceptions.dart';
 import '../models/trip.dart';
 import '../models/expense.dart';
 
-/// Serviço de notificações inteligentes e contextuais
-///
-/// Responsabilidades:
-/// - Notificações baseadas em contexto (viagens próximas, orçamento, etc.)
-/// - Agendamento de verificações periódicas
-/// - Lembretes de check-in de segurança
-/// - Notificações de conquistas e dicas
-///
-/// Integra: flutter_local_notifications + Firebase Firestore
 class SmartNotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -23,23 +14,17 @@ class SmartNotificationService {
 
   static bool _isInitialized = false;
 
-  // IDs de notificações agendadas
   static const int _upcomingTripsCheckId = 1000;
   static const int _budgetCheckId = 1001;
   static const int _safetyCheckinId = 1002;
 
-  // Constantes de validação
   static const int _minTripNameLength = 2;
   static const int _minUserNameLength = 2;
   static const double _minSavings = 0.01;
   static const double _maxSavings = 999999.99;
 
-  /// Inicializa o serviço de notificações inteligentes
-  ///
-  /// Agenda verificações periódicas automáticas
-  ///
-  /// Lança:
-  /// - [GenericException]: Se falhar ao inicializar
+  // Inicializa o serviço de notificações inteligentes
+  // - [GenericException]: Se falhar ao inicializar
   static Future<void> initialize() async {
     if (_isInitialized) {
       return; // Já inicializado
@@ -56,10 +41,9 @@ class SmartNotificationService {
     }
   }
 
-  /// Agenda verificações periódicas diárias
+  // Agenda verificações periódicas diárias
   static Future<void> _scheduleSmartChecks() async {
     try {
-      // Verificar viagens próximas (diariamente às 9h)
       await _scheduleDaily(
         id: _upcomingTripsCheckId,
         hour: 9,
@@ -68,7 +52,6 @@ class SmartNotificationService {
         body: 'Verificando suas próximas viagens...',
       );
 
-      // Verificar orçamento (diariamente às 20h)
       await _scheduleDaily(
         id: _budgetCheckId,
         hour: 20,
@@ -77,7 +60,6 @@ class SmartNotificationService {
         body: 'Analisando seus gastos...',
       );
 
-      // Lembrete de check-in de segurança (diariamente às 12h)
       await _scheduleDaily(
         id: _safetyCheckinId,
         hour: 12,
@@ -93,7 +75,7 @@ class SmartNotificationService {
     }
   }
 
-  /// Agenda notificação diária em horário específico
+  // Agenda notificação diária em horário específico
   static Future<void> _scheduleDaily({
     required int id,
     required int hour,
@@ -150,9 +132,6 @@ class SmartNotificationService {
     }
   }
 
-  /// Verifica viagens próximas e envia notificações relevantes
-  ///
-  /// Chamado automaticamente pelo agendamento diário
   static Future<void> checkUpcomingTrips() async {
     _ensureAuthenticated();
 
@@ -209,9 +188,7 @@ class SmartNotificationService {
     }
   }
 
-  /// Verifica status do orçamento e envia alertas
-  ///
-  /// Chamado automaticamente pelo agendamento diário
+
   static Future<void> checkBudgetStatus() async {
     _ensureAuthenticated();
 
@@ -242,7 +219,6 @@ class SmartNotificationService {
           final percentageUsed =
               trip.budget > 0 ? (totalSpent / trip.budget) : 0;
 
-          // Alertas baseados em porcentagem do orçamento
           if (percentageUsed >= 1.0) {
             await _sendNotification(
               id: trip.id.hashCode + 100,
@@ -275,7 +251,6 @@ class SmartNotificationService {
             );
           }
         } catch (e) {
-          // Continua mesmo se falhar para uma viagem específica
           continue;
         }
       }
@@ -287,9 +262,7 @@ class SmartNotificationService {
     }
   }
 
-  /// Lembra usuário de fazer check-in de segurança
-  ///
-  /// Chamado automaticamente pelo agendamento diário
+  // Chamado automaticamente pelo agendamento diário
   static Future<void> remindSafetyCheckin() async {
     _ensureAuthenticated();
 
@@ -347,7 +320,6 @@ class SmartNotificationService {
     }
   }
 
-  /// Notifica atividade no diário de viagem
   static Future<void> notifyJournalActivity({
     required String tripName,
     required String userName,
@@ -364,7 +336,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica oportunidade de economia
   static Future<void> notifySavingsOpportunity({
     required String tripName,
     required double potentialSavings,
@@ -381,7 +352,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica alerta climático
   static Future<void> notifyWeatherAlert({
     required String destination,
     required String alert,
@@ -397,7 +367,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica documentos pendentes
   static Future<void> notifyDocumentReminder({
     required String tripName,
     required List<String> missingDocuments,
@@ -413,7 +382,6 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica melhor época para viajar
   static Future<void> notifyBestTimeToTravel({
     required String destination,
     required String month,
@@ -430,7 +398,7 @@ class SmartNotificationService {
     );
   }
 
-  /// Notifica conquista desbloqueada
+  // Notifica conquista desbloqueada
   static Future<void> notifyAchievement({
     required String title,
     required String description,
@@ -446,7 +414,7 @@ class SmartNotificationService {
     );
   }
 
-  /// Cancela todas as notificações agendadas
+  // Cancela todas as notificações agendadas
   static Future<void> cancelAll() async {
     try {
       await _notifications.cancelAll();
@@ -458,7 +426,6 @@ class SmartNotificationService {
     }
   }
 
-  /// Cancela notificação específica
   static Future<void> cancel(int id) async {
     try {
       await _notifications.cancel(id: id);
@@ -470,12 +437,11 @@ class SmartNotificationService {
     }
   }
 
-  /// Verifica se o serviço está inicializado
+  // Verifica se o serviço está inicializado
   static bool get isInitialized => _isInitialized;
 
-  // ========== MÉTODOS PRIVADOS ==========
 
-  /// Envia notificação genérica
+  // Envia notificação genérica
   static Future<void> _sendNotification({
     required int id,
     required String title,
@@ -516,7 +482,6 @@ class SmartNotificationService {
     }
   }
 
-  // ========== VALIDAÇÕES ==========
 
   static void _ensureAuthenticated() {
     if (_auth.currentUser == null) {
@@ -617,4 +582,3 @@ class SmartNotificationService {
   }
 }
 
-// Made with Bob

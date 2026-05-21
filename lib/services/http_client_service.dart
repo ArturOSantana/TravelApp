@@ -194,12 +194,10 @@ class HttpClientService {
     );
   }
 
-  /// Limpa cache HTTP
   static Future<void> clearCache() async {
     print('[HTTP] Cache HTTP limpo');
   }
 
-  /// Faz múltiplas requisições em paralelo com limite
   static Future<List<http.Response?>> getMultiple(
     List<Uri> urls, {
     Map<String, String>? headers,

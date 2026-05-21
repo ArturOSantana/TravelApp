@@ -176,7 +176,6 @@ class DestinationRating {
       'DestinationRating(id: $id, destination: $destinationName, rating: $overallRating)';
 }
 
-/// Estatísticas agregadas de avaliações de um destino
 class DestinationStats {
   final String destinationName;
   final double averageRating;
@@ -200,7 +199,6 @@ class DestinationStats {
     this.topTags = const [],
   });
 
-  /// Calcula estatísticas a partir de uma lista de avaliações
   factory DestinationStats.fromRatings(List<DestinationRating> ratings) {
     if (ratings.isEmpty) {
       return DestinationStats(
@@ -266,7 +264,6 @@ class DestinationStats {
   }
 }
 
-/// Tags pré-definidas para avaliações
 class RatingTags {
   static const List<String> all = [
     'Família',

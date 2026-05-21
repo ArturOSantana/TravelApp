@@ -100,7 +100,6 @@ class AuthService {
     }
   }
 
-  /// Reenvia email de verificação
   Future<void> resendVerificationEmail() async {
     try {
       final user = currentUser;
@@ -176,7 +175,6 @@ class AuthService {
     }
   }
 
-  /// Reautentica o usuário com credenciais atuais
   Future<void> reauthenticate(String email, String password) async {
     try {
       final user = currentUser;
@@ -203,9 +201,6 @@ class AuthService {
     }
   }
 
-  /// Deleta a conta do usuário
-  ///
-  /// Requer reautenticação recente
   Future<void> deleteAccount() async {
     try {
       final user = currentUser;
@@ -233,7 +228,6 @@ class AuthService {
     }
   }
 
-  /// Converte exceções do Firebase em exceções customizadas
   AuthException _handleFirebaseAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':

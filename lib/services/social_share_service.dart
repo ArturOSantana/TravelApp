@@ -8,28 +8,7 @@ import 'package:intl/intl.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/trip.dart';
 
-/// Serviço de compartilhamento social de viagens.
-///
-/// Gera cards visuais personalizados para compartilhamento em redes sociais
-/// com informações da viagem, estatísticas e design atrativo.
 class SocialShareService {
-  /// Compartilha um card visual da viagem.
-  ///
-  /// Gera uma imagem de alta qualidade (1080x1920) com:
-  /// - Destino da viagem
-  /// - Duração, fotos e gastos
-  /// - Design gradiente personalizado
-  /// - Marca d'água do app
-  ///
-  /// Parameters:
-  /// - [context]: BuildContext necessário para renderização
-  /// - [trip]: Dados da viagem
-  /// - [photosCount]: Quantidade de fotos da viagem
-  /// - [totalSpent]: Total gasto na viagem
-  ///
-  /// Throws:
-  /// - [ValidationException] se os parâmetros forem inválidos
-  /// - [GenericException] se houver erro ao gerar/compartilhar
   static Future<void> shareTripCard({
     required BuildContext context,
     required Trip trip,
@@ -58,7 +37,6 @@ class SocialShareService {
     }
   }
 
-  /// Converte um Widget em imagem
   static Future<ui.Image> _widgetToImage(Widget widget) async {
     final repaintBoundary = RenderRepaintBoundary();
 
@@ -94,7 +72,6 @@ class SocialShareService {
     return image;
   }
 
-  /// Salva a imagem em arquivo temporário
   static Future<File> _saveImage(ui.Image image, String tripName) async {
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final buffer = byteData!.buffer.asUint8List();
@@ -109,7 +86,6 @@ class SocialShareService {
   }
 }
 
-/// Widget do card de compartilhamento
 class _TripShareCard extends StatelessWidget {
   final Trip trip;
   final int photosCount;
@@ -383,7 +359,6 @@ class _TripShareCard extends StatelessWidget {
   }
 }
 
-/// Painter para padrão decorativo de fundo
 class _BackgroundPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

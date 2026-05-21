@@ -1,28 +1,11 @@
 
-/// ⚠️ IMPORTANTE - SEGURANÇA DE API KEYS ⚠️
-///
-/// NUNCA commite este arquivo com suas keys reais!
-///
-/// CONFIGURAÇÃO RECOMENDADA:
-/// 1. Copie este arquivo para 'api_keys.dart'
-/// 2. Adicione 'api_keys.dart' ao .gitignore
-/// 3. Configure suas keys no arquivo copiado
-///
-/// PRODUÇÃO:
-/// Para produção, use variáveis de ambiente com flutter_dotenv:
-/// 1. Adicione flutter_dotenv ao pubspec.yaml
-/// 2. Crie arquivo .env na raiz do projeto
-/// 3. Adicione .env ao .gitignore
-/// 4. Use: String.fromEnvironment('API_KEY') ou dotenv.env['API_KEY']
-///
-/// COMO OBTER AS KEYS:
+
 /// - OpenWeatherMap: https://openweathermap.org/api
 /// - Geoapify: https://www.geoapify.com/get-started-with-maps-api
 /// - OpenTripMap: https://opentripmap.io/product (opcional)
 /// - Foursquare: https://foursquare.com/developers/apps (opcional)
 
 class ApiKeys {
-  // ⚠️ NÃO COMMITE KEYS REAIS - Use apenas para desenvolvimento local
   
   /// OpenWeatherMap - Clima e Previsão do Tempo
   /// Plano gratuito: 1000 chamadas/dia

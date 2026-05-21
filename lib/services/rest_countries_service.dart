@@ -17,16 +17,6 @@ class RestCountriesService {
     'oceania',
   ];
 
-  /// Busca informações detalhadas de um país por nome
-  ///
-  /// Parâmetros:
-  /// - [countryName]: Nome do país (mínimo 2 caracteres)
-  ///
-  /// Retorna: Mapa com informações do país
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se nome do país for inválido
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<Map<String, dynamic>> getCountryInfo(String countryName) async {
     _validateCountryName(countryName);
 
@@ -82,16 +72,6 @@ class RestCountriesService {
     }
   }
 
-  /// Busca país por nome da capital
-  ///
-  /// Parâmetros:
-  /// - [capital]: Nome da capital (mínimo 2 caracteres)
-  ///
-  /// Retorna: Mapa com informações do país
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se nome da capital for inválido
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<Map<String, dynamic>> getCountryByCapital(
       String capital) async {
     _validateCapitalName(capital);
@@ -148,16 +128,6 @@ class RestCountriesService {
     }
   }
 
-  /// Busca todos os países de uma região
-  ///
-  /// Parâmetros:
-  /// - [region]: Nome da região (africa, americas, asia, europe, oceania)
-  ///
-  /// Retorna: Lista de países da região
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se região for inválida
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<List<Map<String, dynamic>>> getCountriesByRegion(
     String region,
   ) async {
@@ -211,16 +181,6 @@ class RestCountriesService {
     }
   }
 
-  /// Busca países que fazem fronteira com um país específico
-  ///
-  /// Parâmetros:
-  /// - [countryCode]: Código ISO do país (ex: BRA, USA, FRA)
-  ///
-  /// Retorna: Lista de países vizinhos
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se código do país for inválido
-  /// - [NetworkException]: Se houver erro na requisição
   static Future<List<Map<String, dynamic>>> getBorderingCountries(
     String countryCode,
   ) async {
@@ -307,12 +267,6 @@ class RestCountriesService {
     }
   }
 
-  /// Extrai nome do país de um endereço completo
-  ///
-  /// Parâmetros:
-  /// - [address]: Endereço completo
-  ///
-  /// Retorna: Nome do país extraído
   static String extractCountryFromAddress(String address) {
     if (address.trim().isEmpty) {
       return '';
@@ -325,12 +279,6 @@ class RestCountriesService {
     return address.trim();
   }
 
-  /// Extrai nome da cidade de um endereço completo
-  ///
-  /// Parâmetros:
-  /// - [address]: Endereço completo
-  ///
-  /// Retorna: Nome da cidade extraída
   static String extractCityFromAddress(String address) {
     if (address.trim().isEmpty) {
       return '';
@@ -340,12 +288,6 @@ class RestCountriesService {
     return parts.first.trim();
   }
 
-  /// Gera dicas de viagem baseadas nas informações do país
-  ///
-  /// Parâmetros:
-  /// - [countryInfo]: Mapa com informações do país
-  ///
-  /// Retorna: Lista de dicas formatadas
   static List<String> getTravelTips(Map<String, dynamic> countryInfo) {
     final tips = <String>[];
 
@@ -394,7 +336,6 @@ class RestCountriesService {
     return tips;
   }
 
-  /// Retorna lista de regiões disponíveis
   static List<Map<String, String>> getAvailableRegions() {
     return [
       {'id': 'africa', 'name': 'África', 'icon': '🌍'},
@@ -417,7 +358,6 @@ class RestCountriesService {
     }
   }
 
-  /// Valida nome da capital
   static void _validateCapitalName(String capital) {
     if (capital.trim().isEmpty) {
       throw ValidationException('Nome da capital não pode estar vazio');
@@ -430,7 +370,6 @@ class RestCountriesService {
     }
   }
 
-  /// Valida região
   static void _validateRegion(String region) {
     final regionLower = region.trim().toLowerCase();
 
@@ -445,7 +384,6 @@ class RestCountriesService {
     }
   }
 
-  /// Valida código do país
   static void _validateCountryCode(String countryCode) {
     if (countryCode.trim().isEmpty) {
       throw ValidationException('Código do país não pode estar vazio');
@@ -459,7 +397,6 @@ class RestCountriesService {
     }
   }
 
-  /// Processa dados detalhados do país
   static Map<String, dynamic> _parseDetailedCountryData(
     Map<String, dynamic> country,
   ) {
@@ -516,7 +453,6 @@ class RestCountriesService {
     }
   }
 
-  /// Processa dados básicos do país
   static Map<String, dynamic> _parseCountryData(Map<String, dynamic> country) {
     try {
       final currencies = country['currencies'] as Map<String, dynamic>?;

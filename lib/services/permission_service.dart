@@ -2,23 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço centralizado para gerenciar permissões do aplicativo.
-///
-/// Gerencia solicitações de permissões com diálogos informativos
-/// e tratamento adequado de diferentes estados de permissão.
 class PermissionService {
-  /// Verifica e solicita permissão de localização.
-  ///
-  /// Exibe diálogos informativos para o usuário e trata todos os
-  /// estados possíveis de permissão (negada, negada permanentemente, etc).
-  ///
-  /// Parameters:
-  /// - [context]: BuildContext para exibir diálogos
-  ///
-  /// Returns: `true` se a permissão foi concedida
-  ///
-  /// Throws:
-  /// - [PermissionException] se houver erro ao verificar/solicitar permissão
   static Future<bool> requestLocationPermission(BuildContext context) async {
     try {
       // Verifica se o serviço de localização está habilitado
@@ -66,12 +50,6 @@ class PermissionService {
     }
   }
 
-  /// Verifica se o app possui permissão de localização.
-  ///
-  /// Returns: `true` se possui permissão (always ou whileInUse)
-  ///
-  /// Throws:
-  /// - [PermissionException] se houver erro ao verificar
   static Future<bool> hasLocationPermission() async {
     try {
       final permission = await Geolocator.checkPermission();

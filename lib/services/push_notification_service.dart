@@ -6,15 +6,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../core/exceptions/app_exceptions.dart';
 
-/// Serviço de notificações push via Firebase Cloud Messaging
-///
-/// Responsabilidades:
-/// - Gerenciamento de tokens FCM
-/// - Recebimento de notificações push
-/// - Exibição de notificações locais
-/// - Tratamento de notificações de emergência (SOS)
-///
-/// Integra: Firebase Cloud Messaging + flutter_local_notifications
+
 class PushNotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -48,12 +40,6 @@ class PushNotificationService {
   static const int _minBodyLength = 1;
   static const int _maxBodyLength = 240;
 
-  /// Inicializa o serviço de notificações push
-  ///
-  /// Deve ser chamado uma vez no início do app
-  ///
-  /// Lança:
-  /// - [GenericException]: Se falhar ao inicializar
   static Future<void> initialize() async {
     if (_isInitialized) {
       return; // Já inicializado
@@ -77,7 +63,6 @@ class PushNotificationService {
         // Salvar token do dispositivo
         await _saveDeviceToken();
 
-        // Configurar handlers de mensagens
         _configureMessageHandlers();
 
         _isInitialized = true;
@@ -97,7 +82,6 @@ class PushNotificationService {
     }
   }
 
-  /// Solicita permissões de notificação
   static Future<NotificationSettings> _requestPermissions() async {
     try {
       return await _messaging.requestPermission(
@@ -113,7 +97,6 @@ class PushNotificationService {
     }
   }
 
-  /// Configura canais de notificação no Android
   static Future<void> _setupNotificationChannels() async {
     if (!Platform.isAndroid) {
       return;
@@ -136,7 +119,6 @@ class PushNotificationService {
     }
   }
 
-  /// Configura notificações locais
   static Future<void> _configureLocalNotifications() async {
     try {
       const androidSettings =
@@ -165,12 +147,10 @@ class PushNotificationService {
     }
   }
 
-  /// Callback quando usuário toca na notificação
   static void _onNotificationTapped(NotificationResponse details) {
     // Aqui pode adicionar navegação baseada no payload
   }
 
-  /// Salva token FCM do dispositivo no Firestore
   static Future<void> _saveDeviceToken() async {
     try {
       final token = await _messaging.getToken();
@@ -199,7 +179,6 @@ class PushNotificationService {
     }
   }
 
-  /// Configura handlers para mensagens recebidas
   static void _configureMessageHandlers() {
     // Mensagens recebidas quando app está em foreground
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -208,7 +187,6 @@ class PushNotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
   }
 
-  /// Trata mensagem recebida em foreground
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
     final notification = message.notification;
     final android = message.notification?.android;
@@ -243,21 +221,10 @@ class PushNotificationService {
     }
   }
 
-  /// Trata mensagem que abriu o app
   static void _handleMessageOpenedApp(RemoteMessage message) {
     // Aqui pode adicionar navegação baseada nos dados da mensagem
   }
 
-  /// Envia notificação local instantânea
-  ///
-  /// Parâmetros:
-  /// - [title]: Título da notificação
-  /// - [body]: Corpo da notificação
-  /// - [isCritical]: Se é notificação crítica (SOS)
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [GenericException]: Se falhar ao enviar
   static Future<void> sendInstantNotification({
     required String title,
     required String body,
@@ -301,15 +268,6 @@ class PushNotificationService {
     }
   }
 
-  /// Notifica alerta de segurança (SOS)
-  ///
-  /// Parâmetros:
-  /// - [userName]: Nome do usuário em emergência
-  /// - [location]: Localização do usuário
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [GenericException]: Se falhar ao notificar
   static Future<void> notifySafetyAlert(
     String userName,
     String location,
@@ -324,17 +282,6 @@ class PushNotificationService {
     );
   }
 
-  /// Notifica novo comentário
-  ///
-  /// Parâmetros:
-  /// - [postName]: Nome do post
-  /// - [userName]: Nome de quem comentou
-  /// - [receiverId]: ID do destinatário
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [AuthException]: Se usuário não estiver autenticado
-  /// - [GenericException]: Se falhar ao notificar
   static Future<void> notifyNewComment(
     String postName,
     String userName,
@@ -361,17 +308,6 @@ class PushNotificationService {
     );
   }
 
-  /// Notifica nova curtida
-  ///
-  /// Parâmetros:
-  /// - [postName]: Nome do post
-  /// - [userName]: Nome de quem curtiu
-  /// - [receiverId]: ID do destinatário
-  ///
-  /// Lança:
-  /// - [ValidationException]: Se parâmetros forem inválidos
-  /// - [AuthException]: Se usuário não estiver autenticado
-  /// - [GenericException]: Se falhar ao notificar
   static Future<void> notifyNewLike(
     String postName,
     String userName,
@@ -398,13 +334,11 @@ class PushNotificationService {
     );
   }
 
-  /// Atualiza token FCM quando ele muda
   static Future<void> refreshToken() async {
     _ensureInitialized();
     await _saveDeviceToken();
   }
 
-  /// Verifica se o serviço está inicializado
   static bool get isInitialized => _isInitialized;
 
   static void _ensureInitialized() {
@@ -415,7 +349,6 @@ class PushNotificationService {
     }
   }
 
-  /// Valida título
   static void _validateTitle(String title) {
     if (title.trim().isEmpty) {
       throw ValidationException('Título não pode estar vazio');
@@ -434,7 +367,6 @@ class PushNotificationService {
     }
   }
 
-  /// Valida corpo
   static void _validateBody(String body) {
     if (body.trim().isEmpty) {
       throw ValidationException('Corpo não pode estar vazio');
@@ -453,7 +385,6 @@ class PushNotificationService {
     }
   }
 
-  /// Valida nome de usuário
   static void _validateUserName(String userName) {
     if (userName.trim().isEmpty) {
       throw ValidationException('Nome de usuário não pode estar vazio');
@@ -466,7 +397,6 @@ class PushNotificationService {
     }
   }
 
-  /// Valida localização
   static void _validateLocation(String location) {
     if (location.trim().isEmpty) {
       throw ValidationException('Localização não pode estar vazia');
@@ -479,14 +409,12 @@ class PushNotificationService {
     }
   }
 
-  /// Valida nome do post
   static void _validatePostName(String postName) {
     if (postName.trim().isEmpty) {
       throw ValidationException('Nome do post não pode estar vazio');
     }
   }
 
-  /// Valida ID do usuário
   static void _validateUserId(String userId) {
     if (userId.trim().isEmpty) {
       throw ValidationException('ID do usuário não pode estar vazio');

@@ -38,7 +38,6 @@ class _ItineraryPageState extends State<ItineraryPage> {
     _carregarUsuario();
   }
 
-  /// Carrega os dados da viagem do Firestore
   Future<void> _carregarViagem() async {
     final viagem = await _controller.getTripById(widget.tripId);
     if (mounted) {
@@ -46,7 +45,6 @@ class _ItineraryPageState extends State<ItineraryPage> {
     }
   }
 
-  /// Carrega os dados do usuário logado
   Future<void> _carregarUsuario() async {
     final usuario = await _authController.getUserData();
     if (mounted) {

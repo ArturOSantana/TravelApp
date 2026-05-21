@@ -9,14 +9,7 @@ import '../models/trip.dart';
 import '../models/expense.dart';
 import 'analytics_service.dart';
 
-/// Serviço de exportação de relatórios em PDF.
-///
-/// Gera relatórios completos de viagens com:
-/// - Resumo financeiro e estatísticas
-/// - Gráficos de categorias e evolução temporal
-/// - Detalhamento de despesas
-/// - Divisão de gastos por pessoa (viagens em grupo)
-/// - Recomendações inteligentes
+
 class PdfExportService {
   static final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'pt_BR',
@@ -24,18 +17,6 @@ class PdfExportService {
     decimalDigits: 2,
   );
 
-  /// Exporta relatório completo da viagem em PDF.
-  ///
-  /// Gera um PDF de múltiplas páginas com análise completa dos gastos.
-  ///
-  /// Parameters:
-  /// - [trip]: Dados da viagem
-  /// - [expenses]: Lista de despesas da viagem
-  ///
-  /// Returns: File com o PDF gerado
-  ///
-  /// Throws:
-  /// - [FileSystemException] se houver erro ao salvar o arquivo
   static Future<File> exportTripReport({
     required Trip trip,
     required List<Expense> expenses,
@@ -580,7 +561,6 @@ class PdfExportService {
     return file;
   }
 
-  /// Compartilha o PDF gerado
   static Future<void> shareReport(File pdfFile, String tripName) async {
     await Share.shareXFiles(
       [XFile(pdfFile.path)],
@@ -647,7 +627,6 @@ class PdfExportService {
     }
   }
 
-  /// Constrói um gráfico de barras horizontais para categorias
   static pw.Widget _buildPieChart(
       Map<String, double> categories, double total) {
     if (categories.isEmpty || total == 0) {
@@ -716,7 +695,6 @@ class PdfExportService {
     );
   }
 
-  /// Constrói um gráfico de barras para evolução temporal
   static pw.Widget _buildLineChart(
       Map<DateTime, double> dailyData, double budget) {
     if (dailyData.isEmpty) {
@@ -792,7 +770,6 @@ class PdfExportService {
     );
   }
 
-  /// Retorna cor para cada categoria
   static PdfColor _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'alimentação':

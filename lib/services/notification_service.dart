@@ -188,12 +188,6 @@ class NotificationService {
     }
   }
 
-  /// Retorna lista de notificações pendentes
-  ///
-  /// Retorna: Lista de notificações agendadas
-  ///
-  /// Lança:
-  /// - [GenericException]: Se falhar ao obter lista
   static Future<List<PendingNotificationRequest>>
       getPendingNotifications() async {
     _ensureInitialized();
@@ -208,7 +202,6 @@ class NotificationService {
     }
   }
 
-  /// Verifica se o serviço está inicializado
   static bool get isInitialized => _isInitialized;
 
   static void _ensureInitialized() {
@@ -219,7 +212,6 @@ class NotificationService {
     }
   }
 
-  /// Valida ID da notificação
   static void _validateNotificationId(int id) {
     if (id < _minNotificationId || id > _maxNotificationId) {
       throw ValidationException(
@@ -228,7 +220,6 @@ class NotificationService {
     }
   }
 
-  /// Valida título da notificação
   static void _validateTitle(String title) {
     if (title.trim().isEmpty) {
       throw ValidationException('Título da notificação não pode estar vazio');
@@ -247,7 +238,6 @@ class NotificationService {
     }
   }
 
-  /// Valida corpo da notificação
   static void _validateBody(String body) {
     if (body.trim().isEmpty) {
       throw ValidationException('Corpo da notificação não pode estar vazio');
@@ -266,7 +256,6 @@ class NotificationService {
     }
   }
 
-  /// Valida data agendada
   static void _validateScheduledDate(DateTime scheduledDate) {
     final now = DateTime.now();
 
