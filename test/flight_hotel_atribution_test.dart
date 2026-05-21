@@ -11,10 +11,11 @@ void main() {
         budget: 5000,
         objective: 'Leisure',
         createdAt: DateTime.now(),
-        status: 'active',
+        status: TripStatus.active,
       );
 
-      final bool canAtribute = trip.status == 'active' || trip.status == 'planned';
+      final bool canAtribute =
+          trip.status == TripStatus.active || trip.status == TripStatus.planned;
       expect(canAtribute, isTrue);
     });
 
@@ -26,10 +27,11 @@ void main() {
         budget: 15000,
         objective: 'Leisure',
         createdAt: DateTime.now(),
-        status: 'planned',
+        status: TripStatus.planned,
       );
 
-      final bool canAtribute = trip.status == 'active' || trip.status == 'planned';
+      final bool canAtribute =
+          trip.status == TripStatus.active || trip.status == TripStatus.planned;
       expect(canAtribute, isTrue);
     });
 
@@ -41,10 +43,11 @@ void main() {
         budget: 3000,
         objective: 'Leisure',
         createdAt: DateTime.now(),
-        status: 'completed',
+        status: TripStatus.completed,
       );
 
-      final bool canAtribute = trip.status == 'active' || trip.status == 'planned';
+      final bool canAtribute =
+          trip.status == TripStatus.active || trip.status == TripStatus.planned;
       expect(canAtribute, isFalse);
     });
   });
