@@ -2,7 +2,6 @@ import 'dart:convert';
 import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
-
 class RestCountriesService {
   static const String _baseUrl = 'https://restcountries.com/v3.1';
 
@@ -491,5 +490,3 @@ class RestCountriesService {
     }
   }
 }
-
-// Made with Bob

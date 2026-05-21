@@ -205,14 +205,26 @@ class _TripsPageState extends State<TripsPage>
   }
 
   Widget _buildTripList(String status) {
+    debugPrint('🖥️ [UI] Construindo lista para status: $status');
     return StreamBuilder<List<Trip>>(
       stream: _controller.getTrips(status: status),
       builder: (context, snapshot) {
+        debugPrint(
+            '🖥️ [UI] StreamBuilder - ConnectionState: ${snapshot.connectionState}');
+        debugPrint('🖥️ [UI] StreamBuilder - HasData: ${snapshot.hasData}');
+        debugPrint(
+            '🖥️ [UI] StreamBuilder - Data length: ${snapshot.data?.length ?? 0}');
+        debugPrint('🖥️ [UI] StreamBuilder - HasError: ${snapshot.hasError}');
+        if (snapshot.hasError) {
+          debugPrint('🖥️ [UI] StreamBuilder - Error: ${snapshot.error}');
+        }
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
         final trips = snapshot.data ?? [];
+        debugPrint('🖥️ [UI] Viagens recebidas para $status: ${trips.length}');
 
         if (trips.isEmpty) {
           IconData icon;
@@ -316,6 +328,38 @@ class _TripsPageState extends State<TripsPage>
                           }
                         },
                         tooltip: "Iniciar Viagem",
+                      ),
+                    if (status == 'active' && trip.isAdmin(_currentUid))
+                      IconButton(
+                        icon:
+                            const Icon(Icons.check_circle, color: Colors.blue),
+                        onPressed: () async {
+                          try {
+                            await _controller.updateTripStatus(
+                              trip.id,
+                              'completed',
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('Viagem finalizada com sucesso!'),
+                                  backgroundColor: Colors.blue,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Erro ao finalizar viagem: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        tooltip: "Finalizar Viagem",
                       ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red),

@@ -22,10 +22,11 @@ class _JournalPageState extends State<JournalPage> {
 
   Future<void> _shareLiveAlbumLink(BuildContext context) async {
     final box = context.findRenderObject() as RenderBox?;
+
+    // URL corrigida: usa /album com query parameter tripId
     final String albumUrl =
-        "https://travel-app-tcc.web.app/journal/${widget.tripId}";
-    final String message =
-        "Confira o meu álbum de memórias da viagem!\n$albumUrl";
+        "https://travel-app-tcc.web.app/album?tripId=${widget.tripId}";
+    final String message = "Confira o álbum de memórias da viagem!\n$albumUrl";
 
     await Share.share(
       message,
@@ -226,8 +227,8 @@ class _JournalPageState extends State<JournalPage> {
                       const SizedBox(width: 4),
                       Text(
                         entry.locationName ?? "Localização não informada",
-                        style:  TextStyle(
-                          color: Theme.of(  context).colorScheme.onSurface,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -237,10 +238,10 @@ class _JournalPageState extends State<JournalPage> {
                   const SizedBox(height: 12),
                   Text(
                     entry.content,
-                    style:  TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       height: 1.5,
-                      color: Theme.of(  context).colorScheme.onSurface,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 16),

@@ -6,7 +6,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../core/exceptions/app_exceptions.dart';
 
-
 class PushNotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -421,5 +420,3 @@ class PushNotificationService {
     }
   }
 }
-
-// Made with Bob

@@ -49,7 +49,6 @@ class _CreateTripPageState extends State<CreateTripPage> {
     'Cancún, México',
   ];
 
-
   Future<void> _showConfirmationDialog() async {
     if (!formKey.currentState!.validate()) return;
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'cache_service.dart';
+import 'logger_service.dart';
 
 class HttpClientService {
   static const Duration _defaultTimeout = Duration(seconds: 10);
@@ -19,7 +20,7 @@ class HttpClientService {
     if (useCache) {
       final cached = _getCachedResponse(url.toString());
       if (cached != null) {
-        print('[HTTP] Cache hit: ${url.toString()}');
+        LoggerService.debug('Cache hit: ${url.toString()}', tag: 'HTTP');
         return cached;
       }
     }
@@ -29,8 +30,9 @@ class HttpClientService {
 
     while (attempts < _maxRetries) {
       try {
-        print(
-            '[HTTP] Tentativa ${attempts + 1}/$_maxRetries: ${url.toString()}');
+        LoggerService.debug(
+            'Tentativa ${attempts + 1}/$_maxRetries: ${url.toString()}',
+            tag: 'HTTP');
 
         final response = await http
             .get(url, headers: headers)
@@ -52,18 +54,21 @@ class HttpClientService {
             await Future.delayed(_retryDelay);
           }
         } else {
-          print('[HTTP] Client error: ${response.statusCode}');
+          LoggerService.warning('Client error: ${response.statusCode}',
+              tag: 'HTTP');
           return response;
         }
       } on TimeoutException catch (e) {
-        print('[HTTP] Timeout na tentativa ${attempts + 1}');
+        LoggerService.warning('Timeout na tentativa ${attempts + 1}',
+            tag: 'HTTP');
         lastException = e;
         attempts++;
         if (attempts < _maxRetries) {
           await Future.delayed(_retryDelay);
         }
       } catch (e) {
-        print('[HTTP] Erro na tentativa ${attempts + 1}: $e');
+        LoggerService.error('Erro na tentativa ${attempts + 1}',
+            tag: 'HTTP', error: e);
         lastException = e as Exception;
         attempts++;
         if (attempts < _maxRetries) {
@@ -72,12 +77,13 @@ class HttpClientService {
       }
     }
 
-    print('[HTTP] Falha após $_maxRetries tentativas: ${url.toString()}');
+    LoggerService.error('Falha após $_maxRetries tentativas: ${url.toString()}',
+        tag: 'HTTP');
 
     if (useCache) {
       final oldCache = _getCachedResponse(url.toString(), ignoreExpiry: true);
       if (oldCache != null) {
-        print('[HTTP] Usando cache expirado como fallback');
+        LoggerService.info('Usando cache expirado como fallback', tag: 'HTTP');
         return oldCache;
       }
     }
@@ -96,8 +102,9 @@ class HttpClientService {
 
     while (attempts < _maxRetries) {
       try {
-        print(
-            '[HTTP] POST tentativa ${attempts + 1}/$_maxRetries: ${url.toString()}');
+        LoggerService.debug(
+            'POST tentativa ${attempts + 1}/$_maxRetries: ${url.toString()}',
+            tag: 'HTTP');
 
         final response = await http
             .post(url, headers: headers, body: body)
@@ -115,14 +122,16 @@ class HttpClientService {
           return response;
         }
       } on TimeoutException catch (e) {
-        print('[HTTP] POST timeout na tentativa ${attempts + 1}');
+        LoggerService.warning('POST timeout na tentativa ${attempts + 1}',
+            tag: 'HTTP');
         lastException = e;
         attempts++;
         if (attempts < _maxRetries) {
           await Future.delayed(_retryDelay);
         }
       } catch (e) {
-        print('[HTTP] POST erro na tentativa ${attempts + 1}: $e');
+        LoggerService.error('POST erro na tentativa ${attempts + 1}',
+            tag: 'HTTP', error: e);
         lastException = e as Exception;
         attempts++;
         if (attempts < _maxRetries) {
@@ -152,7 +161,7 @@ class HttpClientService {
         expiration: duration,
       );
     } catch (e) {
-      print('[HTTP] Erro ao salvar cache: $e');
+      LoggerService.error('Erro ao salvar cache', tag: 'HTTP', error: e);
     }
   }
 
@@ -175,7 +184,7 @@ class HttpClientService {
         return _buildResponseFromCache(cached);
       }
     } catch (e) {
-      print('[HTTP] Erro ao ler cache: $e');
+      LoggerService.error('Erro ao ler cache', tag: 'HTTP', error: e);
     }
     return null;
   }
@@ -195,7 +204,7 @@ class HttpClientService {
   }
 
   static Future<void> clearCache() async {
-    print('[HTTP] Cache HTTP limpo');
+    LoggerService.info('Cache HTTP limpo', tag: 'HTTP');
   }
 
   static Future<List<http.Response?>> getMultiple(

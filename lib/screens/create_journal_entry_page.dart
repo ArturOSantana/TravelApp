@@ -20,6 +20,7 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
   final _locationController = TextEditingController();
   final List<File> _selectedImages = [];
   bool _isSaving = false;
+  bool _isPublic = true; // Público por padrão
   MoodIcon _selectedMood = MoodIcon.neutral;
 
   final ImagePicker _picker = ImagePicker();
@@ -77,6 +78,7 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
             ? _locationController.text.trim()
             : null,
         createdAt: DateTime.now(),
+        isPublic: _isPublic,
       );
 
       await _controller.addJournalEntry(entry);
@@ -162,7 +164,16 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                     minimumSize: const Size(double.infinity, 50),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
+                SwitchListTile(
+                  title: const Text("Compartilhar publicamente"),
+                  subtitle:
+                      const Text("Permitir que outros vejam este registro"),
+                  value: _isPublic,
+                  onChanged: (value) => setState(() => _isPublic = value),
+                  activeColor: Colors.deepPurple,
+                ),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _isSaving ? null : _saveEntry,
                   style: ElevatedButton.styleFrom(
@@ -230,7 +241,9 @@ class _CreateJournalEntryPageState extends State<CreateJournalEntryPage> {
                     Icon(
                       _getMoodIconData(mood.iconName),
                       size: isSelected ? 40 : 32,
-                      color: isSelected ? Colors.deepPurple : const Color.fromARGB(255, 235, 232, 38),
+                      color: isSelected
+                          ? Colors.deepPurple
+                          : const Color.fromARGB(255, 235, 232, 38),
                     ),
                     const SizedBox(height: 4),
                     Text(

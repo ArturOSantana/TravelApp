@@ -78,12 +78,29 @@ class TripController {
 
   Stream<List<Trip>> getTrips({String? status}) {
     String uid = _auth.currentUser?.uid ?? '';
+    debugPrint(
+        '🔍 [getTrips] Buscando viagens para UID: $uid, Status: $status');
+
     var query = _db.collection('trips').where('members', arrayContains: uid);
     if (status != null) query = query.where('status', isEqualTo: status);
+
     return query.snapshots().map((snapshot) {
-      final trips =
-          snapshot.docs.map((doc) => Trip.fromFirestore(doc)).toList();
+      debugPrint(
+          '📊 [getTrips] Encontradas ${snapshot.docs.length} viagens com status: $status');
+
+      final trips = snapshot.docs.map((doc) {
+        final data = doc.data() as Map;
+        debugPrint(
+            '  🔍 RAW DATA [${doc.id}]: status field = ${data['status']} (type: ${data['status']?.runtimeType})');
+
+        final trip = Trip.fromFirestore(doc);
+        debugPrint(
+            '  📍 ${trip.destination}: status=${trip.status.value}, members=${trip.members.length}, id=${trip.id}');
+        return trip;
+      }).toList();
+
       trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      debugPrint('✅ [getTrips] Retornando ${trips.length} viagens ordenadas');
       return trips;
     });
   }
@@ -457,15 +474,12 @@ class TripController {
   Future<void> deleteExpense(String expenseId) async =>
       await _db.collection('expenses').doc(expenseId).delete();
 
-  //vampire diares
-  Stream<List<JournalEntry>> getJournalEntries(String tripId) => _db
-      .collection('journal')
-      .where('tripId', isEqualTo: tripId)
-      .snapshots()
-      .map(
-        (snap) =>
-            snap.docs.map((doc) => JournalEntry.fromFirestore(doc)).toList(),
-      );
+  Stream<List<JournalEntry>> getJournalEntries(String tripId) =>
+      _db.collection('trips').doc(tripId).collection('journal').snapshots().map(
+            (snap) => snap.docs
+                .map((doc) => JournalEntry.fromFirestore(doc))
+                .toList(),
+          );
   Future<void> addJournalEntry(JournalEntry entry) async {
     try {
       final user = _auth.currentUser;
@@ -474,8 +488,12 @@ class TripController {
         throw Exception('Usuário não autenticado');
       }
 
-      debugPrint('[JOURNAL] Salvando registro no journal...');
-      final docRef = await _db.collection('journal').add(entry.toMap());
+      debugPrint('[JOURNAL] Salvando registro para tripId: ${entry.tripId}');
+      final docRef = await _db
+          .collection('trips')
+          .doc(entry.tripId)
+          .collection('journal')
+          .add(entry.toMap());
       debugPrint('[JOURNAL] Registro salvo com sucesso! ID: ${docRef.id}');
     } catch (e) {
       debugPrint('[JOURNAL] Erro ao salvar registro: $e');

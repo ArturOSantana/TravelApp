@@ -4,7 +4,6 @@ import '../config/api_keys.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
-
 class GeoapifyService {
   static const String _apiKey = ApiKeys.geoapify;
   static const String _baseUrl = 'https://api.geoapify.com/v1';
@@ -632,5 +631,3 @@ class GeoapifyService {
     return degrees * pi / 180;
   }
 }
-
-// Made with Bob

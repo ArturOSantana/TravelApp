@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Álbum de Viagem - Travel App</title>
+    <title>Álbum de Viagem</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,196 +13,152 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 15px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 700px;
             margin: 0 auto;
         }
 
         .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 5px;
         }
 
         .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 0.9rem;
+            color: #666;
         }
 
         .card {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-            margin-bottom: 30px;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
         .card-header {
-            padding: 20px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #666;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
+            font-size: 14px;
         }
 
         .user-details h3 {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: #333;
         }
 
         .user-details p {
-            font-size: 0.9rem;
-            color: #666;
+            font-size: 0.85rem;
+            color: #888;
         }
 
         .mood-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
             margin-left: auto;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
         }
 
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 4px;
         }
 
         .gallery img {
             width: 100%;
-            height: 300px;
+            height: 250px;
             object-fit: cover;
             cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .gallery img:hover {
-            transform: scale(1.05);
         }
 
         .card-content {
-            padding: 20px;
+            padding: 15px;
         }
 
         .location {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: #e74c3c;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
         }
 
         .content-text {
-            font-size: 1rem;
-            line-height: 1.6;
+            font-size: 0.95rem;
+            line-height: 1.5;
             color: #333;
-            margin-bottom: 16px;
         }
 
         .reactions {
             display: flex;
-            gap: 10px;
-            padding: 16px 20px;
-            border-top: 1px solid #f0f0f0;
-            border-bottom: 1px solid #f0f0f0;
+            gap: 8px;
+            padding: 12px 15px;
+            border-top: 1px solid #eee;
+            flex-wrap: wrap;
         }
 
         .reaction-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            background: white;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 20px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .reaction-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .reaction-btn.active {
-            border-color: currentColor;
-            background: currentColor;
-            color: white;
-        }
-
-        .reaction-btn .icon {
-            font-size: 1.2rem;
-        }
-
-        .reaction-btn .count {
-            font-weight: 600;
+            gap: 5px;
         }
 
         .timestamp {
-            padding: 16px 20px;
-            font-size: 0.85rem;
+            padding: 12px 15px;
+            font-size: 0.8rem;
             color: #999;
+            border-top: 1px solid #eee;
         }
 
         .loading {
             text-align: center;
-            padding: 60px 20px;
-            color: white;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 8px;
         }
 
         .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top-color: white;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top-color: #666;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 15px;
         }
 
         @keyframes spin {
@@ -210,17 +167,12 @@
 
         .error {
             background: white;
-            border-radius: 20px;
-            padding: 40px;
+            border-radius: 8px;
+            padding: 30px;
             text-align: center;
-            color: #e74c3c;
+            color: #d32f2f;
         }
 
-        .error h2 {
-            margin-bottom: 10px;
-        }
-
-        /* Modal para visualização de imagem */
         .modal {
             display: none;
             position: fixed;
@@ -241,19 +193,18 @@
         .modal img {
             max-width: 90%;
             max-height: 90%;
-            object-fit: contain;
         }
 
         .modal-close {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
             color: white;
-            font-size: 2rem;
+            font-size: 30px;
             cursor: pointer;
+            width: 40px;
+            height: 40px;
             background: rgba(0,0,0,0.5);
-            width: 50px;
-            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -261,16 +212,11 @@
         }
 
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 1.8rem;
+            body {
+                padding: 10px;
             }
-
             .gallery {
                 grid-template-columns: 1fr;
-            }
-
-            .reactions {
-                flex-wrap: wrap;
             }
         }
     </style>
@@ -278,14 +224,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📸 Álbum de Viagem</h1>
-            <p>Compartilhado com você</p>
+            <h1>Álbum de Viagem</h1>
+            <p>Registros compartilhados</p>
         </div>
 
         <div id="content">
             <div class="loading">
                 <div class="loading-spinner"></div>
-                <p>Carregando registro...</p>
+                <p>Carregando...</p>
             </div>
         </div>
     </div>
@@ -315,62 +261,107 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Obter token da URL
+        // Obter tripId da URL
         const urlParams = new URLSearchParams(window.location.search);
-        const shareToken = urlParams.get('token');
+        const tripId = urlParams.get('tripId');
 
-        if (!shareToken) {
-            showError('Token de compartilhamento não encontrado na URL.');
+        if (!tripId) {
+            showError('ID da viagem não encontrado na URL.');
         } else {
-            loadJournalEntry(shareToken);
+            loadJournalEntries(tripId);
         }
 
-        async function loadJournalEntry(token) {
+        async function loadJournalEntries(tripId) {
             try {
-                // Buscar registro público pelo token
-                const tripsSnapshot = await db.collection('trips').get();
+                console.log('Carregando registros para tripId:', tripId);
                 
-                let entry = null;
-                for (const tripDoc of tripsSnapshot.docs) {
-                    const journalSnapshot = await db
-                        .collection('trips')
-                        .doc(tripDoc.id)
-                        .collection('journal')
-                        .where('shareToken', '==', token)
-                        .where('isPublic', '==', true)
-                        .limit(1)
-                        .get();
+                // Buscar informações da viagem
+                const tripDoc = await db.collection('trips').doc(tripId).get();
+                const tripData = tripDoc.data();
+                
+                // Buscar registros
+                const journalSnapshot = await db
+                    .collection('trips')
+                    .doc(tripId)
+                    .collection('journal')
+                    .get();
 
-                    if (!journalSnapshot.empty) {
-                        entry = journalSnapshot.docs[0].data();
-                        entry.id = journalSnapshot.docs[0].id;
-                        entry.tripId = tripDoc.id;
-                        break;
-                    }
+                console.log('Registros encontrados:', journalSnapshot.size);
+
+                if (journalSnapshot.empty) {
+                    showError('Nenhum registro encontrado para esta viagem.');
+                    return;
                 }
 
-                if (entry) {
-                    renderJournalEntry(entry);
-                    setupRealtimeUpdates(entry.tripId, entry.id);
-                } else {
-                    showError('Registro não encontrado ou não está mais público.');
+                // Filtrar e ordenar
+                const entries = journalSnapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        tripId: tripId,
+                        ...doc.data()
+                    }))
+                    .filter(entry => entry.isPublic === true)
+                    .sort((a, b) => {
+                        const dateA = a.date?.seconds || 0;
+                        const dateB = b.date?.seconds || 0;
+                        return dateB - dateA;
+                    });
+
+                console.log('Registros públicos:', entries.length);
+
+                if (entries.length === 0) {
+                    showError('Nenhum registro público encontrado para esta viagem.');
+                    return;
                 }
+
+                renderTripHeader(tripData);
+                renderJournalEntries(entries);
+                setupRealtimeUpdates(tripId);
             } catch (error) {
-                console.error('Erro ao carregar registro:', error);
-                showError('Erro ao carregar o registro. Tente novamente mais tarde.');
+                console.error('Erro ao carregar registros:', error);
+                showError(`Erro ao carregar os registros: ${error.message}`);
             }
         }
 
-        function renderJournalEntry(entry) {
+        function renderTripHeader(trip) {
+            const startDate = trip.startDate ? new Date(trip.startDate.seconds * 1000) : null;
+            const endDate = trip.endDate ? new Date(trip.endDate.seconds * 1000) : null;
+            const members = trip.members || [];
+            
+            let datesText = '';
+            if (startDate && endDate) {
+                datesText = `${startDate.toLocaleDateString('pt-BR')} - ${endDate.toLocaleDateString('pt-BR')}`;
+            } else if (startDate) {
+                datesText = `A partir de ${startDate.toLocaleDateString('pt-BR')}`;
+            }
+
+            document.querySelector('.header h1').textContent = trip.destination || 'Viagem';
+            document.querySelector('.header p').innerHTML = `
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 10px;">
+                    ${datesText ? `<span><i class="material-icons" style="font-size: 16px; vertical-align: middle;">event</i> ${datesText}</span>` : ''}
+                    <span><i class="material-icons" style="font-size: 16px; vertical-align: middle;">people</i> ${members.length} ${members.length === 1 ? 'viajante' : 'viajantes'}</span>
+                </div>
+            `;
+        }
+
+        function renderJournalEntries(entries) {
+            let html = '';
+            entries.forEach(entry => {
+                html += renderSingleEntry(entry);
+            });
+            document.getElementById('content').innerHTML = html;
+        }
+
+        function renderSingleEntry(entry) {
             const moodIcons = {
-                'veryHappy': { icon: '😄', label: 'Muito Feliz', color: '#27ae60' },
-                'happy': { icon: '😊', label: 'Feliz', color: '#2ecc71' },
-                'neutral': { icon: '😐', label: 'Neutro', color: '#f39c12' },
-                'sad': { icon: '😔', label: 'Triste', color: '#e67e22' },
-                'verySad': { icon: '😢', label: 'Muito Triste', color: '#e74c3c' }
+                'sentiment_very_satisfied': { icon: 'sentiment_very_satisfied', label: 'Muito Feliz', color: '#27ae60' },
+                'sentiment_satisfied': { icon: 'sentiment_satisfied', label: 'Feliz', color: '#2ecc71' },
+                'sentiment_neutral': { icon: 'sentiment_neutral', label: 'Neutro', color: '#f39c12' },
+                'sentiment_dissatisfied': { icon: 'sentiment_dissatisfied', label: 'Triste', color: '#e67e22' },
+                'sentiment_very_dissatisfied': { icon: 'sentiment_very_dissatisfied', label: 'Muito Triste', color: '#e74c3c' }
             };
 
-            const mood = moodIcons[entry.mood] || moodIcons.neutral;
+            const mood = moodIcons[entry.mood] || moodIcons['sentiment_neutral'];
             const date = new Date(entry.date.seconds * 1000);
 
             let html = `
@@ -380,10 +371,10 @@
                             <div class="avatar">${entry.userName.charAt(0).toUpperCase()}</div>
                             <div class="user-details">
                                 <h3>${entry.userName}</h3>
-                                <p>${entry.locationName || 'Localização não informada'}</p>
+                                <p>${entry.locationName || 'Sem localização'}</p>
                             </div>
                             <div class="mood-tag" style="background: ${mood.color}20; color: ${mood.color};">
-                                <span>${mood.icon}</span>
+                                <i class="material-icons" style="font-size: 18px;">${mood.icon}</i>
                                 <span>${mood.label}</span>
                             </div>
                         </div>
@@ -391,30 +382,36 @@
             `;
 
             if (entry.photos && entry.photos.length > 0) {
+                console.log('Fotos encontradas:', entry.photos.length);
                 html += '<div class="gallery">';
-                entry.photos.forEach(photo => {
-                    html += `<img src="${photo}" alt="Foto da viagem" onclick="openModal('${photo}')">`;
+                entry.photos.forEach((photo, index) => {
+                    const imgSrc = photo.startsWith('http') ? photo : `data:image/jpeg;base64,${photo}`;
+                    console.log(`Foto ${index}: tipo=${photo.startsWith('http') ? 'URL' : 'Base64'}, tamanho=${photo.length}`);
+                    html += `<img src="${imgSrc}" alt="Foto ${index + 1}" onclick="openModal('${imgSrc}')" onerror="console.error('Erro ao carregar imagem ${index}')">`;
                 });
                 html += '</div>';
             }
 
             html += `
                     <div class="card-content">
+                        ${entry.locationName ? `
                         <div class="location">
-                            <span>📍</span>
-                            <span>${entry.locationName || 'Localização não informada'}</span>
+                            <i class="material-icons" style="font-size: 16px; vertical-align: middle;">place</i>
+                            <span>${entry.locationName}</span>
                         </div>
+                        ` : ''}
                         <div class="content-text">${entry.content}</div>
                     </div>
                     
-                    <div class="reactions" id="reactions">
+                    <div class="reactions" id="reactions-${entry.id}">
                         ${renderReactions(entry.reactions || {})}
                     </div>
                     
                     <div class="timestamp">
-                        ${date.toLocaleDateString('pt-BR', { 
-                            day: '2-digit', 
-                            month: 'long', 
+                        <i class="material-icons" style="font-size: 14px; vertical-align: middle;">schedule</i>
+                        ${date.toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'long',
                             year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit'
@@ -423,43 +420,51 @@
                 </div>
             `;
 
-            document.getElementById('content').innerHTML = html;
+            return html;
         }
+
 
         function renderReactions(reactions) {
             const reactionTypes = [
-                { key: 'like', icon: '❤️', label: 'Curtir', color: '#e74c3c' },
-                { key: 'love', icon: '💕', label: 'Amei', color: '#e91e63' },
-                { key: 'wow', icon: '⭐', label: 'Uau', color: '#f39c12' },
-                { key: 'celebrate', icon: '🎉', label: 'Celebrar', color: '#ff9800' },
-                { key: 'support', icon: '👍', label: 'Apoiar', color: '#2196f3' },
-                { key: 'thanks', icon: '🙏', label: 'Obrigado', color: '#9c27b0' }
+                { key: 'like', icon: 'favorite', label: 'Curtir', color: '#e74c3c' },
+                { key: 'love', icon: 'favorite_border', label: 'Amei', color: '#e91e63' },
+                { key: 'wow', icon: 'star', label: 'Uau', color: '#f39c12' },
+                { key: 'celebrate', icon: 'celebration', label: 'Celebrar', color: '#ff9800' },
+                { key: 'support', icon: 'thumb_up', label: 'Apoiar', color: '#2196f3' },
+                { key: 'thanks', icon: 'volunteer_activism', label: 'Obrigado', color: '#9c27b0' }
             ];
 
             return reactionTypes.map(reaction => {
                 const count = reactions[reaction.key]?.length || 0;
+                if (count === 0) return '';
                 return `
                     <div class="reaction-btn" style="color: ${reaction.color};">
-                        <span class="icon">${reaction.icon}</span>
-                        ${count > 0 ? `<span class="count">${count}</span>` : ''}
+                        <i class="material-icons" style="font-size: 16px;">${reaction.icon}</i>
+                        <span class="count">${count}</span>
                     </div>
                 `;
             }).join('');
         }
 
-        function setupRealtimeUpdates(tripId, entryId) {
+        function setupRealtimeUpdates(tripId) {
+            // Removido .where() para evitar necessidade de índice
+            // Filtramos no cliente apenas as mudanças de registros públicos
             db.collection('trips')
                 .doc(tripId)
                 .collection('journal')
-                .doc(entryId)
-                .onSnapshot(doc => {
-                    if (doc.exists) {
-                        const entry = doc.data();
-                        const reactionsDiv = document.getElementById('reactions');
-                        if (reactionsDiv) {
-                            reactionsDiv.innerHTML = renderReactions(entry.reactions || {});
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'modified') {
+                            const entry = change.doc.data();
+                            // Só atualiza se for público
+                            if (entry.isPublic === true) {
+                                const reactionsDiv = document.getElementById(`reactions-${change.doc.id}`);
+                                if (reactionsDiv) {
+                                    reactionsDiv.innerHTML = renderReactions(entry.reactions || {});
+                                }
+                            }
                         }
-                    }
+                    });
                 });
         }
 

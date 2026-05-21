@@ -424,5 +424,3 @@ class StorageService {
     }
   }
 }
-
-// Made with Bob

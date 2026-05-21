@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../core/validators/model_validators.dart';
 
 enum TripStatus { planned, active, completed, cancelled }
@@ -67,9 +68,14 @@ class Trip {
   }
 
   void _validate() {
-    ModelValidators.validateNonEmpty(destination, 'Destino');
-    ModelValidators.validatePositiveNumber(budget, 'Orçamento');
-    ModelValidators.validateDateRange(startDate, endDate);
+    // Validação mais tolerante para dados legados
+    if (destination.trim().isEmpty) {
+      debugPrint('⚠️ [Trip] Viagem com destino vazio detectada (ID: $id)');
+    }
+    if (budget < 0) {
+      debugPrint('⚠️ [Trip] Viagem com orçamento negativo detectada (ID: $id)');
+    }
+    // Não valida dateRange para permitir viagens nômades e dados antigos
   }
 
   bool isAdmin(String uid) {

@@ -2,6 +2,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/activity.dart';
+import 'logger_service.dart';
 
 class ExternalAppsService {
   static Future<bool> openInMaps({
@@ -46,7 +47,7 @@ class ExternalAppsService {
 
       return await launchUrl(mapsUrl);
     } catch (e) {
-      print('Erro ao abrir Maps: $e');
+      LoggerService.error('Erro ao abrir Maps', tag: 'ExternalApps', error: e);
       return false;
     }
   }
@@ -77,7 +78,8 @@ class ExternalAppsService {
         mode: LaunchMode.externalApplication,
       );
     } catch (e) {
-      print('Erro ao adicionar ao Calendar: $e');
+      LoggerService.error('Erro ao adicionar ao Calendar',
+          tag: 'ExternalApps', error: e);
       return false;
     }
   }
@@ -112,7 +114,7 @@ class ExternalAppsService {
         longitude: longitude,
       );
     } catch (e) {
-      print('Erro ao abrir Waze: $e');
+      LoggerService.error('Erro ao abrir Waze', tag: 'ExternalApps', error: e);
       return false;
     }
   }
@@ -130,7 +132,8 @@ class ExternalAppsService {
 
       return await launchUrl(shareUrl);
     } catch (e) {
-      print('Erro ao compartilhar localização: $e');
+      LoggerService.error('Erro ao compartilhar localização',
+          tag: 'ExternalApps', error: e);
       return false;
     }
   }

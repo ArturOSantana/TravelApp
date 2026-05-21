@@ -274,5 +274,3 @@ class NotificationService {
     }
   }
 }
-
-// Made with Bob

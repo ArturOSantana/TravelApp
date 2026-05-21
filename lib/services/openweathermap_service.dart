@@ -3,7 +3,6 @@ import '../config/api_keys.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
-
 class OpenWeatherMapService {
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
 
@@ -431,5 +430,3 @@ class OpenWeatherMapService {
     }
   }
 }
-
-// Made with Bob
