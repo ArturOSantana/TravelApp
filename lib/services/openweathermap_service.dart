@@ -3,14 +3,7 @@ import '../config/api_keys.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
-/// Serviço de integração com OpenWeatherMap API
-///
-/// Responsabilidades:
-/// - Buscar clima atual por cidade ou coordenadas
-/// - Buscar previsão do tempo (5 dias)
-/// - Processar e formatar dados meteorológicos
-///
-/// API: https://openweathermap.org/api
+
 class OpenWeatherMapService {
   static const String _baseUrl = 'https://api.openweathermap.org/data/2.5';
 
@@ -406,9 +399,6 @@ class OpenWeatherMapService {
     }).toList();
   }
 
-  // ========== MÉTODOS PRIVADOS ==========
-
-  /// Valida nome da cidade
   static void _validateCityName(String city) {
     if (city.trim().isEmpty) {
       throw ValidationException('Nome da cidade não pode estar vazio');

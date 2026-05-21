@@ -4,15 +4,7 @@ import '../config/api_keys.dart';
 import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
-/// Serviço de integração com Geoapify API
-///
-/// Responsabilidades:
-/// - Cálculo de rotas e distâncias
-/// - Otimização de rotas multi-ponto
-/// - Busca de pontos de interesse
-/// - Matriz de distâncias
-///
-/// API: https://www.geoapify.com/
+
 class GeoapifyService {
   static const String _apiKey = ApiKeys.geoapify;
   static const String _baseUrl = 'https://api.geoapify.com/v1';
@@ -656,9 +648,6 @@ class GeoapifyService {
     ];
   }
 
-  // ========== MÉTODOS PRIVADOS DE VALIDAÇÃO ==========
-
-  /// Valida coordenadas geográficas
   static void _validateCoordinates(double lat, double lon, String context) {
     if (lat < _minLatitude || lat > _maxLatitude) {
       throw ValidationException(

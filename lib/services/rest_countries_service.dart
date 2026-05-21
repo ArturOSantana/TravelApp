@@ -2,15 +2,7 @@ import 'dart:convert';
 import '../core/exceptions/app_exceptions.dart';
 import 'http_client_service.dart';
 
-/// Serviço de integração com REST Countries API
-///
-/// Responsabilidades:
-/// - Buscar informações de países
-/// - Buscar países por região
-/// - Buscar países vizinhos
-/// - Fornecer dicas de viagem
-///
-/// API: https://restcountries.com/
+
 class RestCountriesService {
   static const String _baseUrl = 'https://restcountries.com/v3.1';
 
@@ -413,9 +405,6 @@ class RestCountriesService {
     ];
   }
 
-  // ========== MÉTODOS PRIVADOS ==========
-
-  /// Valida nome do país
   static void _validateCountryName(String countryName) {
     if (countryName.trim().isEmpty) {
       throw ValidationException('Nome do país não pode estar vazio');
