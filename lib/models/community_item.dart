@@ -7,7 +7,7 @@ abstract class CommunityItem {
   String? get userName;
   DateTime get createdAt;
   bool get isPublic;
-  String get type; 
+  String get type;
 
   String get title;
   String get subtitle;
@@ -16,8 +16,22 @@ abstract class CommunityItem {
   List<String> get likes;
 
   int compareTo(CommunityItem other) {
-    return other.createdAt.compareTo(createdAt); // Mais recente primeiro
+    return other.createdAt.compareTo(createdAt);
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          type == other.type;
+
+  @override
+  int get hashCode => id.hashCode ^ type.hashCode;
+
+  @override
+  String toString() => 'CommunityItem(type: $type, id: $id, title: $title)';
 }
 
 class CommunityService extends CommunityItem {
@@ -57,6 +71,18 @@ class CommunityService extends CommunityItem {
 
   @override
   List<String> get likes => service.likes;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other && other is CommunityService && service == other.service;
+
+  @override
+  int get hashCode => super.hashCode ^ service.hashCode;
+
+  @override
+  String toString() =>
+      'CommunityService(${super.toString()}, service: ${service.name})';
 }
 
 class CommunityDestinationRating extends CommunityItem {
@@ -96,11 +122,23 @@ class CommunityDestinationRating extends CommunityItem {
   List<String> get photos => rating.photos;
 
   @override
-  List<String> get likes =>
-      []; 
+  List<String> get likes => [];
 
   String _formatRating(double rating) {
-    return ' ${rating.toStringAsFixed(1)}/5.0';
+    return '★ ${rating.toStringAsFixed(1)}/5.0';
   }
-}
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      super == other &&
+          other is CommunityDestinationRating &&
+          rating == other.rating;
+
+  @override
+  int get hashCode => super.hashCode ^ rating.hashCode;
+
+  @override
+  String toString() =>
+      'CommunityDestinationRating(${super.toString()}, rating: ${rating.overallRating})';
+}
