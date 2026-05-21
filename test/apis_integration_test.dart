@@ -47,16 +47,17 @@ void main() {
       expect(entertainment.first, containsPair('name', isNotNull));
     });
 
-    test('Deve retornar lista vazia para coordenadas inválidas', () async {
-      final results = await GeoapifyService.searchPlaces(
-        lat: 999.0,
-        lon: 999.0,
-        categories: 'tourism',
-        radius: 5000,
-        limit: 10,
+    test('Deve lançar exceção para coordenadas inválidas', () async {
+      expect(
+        () async => await GeoapifyService.searchPlaces(
+          lat: 999.0,
+          lon: 999.0,
+          categories: 'tourism',
+          radius: 5000,
+          limit: 10,
+        ),
+        throwsA(isA<Exception>()),
       );
-
-      expect(results, isEmpty);
     });
   });
 
@@ -169,25 +170,24 @@ void main() {
     });
 
     test('Deve lidar com falhas de API graciosamente', () async {
-      // Testar com cidade inexistente
-      final weather = await OpenWeatherMapService.getCurrentWeather(
-          'CidadeInexistente123456');
-
-      // Deve retornar null em vez de dar erro
-      expect(weather, isNull);
+      expect(
+        () async => await OpenWeatherMapService.getCurrentWeather(
+            'CidadeInexistente123456'),
+        throwsA(isA<Exception>()),
+      );
     });
 
     test('Deve lidar com coordenadas inválidas', () async {
-      final places = await GeoapifyService.searchPlaces(
-        lat: 999.0,
-        lon: 999.0,
-        categories: 'tourism',
-        radius: 5000,
-        limit: 10,
+      expect(
+        () async => await GeoapifyService.searchPlaces(
+          lat: 999.0,
+          lon: 999.0,
+          categories: 'tourism',
+          radius: 5000,
+          limit: 10,
+        ),
+        throwsA(isA<Exception>()),
       );
-
-      // Deve retornar lista vazia em vez de dar erro
-      expect(places, isEmpty);
     });
   });
 
@@ -217,4 +217,3 @@ void main() {
     });
   });
 }
-

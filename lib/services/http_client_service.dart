@@ -134,11 +134,11 @@ class HttpClientService {
     throw lastException ?? Exception('Failed to post data');
   }
 
-  static void _cacheResponse(
+  static Future<void> _cacheResponse(
     String url,
     http.Response response,
     Duration duration,
-  ) {
+  ) async {
     try {
       final cacheData = {
         'statusCode': response.statusCode,
@@ -146,7 +146,7 @@ class HttpClientService {
         'headers': response.headers,
       };
       final cacheKey = _generateCacheKey(url);
-      CacheService.saveData(
+      await CacheService.saveData(
         cacheKey,
         cacheData,
         expiration: duration,
