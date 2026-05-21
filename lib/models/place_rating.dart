@@ -1,17 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 class PlaceRating {
   final String id;
   final String userId;
   final String userName;
-  final String placeId; // id do geo(api)
+  final String placeId;
   final String placeName;
   final String placeAddress;
   final double? placeLat;
   final double? placeLon;
   final String placeCategory;
 
-  // notas
   final double overallRating;
   final double? foodQuality;
   final double? serviceQuality;
@@ -28,7 +28,6 @@ class PlaceRating {
   final bool isPublic;
   final String? tripId;
 
-  // Interações sociais
   final List<String> likes;
   final int helpfulCount;
 
@@ -57,7 +56,27 @@ class PlaceRating {
     this.tripId,
     this.likes = const [],
     this.helpfulCount = 0,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(userId, 'User ID');
+    ModelValidators.validateNonEmpty(placeId, 'Place ID');
+    ModelValidators.validateNonEmpty(placeName, 'Nome do lugar');
+    ModelValidators.validateRating(overallRating, 'Avaliação geral');
+    if (foodQuality != null)
+      ModelValidators.validateRating(foodQuality!, 'Qualidade da comida');
+    if (serviceQuality != null)
+      ModelValidators.validateRating(serviceQuality!, 'Qualidade do serviço');
+    if (valueForMoney != null)
+      ModelValidators.validateRating(valueForMoney!, 'Custo-benefício');
+    if (cleanliness != null)
+      ModelValidators.validateRating(cleanliness!, 'Limpeza');
+    if (atmosphere != null)
+      ModelValidators.validateRating(atmosphere!, 'Atmosfera');
+    ModelValidators.validateCoordinates(placeLat, placeLon);
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -171,16 +190,14 @@ class PlaceRating {
     );
   }
 
-  /// Retorna cor baseada na nota
   String getRatingColor() {
-    if (overallRating >= 4.5) return '#4CAF50'; // Verde
-    if (overallRating >= 4.0) return '#8BC34A'; // Verde claro
-    if (overallRating >= 3.0) return '#FFC107'; // Amarelo
-    if (overallRating >= 2.0) return '#FF9800'; // Laranja
-    return '#F44336'; // Vermelho
+    if (overallRating >= 4.5) return '#4CAF50';
+    if (overallRating >= 4.0) return '#8BC34A';
+    if (overallRating >= 3.0) return '#FFC107';
+    if (overallRating >= 2.0) return '#FF9800';
+    return '#F44336';
   }
 
-  /// Retorna descrição textual da nota
   String getRatingDescription() {
     if (overallRating >= 4.5) return 'Excelente';
     if (overallRating >= 4.0) return 'Muito Bom';
@@ -189,15 +206,29 @@ class PlaceRating {
     return 'Ruim';
   }
 
-  /// Retorna número de estrelas cheias (0-5)
   int getFullStars() {
     return overallRating.floor();
   }
 
-  /// Retorna se tem meia estrela
   bool hasHalfStar() {
     return (overallRating - overallRating.floor()) >= 0.5;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlaceRating &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          placeId == other.placeId &&
+          userId == other.userId;
+
+  @override
+  int get hashCode => id.hashCode ^ placeId.hashCode ^ userId.hashCode;
+
+  @override
+  String toString() =>
+      'PlaceRating(id: $id, place: $placeName, rating: $overallRating)';
 }
 
 class PlaceStats {

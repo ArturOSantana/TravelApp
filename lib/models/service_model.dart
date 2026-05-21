@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 class PostComment {
   final String id;
@@ -9,7 +10,7 @@ class PostComment {
   final bool isHidden;
   final String? hiddenBy;
 
-  const PostComment({
+  PostComment({
     required this.id,
     required this.userId,
     required this.userName,
@@ -17,7 +18,15 @@ class PostComment {
     required this.createdAt,
     this.isHidden = false,
     this.hiddenBy,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(id, 'Comment ID');
+    ModelValidators.validateNonEmpty(userId, 'User ID');
+    ModelValidators.validateNonEmpty(text, 'Texto do comentário');
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -62,6 +71,19 @@ class PostComment {
       hiddenBy: hiddenBy ?? this.hiddenBy,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PostComment &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() => 'PostComment(id: $id, user: $userName)';
 }
 
 class ServiceModel {
@@ -80,8 +102,7 @@ class ServiceModel {
   final bool isPublic;
   final String? userName;
   final List<String> likes;
-  final List<String>
-      savedBy; // Nova lista para IDs de usuários que salvaram o post
+  final List<String> savedBy;
   final int savesCount;
   final List<PostComment> comments;
   final bool commentsEnabled;
@@ -108,7 +129,17 @@ class ServiceModel {
     this.comments = const [],
     this.commentsEnabled = true,
     this.updatedAt,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(ownerId, 'Owner ID');
+    ModelValidators.validateNonEmpty(name, 'Nome do serviço');
+    ModelValidators.validateNonEmpty(category, 'Categoria');
+    ModelValidators.validateRating(rating, 'Avaliação');
+    ModelValidators.validatePositiveNumber(averageCost, 'Custo médio');
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -207,4 +238,18 @@ class ServiceModel {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ServiceModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          ownerId == other.ownerId;
+
+  @override
+  int get hashCode => id.hashCode ^ ownerId.hashCode;
+
+  @override
+  String toString() => 'ServiceModel(id: $id, name: $name, rating: $rating)';
 }
