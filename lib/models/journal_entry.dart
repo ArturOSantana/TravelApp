@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 enum MoodIcon {
   veryHappy('sentiment_very_satisfied', 'Muito Feliz', 5),
@@ -78,20 +79,28 @@ class JournalEntry {
     this.reactions = const {},
     this.isPublic = false,
     this.shareToken,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(tripId, 'Trip ID');
+    ModelValidators.validateNonEmpty(userId, 'User ID');
+    ModelValidators.validateNonEmpty(content, 'Conteúdo');
+  }
 
   Map<String, dynamic> toMap() {
     return {
       'tripId': tripId,
       'userId': userId,
       'userName': userName,
-      'date': date,
+      'date': Timestamp.fromDate(date),
       'content': content,
       'mood': mood.iconName,
       'moodValue': mood.value,
       'photos': photos,
       'locationName': locationName,
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': Timestamp.fromDate(createdAt),
       'reactions': reactions,
       'isPublic': isPublic,
       'shareToken': shareToken,
@@ -188,4 +197,20 @@ class JournalEntry {
     }
     return null;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JournalEntry &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          tripId == other.tripId &&
+          date == other.date;
+
+  @override
+  int get hashCode => id.hashCode ^ tripId.hashCode ^ date.hashCode;
+
+  @override
+  String toString() =>
+      'JournalEntry(id: $id, mood: ${mood.label}, reactions: ${getTotalReactions()})';
 }
