@@ -31,6 +31,21 @@ class UserModel {
     _validate();
   }
 
+  UserModel._internal({
+    required this.uid,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.emergencyContact,
+    required this.emergencyPhone,
+    required this.bio,
+    this.photoUrl,
+    required this.isPremium,
+    required this.savedPosts,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
   void _validate() {
     ModelValidators.validateNonEmpty(uid, 'UID');
     ModelValidators.validateNonEmpty(name, 'Nome');
@@ -38,7 +53,7 @@ class UserModel {
   }
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
-    return UserModel(
+    return UserModel._internal(
       uid: data['uid'] ?? '',
       name: data['name'] ?? '',
       email: data['email'] ?? '',
