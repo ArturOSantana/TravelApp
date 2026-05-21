@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/validators/model_validators.dart';
 
 class UserModel {
@@ -67,10 +68,15 @@ class UserModel {
           ? List<String>.from(data['savedPosts'])
           : [],
       createdAt: data['createdAt'] != null
-          ? DateTime.parse(data['createdAt'])
+          ? (data['createdAt'] is Timestamp
+              ? (data['createdAt'] as Timestamp).toDate()
+              : DateTime.parse(data['createdAt']))
           : DateTime.now(),
-      updatedAt:
-          data['updatedAt'] != null ? DateTime.parse(data['updatedAt']) : null,
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] is Timestamp
+              ? (data['updatedAt'] as Timestamp).toDate()
+              : DateTime.parse(data['updatedAt']))
+          : null,
     );
   }
 
