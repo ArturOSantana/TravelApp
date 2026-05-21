@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 enum SplitType { equal, exact, percentage, shares }
 
@@ -31,7 +32,50 @@ class Expense {
     required this.date,
     this.exchangeRateUsed = 1.0,
     this.conversionDate,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(title, 'Título');
+    ModelValidators.validatePositiveNumber(value, 'Valor');
+    ModelValidators.validatePositiveNumber(exchangeRateUsed, 'Taxa de câmbio');
+    if (splits.isNotEmpty) {
+      ModelValidators.validateSplits(splits, splitType.name);
+    }
+  }
+
+  Expense copyWith({
+    String? id,
+    String? tripId,
+    String? title,
+    double? value,
+    double? originalValue,
+    String? currency,
+    String? category,
+    String? payerId,
+    Map<String, double>? splits,
+    SplitType? splitType,
+    DateTime? date,
+    double? exchangeRateUsed,
+    DateTime? conversionDate,
+  }) {
+    return Expense(
+      id: id ?? this.id,
+      tripId: tripId ?? this.tripId,
+      title: title ?? this.title,
+      value: value ?? this.value,
+      originalValue: originalValue ?? this.originalValue,
+      currency: currency ?? this.currency,
+      category: category ?? this.category,
+      payerId: payerId ?? this.payerId,
+      splits: splits ?? this.splits,
+      splitType: splitType ?? this.splitType,
+      date: date ?? this.date,
+      exchangeRateUsed: exchangeRateUsed ?? this.exchangeRateUsed,
+      conversionDate: conversionDate ?? this.conversionDate,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -44,9 +88,10 @@ class Expense {
       'payerId': payerId,
       'splits': splits,
       'splitType': splitType.name,
-      'date': date,
+      'date': Timestamp.fromDate(date),
       'exchangeRateUsed': exchangeRateUsed,
-      'conversionDate': conversionDate,
+      'conversionDate':
+          conversionDate != null ? Timestamp.fromDate(conversionDate!) : null,
     };
   }
 
@@ -73,4 +118,22 @@ class Expense {
           : null,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Expense &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          tripId == other.tripId &&
+          title == other.title &&
+          value == other.value;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^ tripId.hashCode ^ title.hashCode ^ value.hashCode;
+
+  @override
+  String toString() =>
+      'Expense(id: $id, title: $title, value: $value $currency)';
 }

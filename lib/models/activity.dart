@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/validators/model_validators.dart';
 
 enum ActivityStatus { pending, completed, cancelled }
 
@@ -10,14 +11,13 @@ class Activity {
   final DateTime time;
   final String location;
   final String category;
-  final Map<String, int> votes; // userId: vote (1 or -1)
-  final List<Map<String, dynamic>>
-  opinions; // [{ 'userId': '', 'userName': '', 'text': '' }]
+  final Map<String, int> votes;
+  final List<Map<String, dynamic>> opinions;
   final bool isApproved;
   final double? latitude;
   final double? longitude;
-  final int index; // para  manual
-  final ActivityStatus status; // Novo: status da atividade
+  final int index;
+  final ActivityStatus status;
 
   Activity({
     required this.id,
@@ -34,14 +34,28 @@ class Activity {
     this.longitude,
     this.index = 0,
     this.status = ActivityStatus.pending,
-  });
+  }) {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(title, 'Título');
+    ModelValidators.validateNonEmpty(location, 'Localização');
+    ModelValidators.validateCoordinates(latitude, longitude);
+  }
+
+  bool get isCompleted => status == ActivityStatus.completed;
+  bool get isPending => status == ActivityStatus.pending;
+  bool get isCancelled => status == ActivityStatus.cancelled;
+
+  int get voteScore => votes.values.fold(0, (sum, vote) => sum + vote);
 
   Map<String, dynamic> toMap() {
     return {
       'tripId': tripId,
       'title': title,
       'description': description,
-      'time': time,
+      'time': Timestamp.fromDate(time),
       'location': location,
       'category': category,
       'votes': votes,
@@ -67,8 +81,8 @@ class Activity {
       votes: Map<String, int>.from(data['votes'] ?? {}),
       opinions: List<Map<String, dynamic>>.from(data['opinions'] ?? []),
       isApproved: data['isApproved'] ?? true,
-      latitude: data['latitude'],
-      longitude: data['longitude'],
+      latitude: data['latitude']?.toDouble(),
+      longitude: data['longitude']?.toDouble(),
       index: data['index'] ?? 0,
       status: ActivityStatus.values[data['status'] ?? 0],
     );
@@ -107,4 +121,22 @@ class Activity {
       status: status ?? this.status,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Activity &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          tripId == other.tripId &&
+          title == other.title &&
+          time == other.time;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^ tripId.hashCode ^ title.hashCode ^ time.hashCode;
+
+  @override
+  String toString() =>
+      'Activity(id: $id, title: $title, status: ${status.name})';
 }

@@ -1,3 +1,5 @@
+import '../core/validators/model_validators.dart';
+
 class UserModel {
   final String uid;
   final String name;
@@ -7,8 +9,10 @@ class UserModel {
   final String emergencyPhone;
   final String bio;
   final String? photoUrl;
-  final bool isPremium; // Campo para diferenciar usuários
-  final List<String> savedPosts; // IDs dos posts salvos (serviços e avaliações)
+  final bool isPremium;
+  final List<String> savedPosts;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
 
   UserModel({
     required this.uid,
@@ -21,7 +25,17 @@ class UserModel {
     this.photoUrl,
     this.isPremium = false,
     this.savedPosts = const [],
-  });
+    DateTime? createdAt,
+    this.updatedAt,
+  }) : createdAt = createdAt ?? DateTime.now() {
+    _validate();
+  }
+
+  void _validate() {
+    ModelValidators.validateNonEmpty(uid, 'UID');
+    ModelValidators.validateNonEmpty(name, 'Nome');
+    ModelValidators.validateEmail(email);
+  }
 
   factory UserModel.fromMap(Map<String, dynamic> data) {
     return UserModel(
@@ -37,6 +51,11 @@ class UserModel {
       savedPosts: data['savedPosts'] != null
           ? List<String>.from(data['savedPosts'])
           : [],
+      createdAt: data['createdAt'] != null
+          ? DateTime.parse(data['createdAt'])
+          : DateTime.now(),
+      updatedAt:
+          data['updatedAt'] != null ? DateTime.parse(data['updatedAt']) : null,
     );
   }
 
@@ -52,6 +71,8 @@ class UserModel {
       'photoUrl': photoUrl,
       'isPremium': isPremium,
       'savedPosts': savedPosts,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -64,6 +85,8 @@ class UserModel {
     String? bio,
     String? photoUrl,
     bool? isPremium,
+    List<String>? savedPosts,
+    DateTime? updatedAt,
   }) {
     return UserModel(
       uid: uid,
@@ -75,6 +98,24 @@ class UserModel {
       bio: bio ?? this.bio,
       photoUrl: photoUrl ?? this.photoUrl,
       isPremium: isPremium ?? this.isPremium,
+      savedPosts: savedPosts ?? this.savedPosts,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? DateTime.now(),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserModel &&
+          runtimeType == other.runtimeType &&
+          uid == other.uid &&
+          name == other.name &&
+          email == other.email;
+
+  @override
+  int get hashCode => uid.hashCode ^ name.hashCode ^ email.hashCode;
+
+  @override
+  String toString() => 'UserModel(uid: $uid, name: $name, email: $email)';
 }
