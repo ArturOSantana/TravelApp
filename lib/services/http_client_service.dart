@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'cache_service.dart';
 
@@ -143,8 +145,9 @@ class HttpClientService {
         'body': response.body,
         'headers': response.headers,
       };
+      final cacheKey = _generateCacheKey(url);
       CacheService.saveData(
-        'http_cache_$url',
+        cacheKey,
         cacheData,
         expiration: duration,
       );
@@ -158,7 +161,7 @@ class HttpClientService {
     bool ignoreExpiry = false,
   }) {
     try {
-      final cacheKey = 'http_cache_$url';
+      final cacheKey = _generateCacheKey(url);
 
       if (ignoreExpiry) {
         final prefs = CacheService.getData(cacheKey);
@@ -175,6 +178,12 @@ class HttpClientService {
       print('[HTTP] Erro ao ler cache: $e');
     }
     return null;
+  }
+
+  static String _generateCacheKey(String url) {
+    final bytes = utf8.encode(url);
+    final hash = sha256.convert(bytes);
+    return 'http_${hash.toString().substring(0, 32)}';
   }
 
   static http.Response _buildResponseFromCache(Map<String, dynamic> cached) {

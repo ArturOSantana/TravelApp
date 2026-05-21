@@ -89,8 +89,8 @@ void main() {
         createdAt: DateTime.now(),
       );
 
-      expect(rating1.getRatingColor(), '#4CAF50'); 
-      expect(rating2.getRatingColor(), '#FF9800'); 
+      expect(rating1.getRatingColor(), '#4CAF50');
+      expect(rating2.getRatingColor(), '#FF9800');
     });
 
     test('Deve retornar descrição correta da nota', () {
@@ -303,7 +303,7 @@ void main() {
   });
 
   group('PlaceRating Validation Tests', () {
-    test('Nota deve estar entre 1 e 5', () {
+    test('Nota deve estar entre 0 e 5', () {
       expect(() {
         PlaceRating(
           id: '1',
@@ -313,10 +313,10 @@ void main() {
           placeName: 'Place',
           placeAddress: 'Address',
           placeCategory: 'restaurant',
-          overallRating: 6.0, // Inválido
+          overallRating: 6.0,
           createdAt: DateTime.now(),
         );
-      }, returnsNormally); // O modelo não valida, mas a UI deve validar
+      }, throwsArgumentError);
     });
 
     test('Deve aceitar critérios opcionais nulos', () {
