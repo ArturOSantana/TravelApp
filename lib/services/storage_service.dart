@@ -312,9 +312,6 @@ class StorageService {
     }
   }
 
-  // ========== MÉTODOS PRIVADOS DE VALIDAÇÃO ==========
-
-  /// Valida o ID da viagem
   static void _validateTripId(String tripId) {
     if (tripId.trim().isEmpty) {
       throw ValidationException('ID da viagem não pode estar vazio');

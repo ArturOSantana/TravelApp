@@ -140,15 +140,6 @@ class CacheService {
     }
   }
 
-  /// Verifica se uma chave existe no cache.
-  ///
-  /// Parameters:
-  /// - [key]: Chave a verificar
-  ///
-  /// Returns: `true` se existe
-  ///
-  /// Throws:
-  /// - [ValidationException] se a chave for inválida
   static bool hasKey(String key) {
     _validateKey(key);
 
@@ -272,9 +263,6 @@ class CacheService {
     }
   }
 
-  /// Obtém estatísticas do cache.
-  ///
-  /// Returns: Map com informações sobre o cache
   static Map<String, dynamic> getCacheStats() {
     if (_prefs == null) return {};
 
@@ -298,8 +286,6 @@ class CacheService {
     _cleanupTimer?.cancel();
     _cleanupTimer = null;
   }
-
-  // ==================== VALIDAÇÕES ====================
 
   static void _validateKey(String key) {
     if (key.trim().isEmpty) {
