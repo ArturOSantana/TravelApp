@@ -23,6 +23,9 @@ class _ExpensesPageState extends State<ExpensesPage> {
   final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
   double _exchangeRate = 1.0;
 
+  // Cache de nomes para evitar múltiplas consultas ao Firestore
+  final Map<String, String> _memberNamesCache = {};
+
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'pt_BR',
     symbol: 'R\$',
@@ -429,7 +432,13 @@ class _ExpensesPageState extends State<ExpensesPage> {
       });
     }
 
-    return balances;
+    // Arredondar para 2 casas decimais para evitar problemas de precisão
+    final roundedBalances = <String, double>{};
+    balances.forEach((memberId, balance) {
+      roundedBalances[memberId] = double.parse(balance.toStringAsFixed(2));
+    });
+
+    return roundedBalances;
   }
 
   Widget _buildBalanceSummaryCard(Map<String, double> balances, Trip trip) {
@@ -647,38 +656,68 @@ class _ExpensesPageState extends State<ExpensesPage> {
     final debtors = <String, double>{};
     final creditors = <String, double>{};
 
-    // Separar devedores e credores
+    // Separar devedores e credores (ignorar valores menores que 1 centavo)
     balances.forEach((memberId, balance) {
-      if (balance < -0.01) {
-        debtors[memberId] = -balance;
-      } else if (balance > 0.01) {
-        creditors[memberId] = balance;
+      final roundedBalance = double.parse(balance.toStringAsFixed(2));
+      if (roundedBalance < -0.01) {
+        debtors[memberId] = -roundedBalance;
+      } else if (roundedBalance > 0.01) {
+        creditors[memberId] = roundedBalance;
       }
     });
 
-    // Calcular transferências mínimas
-    final debtorsList = debtors.entries.toList();
-    final creditorsList = creditors.entries.toList();
+    // Se não há devedores ou credores, não há acertos a fazer
+    if (debtors.isEmpty || creditors.isEmpty) {
+      return settlements;
+    }
+
+    // Algoritmo Greedy para minimizar número de transações
+    final debtorsList = debtors.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final creditorsList = creditors.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     int i = 0, j = 0;
+    int maxIterations = debtorsList.length * creditorsList.length;
+    int iterations = 0;
+
     while (i < debtorsList.length && j < creditorsList.length) {
-      final debtor = debtorsList[i];
-      final creditor = creditorsList[j];
+      // Proteção contra loop infinito
+      if (iterations++ > maxIterations) {
+        debugPrint(
+            '[ExpensesPage] Aviso: loop infinito detectado em _calculateSettlements');
+        break;
+      }
 
-      final amount =
-          debtor.value < creditor.value ? debtor.value : creditor.value;
+      final debtorAmount = debtorsList[i].value;
+      final creditorAmount = creditorsList[j].value;
 
-      settlements.add({
-        'from': debtor.key,
-        'to': creditor.key,
-        'amount': amount.toStringAsFixed(2),
-      });
+      // Calcular valor da transferência (o menor entre dívida e crédito)
+      final transferAmount =
+          debtorAmount < creditorAmount ? debtorAmount : creditorAmount;
 
-      debtorsList[i] = MapEntry(debtor.key, debtor.value - amount);
-      creditorsList[j] = MapEntry(creditor.key, creditor.value - amount);
+      // Arredondar para 2 casas decimais
+      final roundedTransfer = double.parse(transferAmount.toStringAsFixed(2));
 
-      if (debtorsList[i].value < 0.01) i++;
-      if (creditorsList[j].value < 0.01) j++;
+      // Só adicionar se valor for significativo (> 1 centavo)
+      if (roundedTransfer > 0.01) {
+        settlements.add({
+          'from': debtorsList[i].key,
+          'to': creditorsList[j].key,
+          'amount': roundedTransfer.toStringAsFixed(2),
+        });
+      }
+
+      // Atualizar valores restantes
+      final newDebtorValue = debtorAmount - roundedTransfer;
+      final newCreditorValue = creditorAmount - roundedTransfer;
+
+      debtorsList[i] = MapEntry(debtorsList[i].key, newDebtorValue);
+      creditorsList[j] = MapEntry(creditorsList[j].key, newCreditorValue);
+
+      // Avançar índices quando valor for zerado (< 1 centavo)
+      if (newDebtorValue < 0.01) i++;
+      if (newCreditorValue < 0.01) j++;
     }
 
     return settlements;
@@ -789,6 +828,11 @@ class _ExpensesPageState extends State<ExpensesPage> {
   Future<String> _getMemberName(String memberId) async {
     if (memberId == _currentUid) return 'Eu';
 
+    // Verificar cache primeiro
+    if (_memberNamesCache.containsKey(memberId)) {
+      return _memberNamesCache[memberId]!;
+    }
+
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -797,13 +841,18 @@ class _ExpensesPageState extends State<ExpensesPage> {
 
       if (doc.exists) {
         final data = doc.data();
-        final name = data?['name'] ?? data?['email']?.split('@')[0];
-        return name ?? 'Membro';
+        final name = data?['name'] ?? data?['email']?.split('@')[0] ?? 'Membro';
+
+        // Armazenar no cache
+        _memberNamesCache[memberId] = name;
+        return name;
       }
     } catch (e) {
-      // Silently fail
+      debugPrint('[ExpensesPage] Erro ao buscar nome do membro $memberId: $e');
     }
 
+    // Fallback e cache do fallback
+    _memberNamesCache[memberId] = 'Membro';
     return 'Membro';
   }
 
