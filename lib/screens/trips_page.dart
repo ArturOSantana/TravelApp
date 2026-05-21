@@ -173,27 +173,56 @@ class _TripsPageState extends State<TripsPage>
           ),
           ElevatedButton(
             onPressed: () async {
-              if (codeController.text.isNotEmpty) {
-                try {
-                  await _controller.joinTrip(codeController.text.trim());
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Você entrou no grupo com sucesso!"),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+              if (codeController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Por favor, insira o código da viagem"),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              try {
+                await _controller.joinTrip(codeController.text.trim());
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("✅ Você entrou no grupo com sucesso!"),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  String errorMessage = "Erro ao entrar no grupo";
+
+                  final errorStr = e.toString();
+                  if (errorStr.contains('não encontrada') ||
+                      errorStr.contains('not-found')) {
+                    errorMessage =
+                        "❌ Código inválido. Verifique se copiou corretamente.";
+                  } else if (errorStr.contains('já é membro')) {
+                    errorMessage = "ℹ️ Você já faz parte deste grupo.";
+                  } else if (errorStr.contains('limite')) {
+                    errorMessage =
+                        "⚠️ Grupo atingiu o limite de membros (3 no plano gratuito).";
+                  } else if (errorStr.contains('permission-denied')) {
+                    errorMessage =
+                        "🔒 Você não tem permissão para entrar neste grupo.";
+                  } else {
+                    errorMessage = "❌ $errorStr";
                   }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text("Erro ao entrar no grupo: $e"),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
                 }
               }
             },

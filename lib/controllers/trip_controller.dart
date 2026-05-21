@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:math';
 import '../models/trip.dart';
 import '../models/activity.dart';
 import '../models/expense.dart';
@@ -11,7 +12,9 @@ import '../models/user_model.dart';
 import '../models/notification_model.dart';
 import '../models/place_rating.dart';
 import '../models/destination_rating.dart';
+import '../models/invite_code.dart';
 import '../services/push_notification_service.dart';
+import '../services/subscription_service.dart';
 
 class TripController {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -129,10 +132,66 @@ class TripController {
 
   Future<void> joinTrip(String tripId) async {
     final uid = _auth.currentUser?.uid ?? '';
+
+    // 1. Verificar se viagem existe
+    final doc = await _db.collection('trips').doc(tripId).get();
+    if (!doc.exists) {
+      throw Exception('Viagem não encontrada. Verifique o código.');
+    }
+
+    final trip = Trip.fromFirestore(doc);
+
+    // 2. Verificar se já é membro ou dono
+    if (trip.members.contains(uid) || trip.ownerId == uid) {
+      throw Exception('Você já é membro deste grupo.');
+    }
+
+    // 3. Verificar limite Premium
+    final canAdd = await SubscriptionService.canAddMember(tripId);
+    if (!canAdd) {
+      throw Exception(
+          'Grupo atingiu o limite de membros (3 no plano gratuito).');
+    }
+
+    // 4. Adicionar membro
     await _db.collection('trips').doc(tripId).update({
       'members': FieldValue.arrayUnion([uid]),
       'isGroup': true,
     });
+
+    // 5. Notificar outros membros
+    await _notifyNewMember(tripId, trip, uid);
+  }
+
+  Future<void> _notifyNewMember(
+      String tripId, Trip trip, String newMemberUid) async {
+    try {
+      final newMemberDoc =
+          await _db.collection('users').doc(newMemberUid).get();
+      if (!newMemberDoc.exists) return;
+
+      final newMember =
+          UserModel.fromMap(newMemberDoc.data() as Map<String, dynamic>);
+
+      final membersToNotify = <String>{
+        trip.ownerId,
+        ...trip.members,
+      }..remove(newMemberUid);
+
+      for (final memberId in membersToNotify) {
+        await _db.collection('notifications').add({
+          'userId': memberId,
+          'tripId': tripId,
+          'type': 'new_member',
+          'title': 'Novo membro no grupo',
+          'body': '${newMember.name} entrou na viagem para ${trip.destination}',
+          'createdAt': FieldValue.serverTimestamp(),
+          'read': false,
+        });
+      }
+    } catch (e) {
+      debugPrint('Erro ao notificar novos membros: $e');
+    }
   }
 
   Future<void> removeMember(String tripId, String memberId) async {
@@ -154,6 +213,131 @@ class TripController {
         users.add(UserModel.fromMap(doc.data() as Map<String, dynamic>));
     }
     return users;
+  }
+
+  // ========== CÓDIGOS DE CONVITE ==========
+
+  String _generateShortCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final random = Random.secure();
+    return List.generate(6, (index) => chars[random.nextInt(chars.length)])
+        .join();
+  }
+
+  Future<InviteCode> createInviteCode({
+    required String tripId,
+    int durationHours = 24,
+    int maxUses = 10,
+  }) async {
+    final uid = _auth.currentUser?.uid ?? '';
+
+    final tripDoc = await _db.collection('trips').doc(tripId).get();
+    if (!tripDoc.exists) {
+      throw Exception('Viagem não encontrada');
+    }
+
+    final trip = Trip.fromFirestore(tripDoc);
+    if (trip.ownerId != uid) {
+      throw Exception('Apenas o administrador pode criar códigos de convite');
+    }
+
+    String code;
+    bool isUnique = false;
+    int attempts = 0;
+
+    do {
+      code = _generateShortCode();
+      final existing = await _db
+          .collection('invite_codes')
+          .where('code', isEqualTo: code)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      isUnique = existing.docs.isEmpty;
+      attempts++;
+
+      if (attempts > 10) {
+        throw Exception('Erro ao gerar código único. Tente novamente.');
+      }
+    } while (!isUnique);
+
+    final inviteCode = InviteCode(
+      id: '',
+      tripId: tripId,
+      code: code,
+      createdBy: uid,
+      createdAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(hours: durationHours)),
+      maxUses: maxUses,
+      usedCount: 0,
+      isActive: true,
+    );
+
+    final docRef = await _db.collection('invite_codes').add(inviteCode.toMap());
+
+    return InviteCode(
+      id: docRef.id,
+      tripId: inviteCode.tripId,
+      code: inviteCode.code,
+      createdBy: inviteCode.createdBy,
+      createdAt: inviteCode.createdAt,
+      expiresAt: inviteCode.expiresAt,
+      maxUses: inviteCode.maxUses,
+      usedCount: inviteCode.usedCount,
+      isActive: inviteCode.isActive,
+    );
+  }
+
+  Future<void> joinTripWithCode(String code) async {
+    final uid = _auth.currentUser?.uid ?? '';
+
+    final codeQuery = await _db
+        .collection('invite_codes')
+        .where('code', isEqualTo: code.toUpperCase())
+        .where('isActive', isEqualTo: true)
+        .limit(1)
+        .get();
+
+    if (codeQuery.docs.isEmpty) {
+      throw Exception('Código inválido ou expirado');
+    }
+
+    final inviteCode = InviteCode.fromFirestore(codeQuery.docs.first);
+
+    if (!inviteCode.isValid) {
+      if (inviteCode.isExpired) {
+        throw Exception('Código expirado');
+      } else if (inviteCode.isMaxUsesReached) {
+        throw Exception('Código atingiu o limite de usos');
+      } else {
+        throw Exception('Código inválido');
+      }
+    }
+
+    await joinTrip(inviteCode.tripId);
+
+    await _db.collection('invite_codes').doc(inviteCode.id).update({
+      'usedCount': FieldValue.increment(1),
+    });
+  }
+
+  Stream<List<InviteCode>> getActiveInviteCodes(String tripId) {
+    return _db
+        .collection('invite_codes')
+        .where('tripId', isEqualTo: tripId)
+        .where('isActive', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => InviteCode.fromFirestore(doc))
+            .where((code) => code.isValid)
+            .toList());
+  }
+
+  Future<void> deactivateInviteCode(String codeId) async {
+    await _db.collection('invite_codes').doc(codeId).update({
+      'isActive': false,
+    });
   }
 
   Stream<List<ServiceModel>> getCommunityServices() {
