@@ -26,5 +26,3 @@ class LoggerService {
     }
   }
 }
-
-// Made with Bob

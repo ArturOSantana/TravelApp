@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import '../models/journal_entry.dart';
 import '../controllers/trip_controller.dart';
 import '../services/memory_manager_service.dart';
+import '../services/safe_share_service.dart';
 import '../widgets/optimized_image.dart';
 import 'create_journal_entry_page.dart';
 
@@ -21,18 +21,15 @@ class _JournalPageState extends State<JournalPage> {
   final TextEditingController _searchController = TextEditingController();
 
   Future<void> _shareLiveAlbumLink(BuildContext context) async {
-    final box = context.findRenderObject() as RenderBox?;
-
     // URL corrigida: usa /album com query parameter tripId
     final String albumUrl =
         "https://travel-app-tcc.web.app/album?tripId=${widget.tripId}";
     final String message = "Confira o álbum de memórias da viagem!\n$albumUrl";
 
-    await Share.share(
+    // Usa SafeShareService para evitar erros de sharePositionOrigin em iPads
+    await SafeShareService.share(
       message,
       subject: "Álbum de Viagem",
-      sharePositionOrigin:
-          box != null ? box.localToGlobal(Offset.zero) & box.size : null,
     );
   }
 

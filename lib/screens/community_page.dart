@@ -1204,5 +1204,3 @@ class _CommunityPageState extends State<CommunityPage>
     );
   }
 }
-
-// Made with Bob

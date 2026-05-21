@@ -55,5 +55,3 @@ class InviteCode {
   bool get isMaxUsesReached => usedCount >= maxUses;
   bool get isValid => isActive && !isExpired && !isMaxUsesReached;
 }
-
-// Made with Bob

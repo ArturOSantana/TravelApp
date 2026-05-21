@@ -88,22 +88,11 @@ class TripController {
     if (status != null) query = query.where('status', isEqualTo: status);
 
     return query.snapshots().map((snapshot) {
-      debugPrint(
-          '📊 [getTrips] Encontradas ${snapshot.docs.length} viagens com status: $status');
-
       final trips = snapshot.docs.map((doc) {
-        final data = doc.data() as Map;
-        debugPrint(
-            '  🔍 RAW DATA [${doc.id}]: status field = ${data['status']} (type: ${data['status']?.runtimeType})');
-
-        final trip = Trip.fromFirestore(doc);
-        debugPrint(
-            '  📍 ${trip.destination}: status=${trip.status.value}, members=${trip.members.length}, id=${trip.id}');
-        return trip;
+        return Trip.fromFirestore(doc);
       }).toList();
 
       trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      debugPrint('✅ [getTrips] Retornando ${trips.length} viagens ordenadas');
       return trips;
     });
   }

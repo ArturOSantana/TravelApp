@@ -56,7 +56,8 @@ class _ReportsPageState extends State<ReportsPage> {
         expenses: widget.expenses,
       );
 
-      await PdfExportService.shareReport(pdf, widget.trip.destination);
+      await PdfExportService.shareReport(pdf, widget.trip.destination,
+          context: context);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

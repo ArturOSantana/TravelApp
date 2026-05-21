@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -8,7 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/trip.dart';
 import '../models/expense.dart';
 import 'analytics_service.dart';
-
+import 'safe_share_service.dart';
 
 class PdfExportService {
   static final NumberFormat _currencyFormat = NumberFormat.currency(
@@ -561,8 +562,10 @@ class PdfExportService {
     return file;
   }
 
-  static Future<void> shareReport(File pdfFile, String tripName) async {
-    await Share.shareXFiles(
+  static Future<void> shareReport(File pdfFile, String tripName,
+      {BuildContext? context}) async {
+    // Usa SafeShareService para evitar erros de sharePositionOrigin em iPads
+    await SafeShareService.shareXFiles(
       [XFile(pdfFile.path)],
       subject: 'Relatório de Viagem - $tripName',
       text: 'Confira o relatório completo da minha viagem para $tripName!',

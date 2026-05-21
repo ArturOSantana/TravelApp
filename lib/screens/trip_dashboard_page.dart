@@ -621,73 +621,104 @@ class _TripDashboardPageState extends State<TripDashboardPage> {
         final trip = snapshot.data ?? widget.trip;
         final symbol = currencySymbols[trip.baseCurrency] ?? trip.baseCurrency;
 
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.06),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-              )
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  size: 32,
-                  color: Colors.green,
-                ),
+        // Busca os gastos para calcular o orçamento restante
+        return StreamBuilder(
+          stream: _controller.getExpenses(trip.id),
+          builder: (context, expensesSnapshot) {
+            final totalSpent = expensesSnapshot.hasData
+                ? expensesSnapshot.data!
+                    .fold<double>(0, (sum, expense) => sum + expense.value)
+                : 0.0;
+            final budgetRemaining = trip.budget - totalSpent;
+
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.06),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
+                  )
+                ],
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ORÇAMENTO',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        letterSpacing: 1,
-                      ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: budgetRemaining >= 0
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$symbol ${trip.budget.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    child: Icon(
+                      Icons.account_balance_wallet_rounded,
+                      size: 32,
+                      color: budgetRemaining >= 0 ? Colors.green : Colors.red,
                     ),
-                  ],
-                ),
-              ),
-              Semantics(
-                button: true,
-                label: 'Editar orçamento',
-                child: IconButton(
-                  onPressed: _showEditBudgetDialog,
-                  icon: Icon(
-                    Icons.edit_outlined,
-                    color: Theme.of(context).colorScheme.primary,
                   ),
-                  tooltip: 'Editar orçamento',
-                ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          budgetRemaining >= 0
+                              ? 'ORÇAMENTO RESTANTE'
+                              : 'ORÇAMENTO EXCEDIDO',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$symbol ${budgetRemaining.abs().toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: budgetRemaining >= 0
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Colors.red,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Total: $symbol ${trip.budget.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Semantics(
+                    button: true,
+                    label: 'Editar orçamento',
+                    child: IconButton(
+                      onPressed: _showEditBudgetDialog,
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      tooltip: 'Editar orçamento',
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

@@ -72,7 +72,8 @@ class _InsightsPageState extends State<InsightsPage> {
       if (mounted) Navigator.of(context).pop();
 
       // Compartilha o PDF
-      await PdfExportService.shareReport(pdfFile, trip.destination);
+      await PdfExportService.shareReport(pdfFile, trip.destination,
+          context: context);
 
       // Mostra mensagem de sucesso
       if (mounted) {

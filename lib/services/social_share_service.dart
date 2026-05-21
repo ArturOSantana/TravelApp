@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 import '../core/exceptions/app_exceptions.dart';
 import '../models/trip.dart';
+import 'safe_share_service.dart';
 
 class SocialShareService {
   static Future<void> shareTripCard({
@@ -25,7 +26,8 @@ class SocialShareService {
       final image = await _widgetToImage(widget);
       final file = await _saveImage(image, trip.destination);
 
-      await Share.shareXFiles(
+      // Usa SafeShareService para evitar erros de sharePositionOrigin em iPads
+      await SafeShareService.shareXFiles(
         [XFile(file.path)],
         text: 'Minha viagem para ${trip.destination}! #TravelApp #Viagem',
       );

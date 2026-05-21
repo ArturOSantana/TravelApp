@@ -286,5 +286,3 @@ class CacheException extends AppException {
 class GenericException extends AppException {
   GenericException(super.message, {super.code, super.originalError});
 }
-
-// Made with Bob

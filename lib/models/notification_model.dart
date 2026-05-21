@@ -107,5 +107,3 @@ class AppNotification {
   String toString() =>
       'AppNotification(id: $id, type: ${type.name}, isRead: $isRead)';
 }
-
-// Made with Bob

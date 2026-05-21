@@ -488,5 +488,3 @@ class _RatePlacePageState extends State<RatePlacePage> {
     }
   }
 }
-
-// Made with Bob
