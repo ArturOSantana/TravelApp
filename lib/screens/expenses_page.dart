@@ -284,7 +284,7 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        "R\$ ${expense.value.toStringAsFixed(2)}",
+                        currencyFormat.format(expense.value),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.error,
