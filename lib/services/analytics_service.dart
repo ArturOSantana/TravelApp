@@ -17,7 +17,7 @@ class AnalyticsService {
     _validatePositiveInt(totalDays, 'Total de dias');
 
     if (totalDays == 0 || totalBudget == 0) return 0;
-
+// // 
     final timeElapsed = daysElapsed / totalDays;
     final budgetUsed = totalSpent / totalBudget;
 
