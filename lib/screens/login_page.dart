@@ -150,191 +150,193 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: formWidth),
               child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Semantics(
-                    label: "Logo do aplicativo Travel Planner",
-                    image: true,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      child: Image.asset(
-                        'assets/images/app_logo.png',
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Semantics(
+                      label: "Logo do aplicativo Travel Planner",
+                      image: true,
+                      child: Container(
                         width: 100,
                         height: 100,
-                        fit: BoxFit.contain,
+                        child: Image.asset(
+                          'assets/images/app_logo.png',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      "Bem-vindo",
-                      style: AppTextStyles.h1(context).copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                    const SizedBox(height: 20),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        "Bem-vindo",
+                        style: AppTextStyles.h1(context).copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Acesse sua conta para continuar",
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.7),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Acesse sua conta para continuar",
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                  // E-MAIL
-                  Semantics(
-                    textField: true,
-                    label: "Campo de e-mail",
-                    child: TextFormField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      textInputAction: TextInputAction.next,
-                      style: AppTextStyles.body(
-                        context,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: "E-mail",
-                        labelStyle: AppTextStyles.body(
+                    // E-MAIL
+                    Semantics(
+                      textField: true,
+                      label: "Campo de e-mail",
+                      child: TextFormField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        textInputAction: TextInputAction.next,
+                        style: AppTextStyles.body(
                           context,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: Theme.of(context).colorScheme.primary,
+                        decoration: InputDecoration(
+                          labelText: "E-mail",
+                          labelStyle: AppTextStyles.body(
+                            context,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest,
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        validator: (value) => value == null || value.isEmpty
+                            ? "Informe seu e-mail"
+                            : null,
                       ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? "Informe seu e-mail"
-                          : null,
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // SENHA
-                  Semantics(
-                    textField: true,
-                    label: "Campo de senha",
-                    obscured: _obscurePassword,
-                    child: TextFormField(
-                      controller: passwordController,
-                      obscureText: _obscurePassword,
-                      autofillHints: const [AutofillHints.password],
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleLogin(),
-                      style: AppTextStyles.body(
-                        context,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: "Senha",
-                        labelStyle: AppTextStyles.body(
+                    // SENHA
+                    Semantics(
+                      textField: true,
+                      label: "Campo de senha",
+                      obscured: _obscurePassword,
+                      child: TextFormField(
+                        controller: passwordController,
+                        obscureText: _obscurePassword,
+                        autofillHints: const [AutofillHints.password],
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _handleLogin(),
+                        style: AppTextStyles.body(
                           context,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        prefixIcon: Icon(
-                          Icons.lock_outline,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        suffixIcon: AccessibleIconButton(
-                          icon: _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: "Senha",
+                          labelStyle: AppTextStyles.body(
+                            context,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
                           ),
-                          tooltip: _obscurePassword
-                              ? "Mostrar senha"
-                              : "Ocultar senha",
-                          semanticLabel: _obscurePassword
-                              ? "Mostrar senha digitada"
-                              : "Ocultar senha digitada",
+                          prefixIcon: Icon(
+                            Icons.lock_outline,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          suffixIcon: AccessibleIconButton(
+                            icon: _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                            tooltip: _obscurePassword
+                                ? "Mostrar senha"
+                                : "Ocultar senha",
+                            semanticLabel: _obscurePassword
+                                ? "Mostrar senha digitada"
+                                : "Ocultar senha digitada",
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest,
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest,
+                        validator: (value) => value == null || value.isEmpty
+                            ? "Informe sua senha"
+                            : null,
                       ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? "Informe sua senha"
-                          : null,
                     ),
-                  ),
 
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: AccessibleButton(
-                      label: "Esqueci minha senha",
-                      onPressed: _showForgotPasswordDialog,
-                      type: ButtonType.text,
-                      semanticLabel: "Recuperar senha esquecida",
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: AccessibleButton(
+                        label: "Esqueci minha senha",
+                        onPressed: _showForgotPasswordDialog,
+                        type: ButtonType.text,
+                        semanticLabel: "Recuperar senha esquecida",
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                  // BOTÃO ENTRAR
-                  SizedBox(
-                    width: double.infinity,
-                    child: AccessibleButton(
-                      label: "Entrar",
-                      onPressed: _isLoading ? null : _handleLogin,
-                      type: ButtonType.primary,
-                      size: ButtonSize.large,
-                      isLoading: _isLoading,
-                      semanticLabel: "Fazer login na sua conta",
+                    // BOTÃO ENTRAR
+                    SizedBox(
+                      width: double.infinity,
+                      child: AccessibleButton(
+                        label: "Entrar",
+                        onPressed: _isLoading ? null : _handleLogin,
+                        type: ButtonType.primary,
+                        size: ButtonSize.large,
+                        isLoading: _isLoading,
+                        semanticLabel: "Fazer login na sua conta",
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  Semantics(
-                    label: "Não tem uma conta? Cadastre-se",
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: [
-                        Text(
-                          "Não tem uma conta?",
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.body(context).copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
+                    Semantics(
+                      label: "Não tem uma conta? Cadastre-se",
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          Text(
+                            "Não tem uma conta?",
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.body(context).copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                        AccessibleButton(
-                          label: "Cadastre-se",
-                          onPressed: () =>
-                              Navigator.pushNamed(context, '/register'),
-                          type: ButtonType.text,
-                          semanticLabel: "Ir para página de cadastro",
-                        ),
-                      ],
+                          AccessibleButton(
+                            label: "Cadastre-se",
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/register'),
+                            type: ButtonType.text,
+                            semanticLabel: "Ir para página de cadastro",
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
