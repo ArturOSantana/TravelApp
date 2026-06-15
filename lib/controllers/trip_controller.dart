@@ -169,13 +169,15 @@ class TripController {
 
       for (final memberId in membersToNotify) {
         await _db.collection('notifications').add({
-          'userId': memberId,
-          'tripId': tripId,
-          'type': 'new_member',
-          'title': 'Novo membro no grupo',
-          'body': '${newMember.name} entrou na viagem para ${trip.destination}',
+          'receiverId': memberId,
+          'senderId': newMemberUid,
+          'senderName': newMember.name,
+          'postId': tripId,
+          'postName': trip.destination,
+          'type': NotificationType.comment.index,
+          'commentText': '${newMember.name} entrou no grupo',
           'createdAt': FieldValue.serverTimestamp(),
-          'read': false,
+          'isRead': false,
         });
       }
     } catch (e) {

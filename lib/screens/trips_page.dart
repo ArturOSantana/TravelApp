@@ -153,15 +153,15 @@ class _TripsPageState extends State<TripsPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              "Cole o código da viagem que seu amigo compartilhou com você:",
+              "Cole o código de convite que seu amigo compartilhou com você:",
             ),
             const SizedBox(height: 15),
             TextField(
               controller: codeController,
               decoration: const InputDecoration(
-                labelText: "Código da Viagem",
+                labelText: "Código de Convite",
                 border: OutlineInputBorder(),
-                hintText: "Ex: ID_DA_VIAGEM",
+                hintText: "Ex: ABC123",
               ),
             ),
           ],
@@ -176,7 +176,7 @@ class _TripsPageState extends State<TripsPage>
               if (codeController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Por favor, insira o código da viagem"),
+                    content: Text("Por favor, insira o código de convite"),
                     backgroundColor: Colors.orange,
                   ),
                 );
@@ -184,7 +184,7 @@ class _TripsPageState extends State<TripsPage>
               }
 
               try {
-                await _controller.joinTrip(codeController.text.trim());
+                await _controller.joinTripWithCode(codeController.text.trim());
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -199,7 +199,6 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
   }
 
   Future<void> _showInviteDialog(BuildContext context) async {
-    // 🔒 VERIFICAÇÃO PREMIUM: Limitar membros por viagem
     final canAdd = await SubscriptionService.canAddMember(widget.trip.id);
     if (!canAdd) {
       if (!mounted) return;
@@ -207,51 +206,64 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
       return;
     }
 
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Convidar para o Grupo"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Compartilhe o código abaixo com seus amigos:"),
-            const SizedBox(height: 15),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SelectableText(
-                widget.trip.id,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
+    try {
+      final inviteCode =
+          await controller.createInviteCode(tripId: widget.trip.id);
+
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Convidar para o Grupo"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Compartilhe o código abaixo com seus amigos:"),
+              const SizedBox(height: 15),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  inviteCode.code,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: inviteCode.code));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Código copiado!")),
+                );
+                Navigator.pop(context);
+              },
+              child: const Text("Copiar Código"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Fechar"),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: widget.trip.id));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Código copiado!")),
-              );
-              Navigator.pop(context);
-            },
-            child: const Text("Copiar Código"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Fechar"),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao gerar código de convite: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _confirmRemove(BuildContext context, UserModel member) {

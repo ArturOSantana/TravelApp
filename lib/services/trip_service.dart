@@ -41,18 +41,21 @@ class TripService {
     }
 
     try {
+      final normalizedMembers = <String>{userId, ...(members ?? [])}.toList();
+
       final tripData = {
+        'ownerId': userId,
+        'createdBy': userId,
         'destination': destination.trim(),
         'startDate': Timestamp.fromDate(startDate),
         'endDate': Timestamp.fromDate(endDate),
         'budget': budget,
         'description': description?.trim(),
-        'members': [userId, ...(members ?? [])],
-        'createdBy': userId,
+        'members': normalizedMembers,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         'status': 'planned',
-        'isGroup': members != null && members.isNotEmpty,
+        'isGroup': normalizedMembers.length > 1,
       };
 
       final docRef = await firestore.collection('trips').add(tripData);
@@ -237,8 +240,9 @@ class TripService {
 
       final tripData = tripDoc.data()!;
 
-      // Não permitir remover o criador
-      if (tripData['createdBy'] == memberId) {
+      // Não permitir remover o dono/criador
+      if (tripData['ownerId'] == memberId ||
+          tripData['createdBy'] == memberId) {
         throw ValidationException(
           'Não é possível remover o criador da viagem',
           code: 'cannot-remove-creator',

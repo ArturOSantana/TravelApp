@@ -80,7 +80,7 @@ class Trip {
 
   bool isAdmin(String uid) {
     if (uid.isEmpty) return false;
-    return uid == ownerId || (members.isNotEmpty && members.first == uid);
+    return uid == ownerId;
   }
 
   bool isMember(String uid) {
