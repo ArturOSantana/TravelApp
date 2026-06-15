@@ -18,23 +18,20 @@ void main() {
       expect(trip.isAdmin('user_member'), isFalse);
     });
 
-    test(
-      'Should return true for the first member if ownerId is empty (legacy support)',
-      () {
-        final trip = Trip(
-          id: '123',
-          ownerId: '', // Viagem antiga
-          destination: 'London',
-          budget: 1000,
-          objective: 'Tour',
-          createdAt: DateTime.now(),
-          members: ['first_user', 'second_user'],
-        );
+    test('Should return false when ownerId is empty', () {
+      final trip = Trip(
+        id: '123',
+        ownerId: '',
+        destination: 'London',
+        budget: 1000,
+        objective: 'Tour',
+        createdAt: DateTime.now(),
+        members: ['first_user', 'second_user'],
+      );
 
-        expect(trip.isAdmin('first_user'), isTrue);
-        expect(trip.isAdmin('second_user'), isFalse);
-      },
-    );
+      expect(trip.isAdmin('first_user'), isFalse);
+      expect(trip.isAdmin('second_user'), isFalse);
+    });
 
     test('Should return false if uid is empty', () {
       final trip = Trip(
