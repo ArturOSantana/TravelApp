@@ -147,12 +147,13 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: Container(
-            width: formWidth,
-            child: Form(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: formWidth),
+              child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -171,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   Semantics(
                     header: true,
                     child: Text(
@@ -184,6 +185,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 8),
                   Text(
                     "Acesse sua conta para continuar",
+                    textAlign: TextAlign.center,
                     style: AppTextStyles.bodySmall(context).copyWith(
                       color: Theme.of(context)
                           .colorScheme
@@ -191,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                           .withOpacity(0.7),
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 32),
 
                   // E-MAIL
                   Semantics(
@@ -309,11 +311,15 @@ class _LoginPageState extends State<LoginPage> {
 
                   Semantics(
                     label: "Não tem uma conta? Cadastre-se",
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      runSpacing: 4,
                       children: [
                         Text(
                           "Não tem uma conta?",
+                          textAlign: TextAlign.center,
                           style: AppTextStyles.body(context).copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           ),

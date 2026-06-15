@@ -108,7 +108,8 @@ class _TripsPageState extends State<TripsPage>
         ],
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: false,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: const [
             Tab(text: "Ativas", icon: Icon(Icons.play_circle_outline)),
             Tab(text: "Planejadas", icon: Icon(Icons.calendar_today)),
@@ -149,22 +150,24 @@ class _TripsPageState extends State<TripsPage>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Entrar em um Grupo"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "Cole o código de convite que seu amigo compartilhou com você:",
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: codeController,
-              decoration: const InputDecoration(
-                labelText: "Código de Convite",
-                border: OutlineInputBorder(),
-                hintText: "Ex: ABC123",
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Cole o código de convite que seu amigo compartilhou com você:",
               ),
-            ),
-          ],
+              const SizedBox(height: 15),
+              TextField(
+                controller: codeController,
+                decoration: const InputDecoration(
+                  labelText: "Código de Convite",
+                  border: OutlineInputBorder(),
+                  hintText: "Ex: ABC123",
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

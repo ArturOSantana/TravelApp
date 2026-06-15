@@ -104,6 +104,18 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeController.themeMode,
+            builder: (context, child) {
+              final mediaQuery = MediaQuery.of(context);
+              final textScaler = mediaQuery.textScaler.clamp(
+                minScaleFactor: 0.9,
+                maxScaleFactor: 1.3,
+              );
+
+              return MediaQuery(
+                data: mediaQuery.copyWith(textScaler: textScaler),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             home: const AppInitializer(),
             onGenerateRoute: (settings) {
               final Uri uri = Uri.parse(settings.name ?? '/');
